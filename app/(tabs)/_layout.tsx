@@ -21,6 +21,10 @@ export default function TabsLayout() {
         options={{ title: 'Tréninky', tabBarIcon: ({ color, size }) => <Ionicons name="barbell" color={color} size={size} /> }}
       />
       <Tabs.Screen
+        name="history"
+        options={{ title: 'Historie', tabBarIcon: ({ color, size }) => <Ionicons name="calendar" color={color} size={size} /> }}
+      />
+      <Tabs.Screen
         name="progress"
         options={{ title: 'Progres', tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" color={color} size={size} /> }}
       />
