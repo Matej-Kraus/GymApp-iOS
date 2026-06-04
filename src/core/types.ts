@@ -124,6 +124,17 @@ export interface Settings {
   smallestPlateKg: number
   /** Aktivní tréninkový program = groupId (např. "ppl"). Řídí doporučení dalšího tréninku. */
   activeProgramId?: string
+  /** Připomínka tréninku (lokální notifikace). */
+  reminder?: ReminderConfig
+}
+
+/** Nastavení připomínky tréninku. `days`: 1 = pondělí … 7 = neděle. */
+export interface ReminderConfig {
+  enabled: boolean
+  /** Hodina (0–23), minuta vždy 0. */
+  hour: number
+  /** Dny v týdnu (1 = Po … 7 = Ne). */
+  days: number[]
 }
 
 /** Jeden záznam tělesných měr (obvody v cm). Všechny míry volitelné. */

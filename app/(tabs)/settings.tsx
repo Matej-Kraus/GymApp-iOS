@@ -7,7 +7,11 @@ import * as DocumentPicker from 'expo-document-picker'
 import { useAppState } from '@/state/AppStateContext'
 import { Button, Card, PageHeader, cn } from '@/components/ui'
 import { DATA_VERSION, deserialize } from '@/core'
-import type { Unit } from '@/core'
+import type { Unit, ReminderConfig } from '@/core'
+import { applyReminders } from '@/lib/reminders'
+
+const WEEKDAYS = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
+const REMINDER_HOURS = [6, 7, 8, 9, 10, 12, 16, 17, 18, 19, 20, 21]
 
 const UNIT_OPTIONS: Unit[] = ['kg', 'lb']
 const PLATE_OPTIONS = [1.25, 2.5, 5]
@@ -37,6 +41,19 @@ export default function Settings() {
   const { unit, smallestPlateKg, activeProgramId } = data.settings
   const [status, setStatus] = useState<string | null>(null)
   const hasSampleData = data.sessions.some((s) => s.isSample) || data.splits.some((s) => s.isSample)
+
+  const reminder: ReminderConfig = data.settings.reminder ?? { enabled: false, hour: 18, days: [] }
+  function updateReminder(patch: Partial<ReminderConfig>) {
+    const next = { ...reminder, ...patch }
+    updateSettings({ reminder: next })
+    applyReminders(next)
+  }
+  function toggleDay(d: number) {
+    const days = reminder.days.includes(d)
+      ? reminder.days.filter((x) => x !== d)
+      : [...reminder.days, d].sort((a, b) => a - b)
+    updateReminder({ days })
+  }
 
   // Programy = skupiny splitů (groupId), které uživatel má.
   const programs = useMemo(() => {
@@ -144,6 +161,47 @@ export default function Settings() {
               onChange={(v) => updateSettings({ smallestPlateKg: Number(v) })}
             />
             <Text className="mt-2 text-xs text-muted">Na násobky zaokrouhlujeme návrhy váhy při progresivním přetížení.</Text>
+          </Card>
+        </View>
+
+        <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Připomínky tréninku</Text>
+          <Card className="gap-3">
+            <Pressable onPress={() => updateReminder({ enabled: !reminder.enabled })} className="flex-row items-center justify-between">
+              <Text className="text-sm text-white">Připomínat trénink</Text>
+              <View className={cn('h-6 w-11 rounded-full justify-center', reminder.enabled ? 'bg-accent' : 'bg-card2')}>
+                <View className={cn('h-5 w-5 rounded-full bg-white', reminder.enabled ? 'ml-5' : 'ml-0.5')} />
+              </View>
+            </Pressable>
+            {reminder.enabled && (
+              <>
+                <View>
+                  <Text className="text-xs text-muted mb-1">Dny</Text>
+                  <View className="flex-row gap-1.5">
+                    {WEEKDAYS.map((lbl, i) => {
+                      const d = i + 1
+                      const on = reminder.days.includes(d)
+                      return (
+                        <Pressable key={d} onPress={() => toggleDay(d)} className={cn('flex-1 rounded-lg py-2 items-center', on ? 'bg-accent' : 'bg-card2')}>
+                          <Text className={cn('text-xs font-semibold', on ? 'text-black' : 'text-muted')}>{lbl}</Text>
+                        </Pressable>
+                      )
+                    })}
+                  </View>
+                </View>
+                <View>
+                  <Text className="text-xs text-muted mb-1">Čas: {String(reminder.hour).padStart(2, '0')}:00</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-1.5">
+                    {REMINDER_HOURS.map((h) => (
+                      <Pressable key={h} onPress={() => updateReminder({ hour: h })} className={cn('rounded-full px-3 py-1.5', reminder.hour === h ? 'bg-accent' : 'bg-card2')}>
+                        <Text className={cn('text-xs font-semibold', reminder.hour === h ? 'text-black' : 'text-muted')}>{h}:00</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+                <Text className="text-xs text-muted">Pozn.: notifikace fungují až ve finálním buildu na iPhonu (ne v Expo Go).</Text>
+              </>
+            )}
           </Card>
         </View>
 
