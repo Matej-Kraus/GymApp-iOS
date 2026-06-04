@@ -8,7 +8,10 @@
     "scheme": "workouttracker",
     "userInterfaceStyle": "dark",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Workout Tracker čte z Apple Health tvoji váhu, tělesné složení a tréninky z Apple Watch, aby je ukázal v přehledech a grafech."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +28,14 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Workout Tracker čte z Apple Health tvoji váhu, tělesné složení a tréninky z Apple Watch.",
+          "background": false
+        }
+      ]
     ]
   }
 }
