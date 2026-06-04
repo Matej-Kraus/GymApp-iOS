@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { createId, SPLIT_TEMPLATES, findExercise } from '@/core'
 import { useAppState } from '@/state/AppStateContext'
@@ -10,6 +11,7 @@ import { colors } from '@/theme/colors'
 export default function Splits() {
   const { data, deleteSplit, duplicateSplit, addSplit } = useAppState()
   const { splits } = data
+  const router = useRouter()
   const [templatesOpen, setTemplatesOpen] = useState(false)
 
   function applyTemplate(tpl: (typeof SPLIT_TEMPLATES)[number]) {
@@ -32,10 +34,6 @@ export default function Splits() {
     ])
   }
 
-  function notYet() {
-    Alert.alert('Brzy', 'Ruční tvorba splitu a vlastní cviky přijdou v další fázi. Zatím použij šablony níže.')
-  }
-
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-6 pb-8">
@@ -43,7 +41,7 @@ export default function Splits() {
           <PageHeader
             title="Splity"
             subtitle="Tréninkové plány"
-            action={<Button title="+ Nový" size="sm" onPress={notYet} />}
+            action={<Button title="+ Nový" size="sm" onPress={() => router.push('/split-form')} />}
           />
         </View>
 
@@ -74,7 +72,7 @@ export default function Splits() {
                   </View>
                   <View className="flex-row gap-1.5">
                     <Pressable
-                      onPress={notYet}
+                      onPress={() => router.push({ pathname: '/split-form', params: { id: split.id } })}
                       className="rounded-md border border-white/15 px-3 py-1.5"
                     >
                       <Text className="text-xs text-muted">Upravit</Text>
@@ -121,7 +119,7 @@ export default function Splits() {
 
         {/* Vlastní cviky (zatím jen vstupní bod) */}
         <Pressable
-          onPress={notYet}
+          onPress={() => router.push('/custom-exercise')}
           className="flex-row items-center gap-3 rounded-2xl border border-dashed border-white/15 px-4 py-3"
         >
           <Ionicons name="add" size={18} color={colors.muted} />
