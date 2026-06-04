@@ -1,172 +1,86 @@
-import type { Split, WorkoutSession } from './types'
+import type { SetLog, Split, WorkoutSession } from './types'
 
-const SAMPLE_SPLIT_PUSH_ID = 'sample-split-push'
-const SAMPLE_SPLIT_PULL_ID = 'sample-split-pull'
+/**
+ * UKÁZKOVÁ DATA — 2 týdny programu Push / Pull / Legs.
+ * Každý týden 2× Push, 2× Pull, 2× Legs (celkem 12 tréninků), každý trénink 3 cviky.
+ * Váhy rostou trénink od tréninku → v grafech je vidět progres.
+ * Vše označeno `isSample: true`, takže to jde v Nastavení hromadně smazat.
+ */
 
-const now = Date.now()
+const PUSH_ID = 'sample-split-push'
+const PULL_ID = 'sample-split-pull'
+const LEGS_ID = 'sample-split-legs'
 const DAY = 86_400_000
+const now = Date.now()
 
 export const SAMPLE_SPLITS: Split[] = [
-  {
-    id: SAMPLE_SPLIT_PUSH_ID,
-    name: 'Push',
-    exerciseIds: ['bench-barbell', 'bench-incline-db', 'overhead-press', 'tricep-pushdown', 'cable-fly', 'lateral-raise'],
-    groupId: 'ppl',
-    groupName: 'Push / Pull / Legs',
-    isSample: true,
-  },
-  {
-    id: SAMPLE_SPLIT_PULL_ID,
-    name: 'Pull',
-    exerciseIds: ['deadlift', 'pullup', 'row-barbell', 'lat-pulldown', 'bicep-curl-db', 'face-pull'],
-    groupId: 'ppl',
-    groupName: 'Push / Pull / Legs',
-    isSample: true,
-  },
+  { id: PUSH_ID, name: 'Push', exerciseIds: ['bench-barbell', 'overhead-press', 'tricep-pushdown'], groupId: 'ppl', groupName: 'Push / Pull / Legs', isSample: true },
+  { id: PULL_ID, name: 'Pull', exerciseIds: ['deadlift', 'row-barbell', 'bicep-curl-db'], groupId: 'ppl', groupName: 'Push / Pull / Legs', isSample: true },
+  { id: LEGS_ID, name: 'Legs', exerciseIds: ['squat', 'leg-press', 'leg-curl'], groupId: 'ppl', groupName: 'Push / Pull / Legs', isSample: true },
 ]
 
-export const SAMPLE_SESSIONS: WorkoutSession[] = [
-  {
-    id: 'sample-session-push',
-    date: new Date(now - 7 * DAY).toISOString(),
-    splitId: SAMPLE_SPLIT_PUSH_ID,
-    splitName: 'Push',
-    durationMinutes: 58,
-    notes: '',
-    isSample: true,
-    entries: [
-      {
-        exerciseId: 'bench-barbell',
-        exerciseName: 'Bench Press',
-        sets: [
-          { weight: 40, reps: 10, rpe: null, completed: true, role: 'warmup', isPR: false },
-          { weight: 60, reps: 8,  rpe: null, completed: true, role: 'warmup', isPR: false },
-          { weight: 80, reps: 6,  rpe: 8,    completed: true, role: 'working', isPR: false },
-          { weight: 80, reps: 5,  rpe: 9,    completed: true, role: 'working', isPR: false },
-          { weight: 64, reps: 12, rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-      {
-        exerciseId: 'bench-incline-db',
-        exerciseName: 'Incline Dumbbell Press',
-        sets: [
-          { weight: 20, reps: 10, rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 35, reps: 8,  rpe: 7,    completed: true, role: 'working', isPR: false },
-          { weight: 35, reps: 7,  rpe: 8,    completed: true, role: 'working', isPR: false },
-          { weight: 28, reps: 14, rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-      {
-        exerciseId: 'overhead-press',
-        exerciseName: 'Overhead Press',
-        sets: [
-          { weight: 30, reps: 10, rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 55, reps: 6,  rpe: 8,    completed: true, role: 'working', isPR: false },
-          { weight: 55, reps: 5,  rpe: 9,    completed: true, role: 'working', isPR: false },
-          { weight: 44, reps: 11, rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-      {
-        exerciseId: 'tricep-pushdown',
-        exerciseName: 'Tricep Pushdown',
-        sets: [
-          { weight: 20, reps: 12, rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 40, reps: 8,  rpe: 7,    completed: true, role: 'working', isPR: false },
-          { weight: 40, reps: 7,  rpe: 8,    completed: true, role: 'working', isPR: false },
-          { weight: 32, reps: 15, rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-      {
-        exerciseId: 'cable-fly',
-        exerciseName: 'Cable Fly',
-        sets: [
-          { weight: 10, reps: 12, rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 20, reps: 10, rpe: 7,    completed: true, role: 'working', isPR: false },
-          { weight: 20, reps: 9,  rpe: 8,    completed: true, role: 'working', isPR: false },
-          { weight: 16, reps: 15, rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-      {
-        exerciseId: 'lateral-raise',
-        exerciseName: 'Lateral Raise',
-        sets: [
-          { weight: 8,  reps: 12, rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 14, reps: 10, rpe: 7,    completed: true, role: 'working', isPR: false },
-          { weight: 14, reps: 9,  rpe: 8,    completed: true, role: 'working', isPR: false },
-          { weight: 11, reps: 18, rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'sample-session-pull',
-    date: new Date(now - 5 * DAY).toISOString(),
-    splitId: SAMPLE_SPLIT_PULL_ID,
-    splitName: 'Pull',
-    durationMinutes: 52,
-    notes: 'Skvělý deadlift dnes.',
-    isSample: true,
-    entries: [
-      {
-        exerciseId: 'deadlift',
-        exerciseName: 'Deadlift',
-        sets: [
-          { weight: 60,  reps: 10, rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 100, reps: 5,  rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 140, reps: 5,  rpe: 8,    completed: true, role: 'working', isPR: true  },
-          { weight: 112, reps: 8,  rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-      {
-        exerciseId: 'pullup',
-        exerciseName: 'Pull-up',
-        sets: [
-          { weight: 0,  reps: 8,  rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 10, reps: 6,  rpe: 7,    completed: true, role: 'working', isPR: false },
-          { weight: 10, reps: 5,  rpe: 8,    completed: true, role: 'working', isPR: false },
-          { weight: 0,  reps: 14, rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-      {
-        exerciseId: 'row-barbell',
-        exerciseName: 'Barbell Row',
-        sets: [
-          { weight: 60, reps: 8,  rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 90, reps: 6,  rpe: 8,    completed: true, role: 'working', isPR: false },
-          { weight: 90, reps: 5,  rpe: 9,    completed: true, role: 'working', isPR: false },
-          { weight: 72, reps: 12, rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-      {
-        exerciseId: 'lat-pulldown',
-        exerciseName: 'Lat Pulldown',
-        sets: [
-          { weight: 40, reps: 10, rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 70, reps: 8,  rpe: 7,    completed: true, role: 'working', isPR: false },
-          { weight: 70, reps: 7,  rpe: 8,    completed: true, role: 'working', isPR: false },
-          { weight: 56, reps: 14, rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-      {
-        exerciseId: 'bicep-curl-db',
-        exerciseName: 'Dumbbell Bicep Curl',
-        sets: [
-          { weight: 12, reps: 12, rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 20, reps: 8,  rpe: 7,    completed: true, role: 'working', isPR: false },
-          { weight: 20, reps: 7,  rpe: 8,    completed: true, role: 'working', isPR: false },
-          { weight: 16, reps: 14, rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-      {
-        exerciseId: 'face-pull',
-        exerciseName: 'Face Pull',
-        sets: [
-          { weight: 15, reps: 15, rpe: null, completed: true, role: 'warmup',  isPR: false },
-          { weight: 25, reps: 12, rpe: 7,    completed: true, role: 'working', isPR: false },
-          { weight: 25, reps: 11, rpe: 8,    completed: true, role: 'working', isPR: false },
-          { weight: 20, reps: 18, rpe: null, completed: true, role: 'backoff', isPR: false },
-        ],
-      },
-    ],
-  },
-]
+const SPLIT_NAME: Record<string, string> = { [PUSH_ID]: 'Push', [PULL_ID]: 'Pull', [LEGS_ID]: 'Legs' }
+
+/** Plán cviku: startovní pracovní váha, přírůstek na trénink, cílová opakování. */
+interface ExPlan { id: string; name: string; start: number; step: number; reps: number }
+
+const PLANS: Record<string, ExPlan[]> = {
+  [PUSH_ID]: [
+    { id: 'bench-barbell', name: 'Bench Press', start: 60, step: 2.5, reps: 8 },
+    { id: 'overhead-press', name: 'Overhead Press', start: 40, step: 2.5, reps: 8 },
+    { id: 'tricep-pushdown', name: 'Tricep Pushdown', start: 25, step: 2.5, reps: 10 },
+  ],
+  [PULL_ID]: [
+    { id: 'deadlift', name: 'Deadlift', start: 100, step: 5, reps: 5 },
+    { id: 'row-barbell', name: 'Barbell Row', start: 50, step: 2.5, reps: 8 },
+    { id: 'bicep-curl-db', name: 'Dumbbell Curl', start: 14, step: 1, reps: 10 },
+  ],
+  [LEGS_ID]: [
+    { id: 'squat', name: 'Squat', start: 80, step: 5, reps: 6 },
+    { id: 'leg-press', name: 'Leg Press', start: 120, step: 10, reps: 10 },
+    { id: 'leg-curl', name: 'Leg Curl', start: 30, step: 2.5, reps: 12 },
+  ],
+}
+
+const round2 = (w: number) => Math.round(w / 2.5) * 2.5
+
+function buildEntry(plan: ExPlan, occ: number, isLast: boolean) {
+  const w = plan.start + plan.step * occ
+  const sets: SetLog[] = [
+    { weight: round2(w * 0.5), reps: 10, rpe: null, completed: true, role: 'warmup', isPR: false },
+    { weight: w, reps: plan.reps, rpe: 8, completed: true, role: 'working', isPR: isLast },
+    { weight: w, reps: plan.reps - 1, rpe: 9, completed: true, role: 'working', isPR: false },
+    { weight: round2(w * 0.8), reps: plan.reps + 4, rpe: null, completed: true, role: 'backoff', isPR: false },
+  ]
+  return { exerciseId: plan.id, exerciseName: plan.name, sets }
+}
+
+// Rozvrh 2 týdnů: každý týden Push, Pull, Legs, Push, Pull, Legs.
+// Od nejstaršího (offset 13 dní) po nejnovější → occ roste, váhy rostou.
+const WEEK_ORDER = [PUSH_ID, PULL_ID, LEGS_ID, PUSH_ID, PULL_ID, LEGS_ID]
+const DAY_OFFSETS = [13, 12, 11, 10, 9, 8, 6, 5, 4, 3, 2, 1] // 2 týdny, vždy 1 den volna
+
+function buildSessions(): WorkoutSession[] {
+  const occ: Record<string, number> = { [PUSH_ID]: 0, [PULL_ID]: 0, [LEGS_ID]: 0 }
+  const sessions: WorkoutSession[] = []
+  for (let i = 0; i < DAY_OFFSETS.length; i++) {
+    const splitId = WEEK_ORDER[i % WEEK_ORDER.length]
+    const k = occ[splitId]
+    const isLast = k === 3 // 4. (poslední) výskyt daného typu = nejtěžší → PR
+    const entries = PLANS[splitId].map((p) => buildEntry(p, k, isLast))
+    sessions.push({
+      id: `sample-${splitId}-${k}`,
+      date: new Date(now - DAY_OFFSETS[i] * DAY).toISOString(),
+      splitId,
+      splitName: SPLIT_NAME[splitId],
+      entries,
+      durationMinutes: 55,
+      notes: '',
+      isSample: true,
+    })
+    occ[splitId] = k + 1
+  }
+  return sessions
+}
+
+export const SAMPLE_SESSIONS: WorkoutSession[] = buildSessions()
