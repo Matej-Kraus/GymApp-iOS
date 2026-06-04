@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { AppData, Exercise, ExerciseGoal, Settings, Split, WorkoutSession, BodyWeightEntry } from '@/core'
+import type { AppData, Exercise, ExerciseGoal, Settings, Split, WorkoutSession, BodyWeightEntry, MeasurementEntry } from '@/core'
 import { createId, createRepository, emptyData, SAMPLE_SPLITS, SAMPLE_SESSIONS } from '@/core'
 import { createAsyncStore } from '@/state/asyncStore'
 
@@ -35,6 +35,8 @@ interface AppStateValue {
   deleteBodyWeightEntry: (date: string) => void
   addGoal: (goal: ExerciseGoal) => void
   deleteGoal: (id: string) => void
+  logMeasurement: (entry: MeasurementEntry) => void
+  deleteMeasurement: (date: string) => void
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null)
@@ -123,6 +125,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         })),
       addGoal: (goal) => setData((d) => ({ ...d, goals: [...d.goals, goal] })),
       deleteGoal: (id) => setData((d) => ({ ...d, goals: d.goals.filter((g) => g.id !== id) })),
+      logMeasurement: (entry) =>
+        setData((d) => ({
+          ...d,
+          measurements: [
+            ...d.measurements.filter((e) => e.date !== entry.date),
+            entry,
+          ].sort((a, b) => a.date.localeCompare(b.date)),
+        })),
+      deleteMeasurement: (date) =>
+        setData((d) => ({ ...d, measurements: d.measurements.filter((e) => e.date !== date) })),
     }),
     [data],
   )

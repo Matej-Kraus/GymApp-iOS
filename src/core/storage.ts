@@ -30,6 +30,7 @@ export function emptyData(): AppData {
     settings: { ...defaultSettings },
     bodyWeightLog: [],
     goals: [],
+    measurements: [],
   }
 }
 
@@ -46,6 +47,7 @@ export function deserialize(raw: string | null): AppData {
       settings: { ...defaultSettings, ...(parsed.settings ?? {}) },
       bodyWeightLog: parsed.bodyWeightLog ?? [],
       goals: parsed.goals ?? [],
+      measurements: parsed.measurements ?? [],
     }
   } catch {
     return emptyData()

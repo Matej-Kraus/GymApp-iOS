@@ -91,8 +91,15 @@ function PRList({ sessions }: { sessions: WorkoutSession[] }) {
   )
 }
 
+const MEASURE_FIELDS: { key: 'waist' | 'chest' | 'arms' | 'thighs'; label: string }[] = [
+  { key: 'waist', label: 'Pas' },
+  { key: 'chest', label: 'Hrudník' },
+  { key: 'arms', label: 'Paže' },
+  { key: 'thighs', label: 'Stehno' },
+]
+
 export default function Progress() {
-  const { data, logBodyWeight, deleteBodyWeightEntry, addGoal, deleteGoal } = useAppState()
+  const { data, logBodyWeight, deleteBodyWeightEntry, addGoal, deleteGoal, logMeasurement } = useAppState()
   const exercises = allExercises(data.customExercises)
 
   const loggedIds = useMemo(() => {
@@ -149,6 +156,30 @@ export default function Progress() {
     const kg = parseFloat(weightInput)
     if (isNaN(kg) || kg < 20 || kg > 300) return
     logBodyWeight({ date: today, kg })
+  }
+
+  // Tělesné míry (obvody v cm)
+  const todayMeasure = data.measurements.find((m) => m.date === today)
+  const [measureInputs, setMeasureInputs] = useState<Record<string, string>>({
+    waist: todayMeasure?.waist ? String(todayMeasure.waist) : '',
+    chest: todayMeasure?.chest ? String(todayMeasure.chest) : '',
+    arms: todayMeasure?.arms ? String(todayMeasure.arms) : '',
+    thighs: todayMeasure?.thighs ? String(todayMeasure.thighs) : '',
+  })
+  function handleSaveMeasure() {
+    const entry: { date: string; waist?: number; chest?: number; arms?: number; thighs?: number } = { date: today }
+    let any = false
+    for (const { key } of MEASURE_FIELDS) {
+      const v = parseFloat(measureInputs[key])
+      if (!isNaN(v) && v > 0) { entry[key] = v; any = true }
+    }
+    if (any) logMeasurement(entry)
+  }
+  function measureSeries(key: 'waist' | 'chest' | 'arms' | 'thighs') {
+    return [...data.measurements]
+      .filter((m) => typeof m[key] === 'number')
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((m) => ({ value: m[key] as number, label: formatDateCZ(m.date + 'T12:00:00').slice(0, 5) }))
   }
 
   const goalPct = currentGoal ? Math.min(100, Math.round((currentE1RM / currentGoal.targetE1RM) * 100)) : 0
@@ -291,6 +322,40 @@ export default function Progress() {
             </Card>
           </View>
         )}
+
+        {/* Tělesné míry */}
+        <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Tělesné míry (cm)</Text>
+          <Card className="gap-3">
+            <View className="flex-row flex-wrap gap-2">
+              {MEASURE_FIELDS.map(({ key, label }) => (
+                <View key={key} className="flex-1" style={{ minWidth: '45%' }}>
+                  <Text className="text-xs text-muted mb-1">{label}</Text>
+                  <TextInput
+                    keyboardType="decimal-pad"
+                    placeholder="—"
+                    placeholderTextColor={colors.muted}
+                    value={measureInputs[key]}
+                    onChangeText={(t) => setMeasureInputs((p) => ({ ...p, [key]: t }))}
+                    className="h-11 rounded-2xl bg-card2 px-3 text-sm text-white"
+                  />
+                </View>
+              ))}
+            </View>
+            <Button title={todayMeasure ? 'Aktualizovat míry' : 'Uložit míry'} size="sm" onPress={handleSaveMeasure} />
+          </Card>
+
+          {MEASURE_FIELDS.map(({ key, label }) => {
+            const series = measureSeries(key)
+            if (series.length < 2) return null
+            return (
+              <Card key={key}>
+                <Text className="font-display text-sm font-bold text-white mb-2">{label} — {series[series.length - 1].value} cm</Text>
+                <Chart data={series} />
+              </Card>
+            )
+          })}
+        </View>
       </ScrollView>
     </SafeAreaView>
   )

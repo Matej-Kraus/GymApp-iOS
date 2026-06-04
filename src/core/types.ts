@@ -122,6 +122,22 @@ export interface Settings {
   unit: Unit
   /** Nejmenší dostupný kotouč v kg → na něj zaokrouhlujeme přírůstky. */
   smallestPlateKg: number
+  /** Aktivní tréninkový program = groupId (např. "ppl"). Řídí doporučení dalšího tréninku. */
+  activeProgramId?: string
+}
+
+/** Jeden záznam tělesných měr (obvody v cm). Všechny míry volitelné. */
+export interface MeasurementEntry {
+  /** Datum ve formátu "YYYY-MM-DD". */
+  date: string
+  /** Pas (cm). */
+  waist?: number
+  /** Hrudník (cm). */
+  chest?: number
+  /** Paže (cm). */
+  arms?: number
+  /** Stehno (cm). */
+  thighs?: number
 }
 
 /** Cíl pro konkrétní cvik — cílový odhadovaný 1RM. */
@@ -149,4 +165,6 @@ export interface AppData {
   bodyWeightLog: BodyWeightEntry[]
   /** Cíle pro jednotlivé cviky (cílový 1RM). */
   goals: ExerciseGoal[]
+  /** Log tělesných měr (obvody) — jeden záznam na den. */
+  measurements: MeasurementEntry[]
 }

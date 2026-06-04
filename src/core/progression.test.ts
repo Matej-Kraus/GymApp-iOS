@@ -55,16 +55,26 @@ describe('working série (pracovní/těžká)', () => {
     expect(suggestWorkingSet(null, bench, settings)).toBeNull()
   })
 
-  it('6 opakování → stejná váha, cíl o 1 víc (7×40)', () => {
-    const s = suggestWorkingSet({ weight: 40, reps: 6 }, bench, settings)
-    expect(s?.weight).toBe(40)
-    expect(s?.reps).toBe(7)
+  it('objemová progrese: 10×15 (150) → 9×17,5 (157,5)', () => {
+    const s = suggestWorkingSet({ weight: 15, reps: 10 }, bench, settings)
+    expect(s?.weight).toBe(17.5)
+    expect(s?.reps).toBe(9)
+    // objem návrhu musí být ostře větší než minule
+    expect(s!.weight * s!.reps).toBeGreaterThan(15 * 10)
   })
 
-  it('na stropu (9×40) → přidat váhu na 42,5 a dolů na 5', () => {
+  it('6×40 (240) → vyšší váha 42,5 a dopočet opakování na vyšší objem', () => {
+    const s = suggestWorkingSet({ weight: 40, reps: 6 }, bench, settings)
+    expect(s?.weight).toBe(42.5)
+    expect(s?.reps).toBe(6)
+    expect(s!.weight * s!.reps).toBeGreaterThan(40 * 6)
+  })
+
+  it('9×40 (360) → 9×42,5 (382,5), objem zase vyšší', () => {
     const s = suggestWorkingSet({ weight: 40, reps: 9 }, bench, settings)
     expect(s?.weight).toBe(42.5)
-    expect(s?.reps).toBe(5)
+    expect(s?.reps).toBe(9)
+    expect(s!.weight * s!.reps).toBeGreaterThan(40 * 9)
   })
 })
 

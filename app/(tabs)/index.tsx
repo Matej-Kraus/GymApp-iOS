@@ -12,6 +12,7 @@ import {
   workoutStreakWeeks,
   volumeLast30Days,
   topMuscleGroup,
+  recommendNextSplit,
 } from '@/core'
 
 const MUSCLE_CZ: Record<string, string> = {
@@ -50,6 +51,16 @@ export default function Dashboard() {
   }
   const groups = [...groupMap.entries()]
 
+  // Aktivní program a doporučený další trénink (rotace).
+  const activeProgramId = data.settings.activeProgramId
+  const programSplits = activeProgramId ? splits.filter((s) => s.groupId === activeProgramId) : []
+  const recommendedId = recommendNextSplit(programSplits, sessions)
+  const recommendedSplit = programSplits.find((s) => s.id === recommendedId) ?? null
+
+  function openPicker() {
+    setPickerStep(programSplits.length > 0 ? 'program' : 'groups')
+    setPickerOpen(true)
+  }
   function closePicker() {
     setPickerOpen(false)
     setPickerStep('groups')
@@ -67,7 +78,12 @@ export default function Dashboard() {
           <PageHeader title="Workout" subtitle={today} />
         </View>
 
-        <Button title="Spustit trénink" size="lg" disabled={!hasSplits} onPress={() => setPickerOpen(true)} />
+        <View className="gap-1.5">
+          <Button title="Spustit trénink" size="lg" disabled={!hasSplits} onPress={openPicker} />
+          {recommendedSplit ? (
+            <Text className="text-center text-xs text-accent">🎯 Dnes doporučeno: {recommendedSplit.name}</Text>
+          ) : null}
+        </View>
 
         {!hasSplits ? (
           <EmptyState
@@ -133,7 +149,41 @@ export default function Dashboard() {
       <Modal visible={pickerOpen} animationType="slide" transparent onRequestClose={closePicker}>
         <SafeAreaView className="flex-1 bg-bg/95">
           <View className="flex-1 px-4 pt-4">
-            {pickerStep === 'groups' ? (
+            {pickerStep === 'program' ? (
+              <>
+                <View className="flex-row items-center justify-between mb-5">
+                  <Text className="font-display text-xl font-bold text-white">Tvůj program</Text>
+                  <Pressable onPress={closePicker} hitSlop={12}>
+                    <Text className="text-muted text-xl">✕</Text>
+                  </Pressable>
+                </View>
+                {programSplits.map((split) => {
+                  const isRec = split.id === recommendedId
+                  return (
+                    <Pressable
+                      key={split.id}
+                      onPress={() => startWorkout(split.id)}
+                      className={cn(
+                        'flex-row items-center justify-between rounded-2xl px-4 py-4 mb-2 active:opacity-80',
+                        isRec ? 'bg-accent/15 border border-accent/50' : 'bg-card border border-white/10',
+                      )}
+                    >
+                      <View>
+                        <Text className={cn('font-display text-lg font-bold', isRec ? 'text-accent' : 'text-white')}>{split.name}</Text>
+                        <Text className="text-xs text-muted mt-0.5">{split.exerciseIds.length} cviků</Text>
+                      </View>
+                      {isRec ? <Text className="text-xs font-bold text-accent">🎯 Dnes</Text> : <Text className="text-muted text-lg">›</Text>}
+                    </Pressable>
+                  )
+                })}
+                <PickerRow title="Volný trénink" subtitle="Bez splitu — přidáš cviky sám" dashed onPress={() => startWorkout('free')} />
+                {groups.length > 1 || (groups.length === 1 && groups[0][0] !== activeProgramId) ? (
+                  <Pressable onPress={() => setPickerStep('groups')} className="py-3 items-center">
+                    <Text className="text-sm text-muted">Jiný split…</Text>
+                  </Pressable>
+                ) : null}
+              </>
+            ) : pickerStep === 'groups' ? (
               <>
                 <View className="flex-row items-center justify-between mb-5">
                   <Text className="font-display text-xl font-bold text-white">Vyber trénink</Text>

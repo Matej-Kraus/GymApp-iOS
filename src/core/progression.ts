@@ -101,27 +101,24 @@ export function suggestWorkingSet(
   last: LastSet | null,
   exercise: Exercise,
   settings: Settings,
-  config: ProgressionConfig = defaultProgressionConfig,
+  _config: ProgressionConfig = defaultProgressionConfig,
 ): Suggestion | null {
   if (!last) return null // baseline – necháme zadat volně, uložíme jako výchozí
 
-  // Dosáhl jsem stropu → přidat váhu a spadnout na spodní počet opakování.
-  if (last.reps >= config.workingRepCeiling) {
-    const inc = weightIncrementKg(exercise)
-    const weight = roundToIncrement(last.weight + inc, settings.smallestPlateKg)
-    return {
-      weight,
-      reps: config.workingRepMin,
-      reason: `Minule ${last.reps}×${formatKg(last.weight)} → přidej váhu na ${formatKg(weight)} kg a jeď od ${config.workingRepMin} opakování.`,
-    }
-  }
+  // OBJEMOVÁ PROGRESE: návrh musí VŽDY překonat objem minula (váha × opakování).
+  // Zvedneme váhu o nejmenší krok a dopočteme tolik opakování, aby výsledný
+  // objem byl ostře větší než minule. (Např. 10×15 = 150 → 9×17,5 = 157,5.)
+  const lastVolume = last.weight * last.reps
+  const inc = weightIncrementKg(exercise)
+  const weight = roundToIncrement(last.weight + inc, settings.smallestPlateKg)
+  // Nejmenší počet opakování, při kterém objem překoná minulý (ostře).
+  const reps = weight > 0 ? Math.max(1, Math.floor(lastVolume / weight) + 1) : last.reps
+  const volume = weight * reps
 
-  // Pod stropem → stejná váha, o jedno opakování víc (až do stropu).
-  const reps = Math.min(last.reps + 1, config.workingRepCeiling)
   return {
-    weight: last.weight,
+    weight,
     reps,
-    reason: `Minule ${last.reps}×${formatKg(last.weight)} → cíl ${reps}×${formatKg(last.weight)} kg (strop ${config.workingRepCeiling}).`,
+    reason: `Minule ${last.reps}×${formatKg(last.weight)} = ${formatKg(lastVolume)} kg → cíl ${reps}×${formatKg(weight)} = ${formatKg(volume)} kg (víc objemu).`,
   }
 }
 

@@ -180,7 +180,7 @@ export const SPLIT_TEMPLATES: Array<{
     ],
   },
   {
-    name: 'Full Body A / B',
+    name: 'Full Body A / B / C',
     groupId: 'full-body',
     splits: [
       {
@@ -190,6 +190,42 @@ export const SPLIT_TEMPLATES: Array<{
       {
         name: 'Full Body B',
         exerciseIds: ['deadlift', 'bench-incline-db', 'pullup', 'tricep-pushdown', 'cable-crunch'],
+      },
+      {
+        name: 'Full Body C',
+        exerciseIds: ['front-squat', 'db-shoulder-press', 'lat-pulldown', 'hip-thrust', 'lateral-raise'],
+      },
+    ],
+  },
+  {
+    name: 'Arnold Split',
+    groupId: 'arnold',
+    splits: [
+      {
+        name: 'Hrudník & Záda',
+        exerciseIds: ['bench-barbell', 'bench-incline-db', 'row-barbell', 'pullup', 'cable-fly', 'lat-pulldown'],
+      },
+      {
+        name: 'Ramena & Paže',
+        exerciseIds: ['overhead-press', 'lateral-raise', 'bicep-curl-bb', 'hammer-curl', 'tricep-pushdown', 'skull-crusher'],
+      },
+      {
+        name: 'Nohy',
+        exerciseIds: ['squat', 'rdl', 'leg-press', 'leg-curl', 'leg-extension', 'calf-raise'],
+      },
+    ],
+  },
+  {
+    name: 'Push / Pull',
+    groupId: 'push-pull',
+    splits: [
+      {
+        name: 'Push',
+        exerciseIds: ['bench-barbell', 'overhead-press', 'bench-incline-db', 'lateral-raise', 'tricep-pushdown', 'cable-fly'],
+      },
+      {
+        name: 'Pull',
+        exerciseIds: ['deadlift', 'pullup', 'row-barbell', 'lat-pulldown', 'bicep-curl-db', 'face-pull'],
       },
     ],
   },

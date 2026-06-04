@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import * as FileSystem from 'expo-file-system/legacy'
@@ -34,9 +34,16 @@ function Segmented({ options, value, onChange }: {
 
 export default function Settings() {
   const { data, updateSettings, resetAllData, replaceAllData, loadSampleData, deleteSampleData } = useAppState()
-  const { unit, smallestPlateKg } = data.settings
+  const { unit, smallestPlateKg, activeProgramId } = data.settings
   const [status, setStatus] = useState<string | null>(null)
   const hasSampleData = data.sessions.some((s) => s.isSample) || data.splits.some((s) => s.isSample)
+
+  // Programy = skupiny splitů (groupId), které uživatel má.
+  const programs = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const s of data.splits) if (s.groupId) map.set(s.groupId, s.groupName ?? s.groupId)
+    return [...map.entries()]
+  }, [data.splits])
 
   async function handleExport() {
     try {
@@ -85,6 +92,36 @@ export default function Settings() {
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-6 pb-8">
         <View className="mt-2"><PageHeader title="Nastavení" /></View>
+
+        <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Můj program</Text>
+          <Card className="gap-2">
+            {programs.length === 0 ? (
+              <Text className="text-xs text-muted">
+                Zatím nemáš žádný program. Přidej si šablonu (PPL, Upper/Lower…) v záložce Tréninky a pak ji tu nastav jako aktivní.
+              </Text>
+            ) : (
+              <>
+                <Text className="text-xs text-muted">
+                  Aktivní program řídí doporučení dalšího tréninku (🎯 Dnes) a výběr při spuštění.
+                </Text>
+                {programs.map(([id, name]) => {
+                  const active = activeProgramId === id
+                  return (
+                    <Pressable
+                      key={id}
+                      onPress={() => updateSettings({ activeProgramId: active ? undefined : id })}
+                      className={cn('flex-row items-center justify-between rounded-xl px-3 py-3', active ? 'bg-accent/15 border border-accent/40' : 'bg-card2')}
+                    >
+                      <Text className={cn('text-sm font-semibold', active ? 'text-accent' : 'text-white')}>{name}</Text>
+                      <Text className={cn('text-base', active ? 'text-accent' : 'text-muted/40')}>{active ? '📍' : '○'}</Text>
+                    </Pressable>
+                  )
+                })}
+              </>
+            )}
+          </Card>
+        </View>
 
         <View className="gap-2">
           <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Jednotky</Text>
