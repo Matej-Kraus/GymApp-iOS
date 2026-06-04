@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useFonts, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk'
+import { AppStateProvider } from '@/state/AppStateContext'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -18,5 +19,9 @@ export default function RootLayout() {
 
   if (!fontsLoaded) return null
 
-  return <Stack screenOptions={{ headerShown: false }} />
+  return (
+    <AppStateProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </AppStateProvider>
+  )
 }
