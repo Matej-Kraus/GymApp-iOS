@@ -55,10 +55,9 @@ export default function Dashboard() {
     setPickerStep('groups')
   }
 
-  // Workout obrazovka přijde ve fázi 4 — zatím přepneme na záložku Aktivní.
-  function startWorkout(_splitIdOrFree: string) {
+  function startWorkout(splitIdOrFree: string) {
     closePicker()
-    router.push('/active')
+    router.push({ pathname: '/workout', params: { splitId: splitIdOrFree } })
   }
 
   return (
