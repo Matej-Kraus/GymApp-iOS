@@ -2,15 +2,16 @@ import '../global.css'
 import { useEffect } from 'react'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
-import { useFonts, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk'
+import { useFonts, Fraunces_500Medium, Fraunces_700Bold } from '@expo-google-fonts/fraunces'
 import { AppStateProvider } from '@/state/AppStateContext'
 
 SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
+  // Display font = Fraunces (luxusní high-contrast serif). Body zůstává systémový.
   const [fontsLoaded] = useFonts({
-    SpaceGrotesk: SpaceGrotesk_500Medium,
-    SpaceGroteskBold: SpaceGrotesk_700Bold,
+    Fraunces: Fraunces_500Medium,
+    FrauncesBold: Fraunces_700Bold,
   })
 
   useEffect(() => {
