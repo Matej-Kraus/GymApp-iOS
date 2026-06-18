@@ -126,6 +126,12 @@ export interface Settings {
   activeProgramId?: string
   /** Připomínka tréninku (lokální notifikace). */
   reminder?: ReminderConfig
+  /** Výchozí délka odpočinku mezi sériemi (s). Default 120. */
+  restSeconds?: number
+  /** Hmotnost osy (kg) pro kalkulačku kotoučů. Default 20. */
+  barWeightKg?: number
+  /** true = uživatel prošel úvodním onboardingem (nezobrazovat znovu). */
+  onboarded?: boolean
 }
 
 /** Nastavení připomínky tréninku. `days`: 1 = pondělí … 7 = neděle. */

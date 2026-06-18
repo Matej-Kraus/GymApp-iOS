@@ -112,3 +112,33 @@ export function topMuscleGroup(
   if (counts.size === 0) return null
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0]
 }
+
+/** Počet započítaných sérií na svalovou skupinu za posledních `days` dní. */
+export interface MuscleSetCount {
+  muscle: string
+  sets: number
+}
+export function weeklySetsByMuscle(
+  sessions: WorkoutSession[],
+  customExercises: Exercise[],
+  days = 7,
+): MuscleSetCount[] {
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - days)
+  const cutoffStr = cutoff.toISOString()
+
+  const counts = new Map<string, number>()
+  for (const session of sessions) {
+    if (session.date < cutoffStr) continue
+    for (const entry of session.entries) {
+      const ex = findExercise(entry.exerciseId, customExercises)
+      if (!ex) continue
+      const scoring = entry.sets.filter(countsTowardProgress).length
+      if (scoring === 0) continue
+      counts.set(ex.muscleGroup, (counts.get(ex.muscleGroup) ?? 0) + scoring)
+    }
+  }
+  return [...counts.entries()]
+    .map(([muscle, sets]) => ({ muscle, sets }))
+    .sort((a, b) => b.sets - a.sets)
+}

@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import type { SetLog, SetRole, WorkoutEntry, Exercise, Split } from '@/core'
+import type { SetRole, WorkoutEntry, Exercise, Split } from '@/core'
 import {
   allExercises,
   backoffWeight,
@@ -13,28 +14,16 @@ import {
   roundToIncrement,
   suggestWorkingSet,
 } from '@/core'
+import type { DraftSet, DraftEntry } from '@/lib/workoutDraft'
+import { clearDraft, loadDraft, saveDraft } from '@/lib/workoutDraft'
 import { useAppState } from '@/state/AppStateContext'
 import { Button, cn } from '@/components/ui'
 import { ExerciseImage } from '@/components/ExerciseImage'
 import { ExercisePicker } from '@/components/ExercisePicker'
+import { RestTimer } from '@/components/RestTimer'
+import { PlateCalculator } from '@/components/PlateCalculator'
+import { success, tapLight, tapMedium } from '@/lib/haptics'
 import { colors } from '@/theme/colors'
-
-interface DraftSet {
-  id: string
-  weight: string
-  reps: string
-  rpe: string
-  role: SetRole
-  completed: boolean
-  isPR: boolean
-  skipped: boolean
-  suggestion: { weight: number; reps: number; reason: string } | null
-  lastPerf: { weight: number; reps: number } | null
-}
-interface DraftEntry {
-  exerciseId: string
-  sets: DraftSet[]
-}
 
 function blankWarmup(): DraftSet {
   return { id: createId(), weight: '', reps: '', rpe: '', role: 'warmup', completed: false, isPR: false, skipped: false, suggestion: null, lastPerf: null }
@@ -51,7 +40,7 @@ function blankBackoff(workingWeight: number | null, lastPerf: DraftSet['lastPerf
     lastPerf,
   }
 }
-function setToLog(s: DraftSet): SetLog {
+function setToLog(s: DraftSet) {
   return {
     weight: parseFloat(s.weight) || 0,
     reps: parseInt(s.reps) || 0,
@@ -65,9 +54,11 @@ function setToLog(s: DraftSet): SetLog {
 const RPE_CYCLE = ['', '6', '7', '8', '9', '10']
 const ROLE_LABEL: Record<SetRole, string> = { warmup: 'W', working: '·', backoff: 'B' }
 
-function SetRow({ set, onChange, onDelete, isWorking }: {
+function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWorking }: {
   set: DraftSet
   onChange: (patch: Partial<DraftSet>) => void
+  onToggleComplete: () => void
+  onToggleSkip: () => void
   onDelete: () => void
   isWorking?: boolean
 }) {
@@ -91,7 +82,9 @@ function SetRow({ set, onChange, onDelete, isWorking }: {
         value={set.weight}
         editable={!set.skipped}
         onChangeText={(t) => onChange({ weight: t })}
-        className="flex-1 h-9 rounded-lg bg-card px-1 text-center font-display text-sm font-bold text-white"
+        accessibilityLabel="Váha v kg"
+        className="flex-1 h-9 rounded-lg bg-card px-1 text-center font-display text-sm text-white"
+        style={{ fontVariant: ['tabular-nums'] }}
       />
       <TextInput
         keyboardType="number-pad"
@@ -100,25 +93,29 @@ function SetRow({ set, onChange, onDelete, isWorking }: {
         value={set.reps}
         editable={!set.skipped}
         onChangeText={(t) => onChange({ reps: t })}
-        className="flex-1 h-9 rounded-lg bg-card px-1 text-center font-display text-sm font-bold text-white"
+        accessibilityLabel="Počet opakování"
+        className="flex-1 h-9 rounded-lg bg-card px-1 text-center font-display text-sm text-white"
+        style={{ fontVariant: ['tabular-nums'] }}
       />
-      <Pressable onPress={cycleRpe} disabled={set.skipped} className="w-11 h-9 rounded-lg bg-card items-center justify-center">
+      <Pressable onPress={cycleRpe} disabled={set.skipped} accessibilityLabel="RPE" className="w-11 h-9 rounded-lg bg-card items-center justify-center">
         <Text className="text-xs text-muted">{set.rpe ? `@${set.rpe}` : '—'}</Text>
       </Pressable>
       <Pressable
-        onPress={() => onChange({ skipped: !set.skipped, completed: false })}
+        onPress={onToggleSkip}
+        accessibilityLabel={set.skipped ? 'Zrušit přeskočení série' : 'Přeskočit sérii'}
         className={cn('w-7 h-8 rounded-lg bg-card2 items-center justify-center')}
       >
         <Text className={cn('text-xs font-bold', set.skipped ? 'text-accent' : 'text-muted/40')}>—</Text>
       </Pressable>
       <Pressable
-        onPress={() => onChange({ completed: !set.completed, skipped: false })}
+        onPress={onToggleComplete}
         disabled={set.skipped}
+        accessibilityLabel={accepted ? 'Zrušit dokončení série' : 'Označit sérii za dokončenou'}
         className={cn('w-8 h-8 rounded-xl items-center justify-center', accepted ? 'bg-accent' : 'bg-card')}
       >
         <Text className={cn('text-sm font-bold', accepted ? 'text-black' : 'text-muted')}>{accepted ? '✓' : '○'}</Text>
       </Pressable>
-      <Pressable onPress={onDelete} hitSlop={6} className="w-5 items-center">
+      <Pressable onPress={onDelete} hitSlop={6} accessibilityLabel="Smazat sérii" className="w-5 items-center">
         <Text className="text-muted/30 text-xs">✕</Text>
       </Pressable>
     </View>
@@ -126,21 +123,24 @@ function SetRow({ set, onChange, onDelete, isWorking }: {
 }
 
 export default function Workout() {
-  const { splitId } = useLocalSearchParams<{ splitId: string }>()
+  const params = useLocalSearchParams<{ splitId?: string; resume?: string }>()
+  const splitId = params.splitId
+  const isResume = params.resume === '1'
   const router = useRouter()
   const { data, addSession } = useAppState()
   const settings = data.settings
   const plate = settings.smallestPlateKg
+  const restSec = settings.restSeconds ?? 120
 
   const isFree = splitId === 'free'
-  const split = isFree
+  const freshSplit = isFree
     ? ({ id: 'free', name: 'Volný trénink', exerciseIds: [] } as Split)
     : data.splits.find((s) => s.id === splitId)
   const startTime = useRef(Date.now())
 
-  const initialEntries = useMemo<DraftEntry[]>(() => {
-    if (isFree || !split) return []
-    return split.exerciseIds.map((exId) => {
+  function buildInitial(): DraftEntry[] {
+    if (isResume || isFree || !freshSplit) return []
+    return freshSplit.exerciseIds.map((exId) => {
       const exercise = findExercise(exId, data.customExercises)
       const { working: lastWorking, backoff: lastBackoff } = lastPerformance(data.sessions, exId)
       const lastW = lastWorking[0] ?? null
@@ -150,12 +150,60 @@ export default function Workout() {
       const backoff = blankBackoff(workingSet.suggestion?.weight ?? null, lastB ? { weight: lastB.weight, reps: lastB.reps } : null, plate)
       return { exerciseId: exId, sets: [blankWarmup(), blankWarmup(), workingSet, backoff] }
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }
 
-  const [entries, setEntries] = useState<DraftEntry[]>(initialEntries)
+  const [entries, setEntries] = useState<DraftEntry[]>(buildInitial)
   const [notes, setNotes] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [ready, setReady] = useState(!isResume)
+  const [meta, setMeta] = useState(() => ({
+    splitId: freshSplit?.id ?? 'free',
+    splitName: freshSplit?.name ?? 'Trénink',
+  }))
+  const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null)
+  const [plateCalc, setPlateCalc] = useState<{ open: boolean; weight: number | null }>({ open: false, weight: null })
+
+  // OBNOVENÍ rozdělaného tréninku po návratu do appky.
+  useEffect(() => {
+    if (!isResume) return
+    let mounted = true
+    loadDraft().then((d) => {
+      if (!mounted) return
+      if (d) {
+        setEntries(d.entries)
+        setNotes(d.notes)
+        startTime.current = d.startedAt
+        setMeta({ splitId: d.splitId, splitName: d.splitName })
+      }
+      setReady(true)
+    })
+    return () => { mounted = false }
+  }, [isResume])
+
+  // AUTOSAVE draftu (debounced) — aby se rozdělaný trénink neztratil.
+  const saveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (!ready || entries.length === 0) return
+    if (saveRef.current) clearTimeout(saveRef.current)
+    saveRef.current = setTimeout(() => {
+      void saveDraft({
+        splitId: meta.splitId,
+        splitName: meta.splitName,
+        startedAt: startTime.current,
+        notes,
+        entries,
+        savedAt: Date.now(),
+      })
+    }, 400)
+    return () => { if (saveRef.current) clearTimeout(saveRef.current) }
+  }, [entries, notes, ready, meta])
+
+  function startRest() {
+    setRest({ endsAt: Date.now() + restSec * 1000, total: restSec })
+  }
+  function adjustRest(delta: number) {
+    setRest((r) => (r ? { endsAt: Math.max(Date.now(), r.endsAt + delta * 1000), total: Math.max(15, r.total + delta) } : r))
+  }
 
   function removeEntry(i: number) {
     setEntries((prev) => prev.filter((_, idx) => idx !== i))
@@ -168,6 +216,7 @@ export default function Workout() {
     const w0 = entry.sets.find((s) => s.role === 'working')
     const ww = (w0?.weight ? parseFloat(w0.weight) : null) || w0?.suggestion?.weight || null
     if (!ww || ww <= 0) return
+    tapLight()
     const r = (w: number) => roundToIncrement(w, plate)
     const warmups: DraftSet[] = [
       { ...blankWarmup(), weight: String(r(ww * 0.4)), reps: '10' },
@@ -207,6 +256,29 @@ export default function Workout() {
       }),
     )
   }, [plate])
+
+  // Dokončení série: haptika + spuštění odpočinku (jen working/backoff).
+  function toggleComplete(ei: number, si: number) {
+    const current = entries[ei]?.sets[si]
+    const willComplete = current ? !current.completed : false
+    setEntries((prev) =>
+      prev.map((e, idx) =>
+        idx === ei ? { ...e, sets: e.sets.map((s, j) => (j === si ? { ...s, completed: !s.completed, skipped: false } : s)) } : e,
+      ),
+    )
+    if (willComplete) {
+      tapMedium()
+      if (current && current.role !== 'warmup') startRest()
+    }
+  }
+  function toggleSkip(ei: number, si: number) {
+    tapLight()
+    setEntries((prev) =>
+      prev.map((e, idx) =>
+        idx === ei ? { ...e, sets: e.sets.map((s, j) => (j === si ? { ...s, skipped: !s.skipped, completed: false } : s)) } : e,
+      ),
+    )
+  }
   function addSet(ei: number, role: SetRole) {
     setEntries((prev) =>
       prev.map((e, idx) => {
@@ -216,11 +288,18 @@ export default function Workout() {
       }),
     )
   }
+  function openPlates(entry: DraftEntry) {
+    const w0 = entry.sets.find((s) => s.role === 'working')
+    const wkg = (w0?.weight ? parseFloat(w0.weight) : null) || w0?.suggestion?.weight || null
+    tapLight()
+    setPlateCalc({ open: true, weight: wkg })
+  }
 
   function leave() {
-    Alert.alert('Opustit trénink?', 'Neuložený trénink se ztratí.', [
+    Alert.alert('Opustit trénink?', 'Rozdělaný trénink zůstane uložený — můžeš v něm pokračovat z plochy.', [
       { text: 'Zůstat', style: 'cancel' },
-      { text: 'Opustit', style: 'destructive', onPress: () => router.back() },
+      { text: 'Opustit', onPress: () => router.back() },
+      { text: 'Zahodit', style: 'destructive', onPress: () => { void clearDraft(); router.back() } },
     ])
   }
 
@@ -234,22 +313,32 @@ export default function Workout() {
     const rawSession = {
       id: createId(),
       date: new Date().toISOString(),
-      splitId: split?.id ?? null,
-      splitName: split?.name ?? '',
+      splitId: meta.splitId === 'free' ? null : meta.splitId,
+      splitName: meta.splitName === 'Trénink' ? '' : meta.splitName,
       entries: rawEntries,
       durationMinutes,
       notes,
     }
     const marked = markPRs(rawSession, data.sessions)
     addSession(marked)
+    void clearDraft()
+    success()
     router.replace({ pathname: '/workout-summary', params: { id: marked.id } })
   }
 
-  if (!isFree && !split) {
+  if (!isFree && !isResume && !freshSplit) {
     return (
       <SafeAreaView className="flex-1 bg-bg items-center justify-center px-6">
         <Text className="text-muted mb-3">Split nenalezen.</Text>
         <Button title="Zpět domů" onPress={() => router.replace('/')} />
+      </SafeAreaView>
+    )
+  }
+
+  if (!ready) {
+    return (
+      <SafeAreaView className="flex-1 bg-bg items-center justify-center">
+        <Text className="text-muted">Obnovuji trénink…</Text>
       </SafeAreaView>
     )
   }
@@ -259,14 +348,20 @@ export default function Workout() {
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <View className="flex-row items-center gap-3 border-b border-white/10 px-4 py-3">
-        <Pressable onPress={leave} hitSlop={8}>
+        <Pressable onPress={leave} hitSlop={8} accessibilityLabel="Opustit trénink">
           <Text className="text-muted text-lg">✕</Text>
         </Pressable>
-        <Text className="flex-1 font-display text-lg font-bold text-white">{split!.name}</Text>
-        <Text className="text-xs text-muted">{totalDone} sérií</Text>
+        <Text className="flex-1 font-display text-lg text-white">{meta.splitName}</Text>
+        <Text className="text-xs text-muted" style={{ fontVariant: ['tabular-nums'] }}>{totalDone} sérií</Text>
       </View>
 
-      <ScrollView className="flex-1 px-4" contentContainerClassName="gap-6 py-4 pb-32">
+      <ScrollView
+        className="flex-1 px-4"
+        contentContainerClassName="gap-6 py-4 pb-32"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+      >
         {entries.map((entry, ei) => {
           const exercise = findExercise(entry.exerciseId, data.customExercises)
           if (!exercise) return null
@@ -274,24 +369,37 @@ export default function Workout() {
           const sug = entry.sets.find((s) => s.role === 'working')?.suggestion
 
           return (
-            <View key={entry.exerciseId} className="rounded-2xl bg-card border border-white/10 overflow-hidden">
+            <Animated.View
+              key={entry.exerciseId}
+              entering={FadeInDown.delay(Math.min(ei, 6) * 50).springify().damping(18)}
+              className="rounded-3xl bg-card border border-white/[0.06] overflow-hidden"
+            >
               <View className="flex-row items-center gap-3 px-3 py-2.5 border-b border-white/10">
                 <ExerciseImage exercise={exercise} size={40} />
                 <View className="flex-1">
-                  <Text className="font-display text-base font-bold text-white" numberOfLines={1}>{exercise.name}</Text>
+                  <Text className="font-display text-base text-white" numberOfLines={1}>{exercise.name}</Text>
                   <Text className="text-xs text-muted" numberOfLines={1}>
                     {exercise.muscleGroup}
                     {lastWorking[0] ? ` · minule: ${lastWorking[0].reps}×${lastWorking[0].weight} kg${lastWorking[0].rpe ? ` @${lastWorking[0].rpe}` : ''}` : ''}
                   </Text>
                 </View>
+                <Pressable
+                  onPress={() => openPlates(entry)}
+                  hitSlop={6}
+                  accessibilityLabel="Kalkulačka kotoučů"
+                  className="h-8 w-8 items-center justify-center rounded-lg bg-card2"
+                >
+                  <Text className="text-sm">🏋️</Text>
+                </Pressable>
                 {sug ? (
                   <View className="rounded-full bg-accent/15 px-2 py-0.5">
-                    <Text className="text-[10px] font-bold text-accent">🎯 {sug.weight}×{sug.reps}</Text>
+                    <Text className="text-[10px] font-bold text-accent" style={{ fontVariant: ['tabular-nums'] }}>🎯 {sug.weight}×{sug.reps}</Text>
                   </View>
                 ) : null}
                 <Pressable
                   onPress={() => Alert.alert('Odebrat cvik?', exercise.name, [{ text: 'Zrušit', style: 'cancel' }, { text: 'Odebrat', style: 'destructive', onPress: () => removeEntry(ei) }])}
                   hitSlop={6}
+                  accessibilityLabel="Odebrat cvik"
                 >
                   <Text className="text-muted/40 text-base">✕</Text>
                 </Pressable>
@@ -308,19 +416,19 @@ export default function Workout() {
 
               {entry.sets.map((s, si) =>
                 s.role === 'warmup' ? (
-                  <SetRow key={s.id} set={s} onChange={(p) => updateSet(ei, si, p)} onDelete={() => removeSet(ei, si)} />
+                  <SetRow key={s.id} set={s} onChange={(p) => updateSet(ei, si, p)} onToggleComplete={() => toggleComplete(ei, si)} onToggleSkip={() => toggleSkip(ei, si)} onDelete={() => removeSet(ei, si)} />
                 ) : null,
               )}
 
               <View className="flex-row items-center justify-between px-3 py-1 bg-accent/5 border-t border-white/10">
                 <Text className="text-[9px] font-bold text-accent/60 uppercase tracking-widest">Working</Text>
-                <Pressable onPress={() => autoWarmup(ei)} hitSlop={6}>
+                <Pressable onPress={() => autoWarmup(ei)} hitSlop={6} accessibilityLabel="Automatická rozcvička">
                   <Text className="text-[10px] text-accent/60">🔥 Auto warmup</Text>
                 </Pressable>
               </View>
               {entry.sets.map((s, si) =>
                 s.role === 'working' ? (
-                  <SetRow key={s.id} set={s} onChange={(p) => updateSet(ei, si, p)} onDelete={() => removeSet(ei, si)} isWorking />
+                  <SetRow key={s.id} set={s} onChange={(p) => updateSet(ei, si, p)} onToggleComplete={() => toggleComplete(ei, si)} onToggleSkip={() => toggleSkip(ei, si)} onDelete={() => removeSet(ei, si)} isWorking />
                 ) : null,
               )}
 
@@ -329,27 +437,28 @@ export default function Workout() {
               </View>
               {entry.sets.map((s, si) =>
                 s.role === 'backoff' ? (
-                  <SetRow key={s.id} set={s} onChange={(p) => updateSet(ei, si, p)} onDelete={() => removeSet(ei, si)} />
+                  <SetRow key={s.id} set={s} onChange={(p) => updateSet(ei, si, p)} onToggleComplete={() => toggleComplete(ei, si)} onToggleSkip={() => toggleSkip(ei, si)} onDelete={() => removeSet(ei, si)} />
                 ) : null,
               )}
 
               <View className="flex-row gap-2 px-3 py-2.5 border-t border-white/10">
-                <Pressable onPress={() => addSet(ei, 'warmup')} className="flex-1 border border-dashed border-white/15 rounded-md py-1.5 items-center">
+                <Pressable onPress={() => addSet(ei, 'warmup')} accessibilityLabel="Přidat rozcvičkovou sérii" className="flex-1 border border-dashed border-white/15 rounded-md py-1.5 items-center">
                   <Text className="text-xs text-muted/50">+ W</Text>
                 </Pressable>
-                <Pressable onPress={() => addSet(ei, 'working')} className="flex-[2] border border-dashed border-white/15 rounded-md py-1.5 items-center">
+                <Pressable onPress={() => addSet(ei, 'working')} accessibilityLabel="Přidat pracovní sérii" className="flex-[2] border border-dashed border-white/15 rounded-md py-1.5 items-center">
                   <Text className="text-xs text-muted">+ Working</Text>
                 </Pressable>
-                <Pressable onPress={() => addSet(ei, 'backoff')} className="flex-1 border border-dashed border-accent/20 rounded-md py-1.5 items-center">
+                <Pressable onPress={() => addSet(ei, 'backoff')} accessibilityLabel="Přidat back-off sérii" className="flex-1 border border-dashed border-accent/20 rounded-md py-1.5 items-center">
                   <Text className="text-xs text-accent/50">+ B</Text>
                 </Pressable>
               </View>
-            </View>
+            </Animated.View>
           )
         })}
 
         <Pressable
           onPress={() => setPickerOpen(true)}
+          accessibilityLabel="Přidat cvik"
           className="flex-row items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/15 py-4"
         >
           <Text className="text-lg text-muted">+</Text>
@@ -369,8 +478,20 @@ export default function Workout() {
         </View>
       </ScrollView>
 
-      <View className="absolute inset-x-0 bottom-0 border-t border-white/10 bg-bg px-4 py-3 pb-6">
-        <Button title="Dokončit trénink" size="lg" onPress={handleFinish} />
+      {/* Spodní lišta: odpočinek + dokončení */}
+      <View className="absolute inset-x-0 bottom-0 border-t border-white/10 bg-bg pt-2 pb-6">
+        {rest ? (
+          <RestTimer
+            endsAt={rest.endsAt}
+            totalSec={rest.total}
+            onAdjust={adjustRest}
+            onDone={() => setRest(null)}
+            onSkip={() => setRest(null)}
+          />
+        ) : null}
+        <View className="px-4">
+          <Button title="Dokončit trénink" size="lg" onPress={handleFinish} />
+        </View>
       </View>
 
       <ExercisePicker
@@ -379,6 +500,13 @@ export default function Workout() {
         selectedIds={entries.map((e) => e.exerciseId)}
         onToggle={addEntry}
         onClose={() => setPickerOpen(false)}
+      />
+
+      <PlateCalculator
+        visible={plateCalc.open}
+        initialWeight={plateCalc.weight}
+        barWeightKg={settings.barWeightKg ?? 20}
+        onClose={() => setPlateCalc({ open: false, weight: null })}
       />
     </SafeAreaView>
   )

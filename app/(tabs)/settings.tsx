@@ -15,6 +15,8 @@ const REMINDER_HOURS = [6, 7, 8, 9, 10, 12, 16, 17, 18, 19, 20, 21]
 
 const UNIT_OPTIONS: Unit[] = ['kg', 'lb']
 const PLATE_OPTIONS = [1.25, 2.5, 5]
+const REST_OPTIONS = [60, 90, 120, 150, 180]
+const BAR_OPTIONS = [20, 15, 10]
 
 function Segmented({ options, value, onChange }: {
   options: { value: string; label: string }[]
@@ -39,6 +41,8 @@ function Segmented({ options, value, onChange }: {
 export default function Settings() {
   const { data, updateSettings, resetAllData, replaceAllData, loadSampleData, deleteSampleData } = useAppState()
   const { unit, smallestPlateKg, activeProgramId } = data.settings
+  const restSeconds = data.settings.restSeconds ?? 120
+  const barWeightKg = data.settings.barWeightKg ?? 20
   const [status, setStatus] = useState<string | null>(null)
   const hasSampleData = data.sessions.some((s) => s.isSample) || data.splits.some((s) => s.isSample)
 
@@ -161,6 +165,30 @@ export default function Settings() {
               onChange={(v) => updateSettings({ smallestPlateKg: Number(v) })}
             />
             <Text className="mt-2 text-xs text-muted">Na násobky zaokrouhlujeme návrhy váhy při progresivním přetížení.</Text>
+          </Card>
+        </View>
+
+        <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Odpočinek mezi sériemi</Text>
+          <Card>
+            <Segmented
+              options={REST_OPTIONS.map((s) => ({ value: String(s), label: s < 60 ? `${s}s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` }))}
+              value={String(restSeconds)}
+              onChange={(v) => updateSettings({ restSeconds: Number(v) })}
+            />
+            <Text className="mt-2 text-xs text-muted">Po dokončení pracovní/back-off série naskočí odpočet s touto délkou.</Text>
+          </Card>
+        </View>
+
+        <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Hmotnost osy</Text>
+          <Card>
+            <Segmented
+              options={BAR_OPTIONS.map((b) => ({ value: String(b), label: `${b} kg` }))}
+              value={String(barWeightKg)}
+              onChange={(v) => updateSettings({ barWeightKg: Number(v) })}
+            />
+            <Text className="mt-2 text-xs text-muted">Výchozí hmotnost osy pro kalkulačku kotoučů v tréninku.</Text>
           </Card>
         </View>
 

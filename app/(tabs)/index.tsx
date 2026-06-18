@@ -1,17 +1,21 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import Animated, { FadeInDown } from 'react-native-reanimated'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { useAppState } from '@/state/AppStateContext'
 import { Button, Card, EmptyState, PageHeader, Stat, cn } from '@/components/ui'
 import { TrainingHeatmap } from '@/components/TrainingHeatmap'
+import { Onboarding } from '@/components/Onboarding'
 import { formatLongCZ, isThisMonth, isThisWeek } from '@/lib/format'
+import { loadDraft, type WorkoutDraft } from '@/lib/workoutDraft'
 import {
   sessionVolume,
   countScoringSets,
   workoutStreakWeeks,
   volumeLast30Days,
   topMuscleGroup,
+  weeklySetsByMuscle,
   recommendNextSplit,
 } from '@/core'
 
@@ -26,7 +30,18 @@ export default function Dashboard() {
   const { splits, sessions } = data
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerStep, setPickerStep] = useState<string>('groups')
+  const [draft, setDraft] = useState<WorkoutDraft | null>(null)
 
+  // Po každém návratu na plochu zkontroluj rozdělaný trénink.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true
+      loadDraft().then((d) => { if (active) setDraft(d) })
+      return () => { active = false }
+    }, []),
+  )
+
+  const weeklyMuscles = weeklySetsByMuscle(sessions, data.customExercises)
   const hasSplits = splits.length > 0
   const lastSession =
     sessions.length > 0 ? [...sessions].sort((a, b) => b.date.localeCompare(a.date))[0] : null
@@ -78,6 +93,23 @@ export default function Dashboard() {
           <PageHeader title="Workout" subtitle={today} />
         </View>
 
+        {draft && draft.entries.length > 0 ? (
+          <Animated.View entering={FadeInDown.springify().damping(18)}>
+            <Pressable
+              onPress={() => router.push({ pathname: '/workout', params: { resume: '1' } })}
+              accessibilityLabel="Pokračovat v rozdělaném tréninku"
+              className="flex-row items-center gap-3 rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3 active:opacity-80"
+            >
+              <Text className="text-xl">⏳</Text>
+              <View className="flex-1">
+                <Text className="text-sm font-bold text-accent">Pokračovat v tréninku</Text>
+                <Text className="text-xs text-muted">{draft.splitName} · {draft.entries.length} cviků rozdělaných</Text>
+              </View>
+              <Text className="text-accent text-lg">›</Text>
+            </Pressable>
+          </Animated.View>
+        ) : null}
+
         <View className="gap-1.5">
           <Button title="Spustit trénink" size="lg" disabled={!hasSplits} onPress={openPicker} />
           {recommendedSplit ? (
@@ -111,6 +143,27 @@ export default function Dashboard() {
                 {topMuscle && (
                   <Stat label="Nejčastěji trénováno" value={MUSCLE_CZ[topMuscle] ?? topMuscle} />
                 )}
+
+                {weeklyMuscles.length > 0 && (
+                  <View className="gap-2">
+                    <Text className="text-sm font-semibold text-muted">Sérií na partii (7 dní)</Text>
+                    <Card className="gap-2.5">
+                      {weeklyMuscles.map(({ muscle, sets }) => {
+                        const max = weeklyMuscles[0].sets || 1
+                        return (
+                          <View key={muscle} className="flex-row items-center gap-3">
+                            <Text className="w-16 text-xs text-muted">{MUSCLE_CZ[muscle] ?? muscle}</Text>
+                            <View className="flex-1 h-2 rounded-full bg-card2 overflow-hidden">
+                              <View className="h-full rounded-full bg-accent" style={{ width: `${Math.max(8, (sets / max) * 100)}%` }} />
+                            </View>
+                            <Text className="w-6 text-right font-display text-sm text-white" style={{ fontVariant: ['tabular-nums'] }}>{sets}</Text>
+                          </View>
+                        )
+                      })}
+                    </Card>
+                  </View>
+                )}
+
                 <TrainingHeatmap sessions={sessions} />
               </>
             )}
@@ -238,6 +291,8 @@ export default function Dashboard() {
           </View>
         </SafeAreaView>
       </Modal>
+
+      <Onboarding visible={!data.settings.onboarded && !hasSplits} />
     </SafeAreaView>
   )
 }

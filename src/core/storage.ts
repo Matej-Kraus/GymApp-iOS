@@ -34,13 +34,33 @@ export function emptyData(): AppData {
   }
 }
 
+/**
+ * Stepwise migrace formátu dat. Klíč = výchozí verze, funkce ji povýší o 1.
+ * Přidaná (volitelná) pole řeší samo `deserialize` (doplní default), sem patří
+ * jen BREAKING změny tvaru (přejmenování/rozdělení polí). Zatím prázdné.
+ */
+const MIGRATIONS: Record<number, (d: Record<string, unknown>) => Record<string, unknown>> = {
+  // 1: (d) => ({ ...d, version: 2, /* …transformace… */ }),
+}
+
+function runMigrations(parsed: Record<string, unknown>): Record<string, unknown> {
+  let d = parsed
+  let guard = 0
+  while (((d.version as number) ?? DATA_VERSION) < DATA_VERSION && guard++ < 50) {
+    const migrate = MIGRATIONS[(d.version as number) ?? DATA_VERSION]
+    if (!migrate) break
+    d = migrate(d)
+  }
+  return d
+}
+
 /** Bezpečně rozparsuje uložený JSON na AppData (chybějící pole doplní). */
 export function deserialize(raw: string | null): AppData {
   if (!raw) return emptyData()
   try {
-    const parsed = JSON.parse(raw) as Partial<AppData>
+    const parsed = runMigrations(JSON.parse(raw) as Record<string, unknown>) as Partial<AppData>
     return {
-      version: parsed.version ?? DATA_VERSION,
+      version: DATA_VERSION,
       customExercises: parsed.customExercises ?? [],
       splits: parsed.splits ?? [],
       sessions: parsed.sessions ?? [],
