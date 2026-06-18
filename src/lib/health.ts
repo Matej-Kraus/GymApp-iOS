@@ -1,10 +1,6 @@
-import {
-  isHealthDataAvailableAsync,
-  requestAuthorization,
-  getMostRecentQuantitySample,
-  queryQuantitySamples,
-  queryWorkoutSamples,
-} from '@kingstinct/react-native-healthkit'
+import Constants from 'expo-constants'
+import { Platform } from 'react-native'
+import type { ObjectTypeIdentifier } from '@kingstinct/react-native-healthkit'
 
 /**
  * Apple Health (HealthKit) — čtení váhy, tělesného složení a tréninků z Apple Watch.
@@ -19,11 +15,41 @@ const READ_TYPES = [
   'HKQuantityTypeIdentifierActiveEnergyBurned',
   'HKQuantityTypeIdentifierHeartRate',
   'HKWorkoutTypeIdentifier',
-] as const
+] satisfies readonly ObjectTypeIdentifier[]
+
+type HealthKitModule = typeof import('@kingstinct/react-native-healthkit')
+
+const WORKOUT_LABELS: Record<number, string> = {
+  50: 'Silový trénink',
+  20: 'Funkční síla',
+  63: 'HIIT',
+  11: 'Cross training',
+  59: 'Core',
+  37: 'Běh',
+  52: 'Chůze',
+  13: 'Kolo',
+  46: 'Plavání',
+  35: 'Veslování',
+  57: 'Jóga',
+}
+
+function workoutLabel(type: number): string {
+  return WORKOUT_LABELS[type] ?? 'Trénink'
+}
+
+async function getHealthKit(): Promise<HealthKitModule | null> {
+  if (Platform.OS !== 'ios' || Constants.expoGoConfig != null) return null
+  try {
+    return await import('@kingstinct/react-native-healthkit')
+  } catch {
+    return null
+  }
+}
 
 export async function isHealthAvailable(): Promise<boolean> {
   try {
-    return await isHealthDataAvailableAsync()
+    const healthkit = await getHealthKit()
+    return healthkit ? await healthkit.isHealthDataAvailableAsync() : false
   } catch {
     return false
   }
@@ -32,7 +58,8 @@ export async function isHealthAvailable(): Promise<boolean> {
 /** Požádá o přístup ke zdravotním datům (čtení). Vrací true při úspěchu. */
 export async function requestHealthAccess(): Promise<boolean> {
   try {
-    return await requestAuthorization({ toRead: READ_TYPES as unknown as never })
+    const healthkit = await getHealthKit()
+    return healthkit ? await healthkit.requestAuthorization({ toRead: READ_TYPES }) : false
   } catch {
     return false
   }
@@ -47,10 +74,12 @@ export interface BodyMetrics {
 /** Nejnovější váha + tělesné složení z Health (sem píše FeelFit váha). */
 export async function readBodyMetrics(): Promise<BodyMetrics> {
   try {
+    const healthkit = await getHealthKit()
+    if (!healthkit) return { weightKg: null, bodyFatPct: null, leanMassKg: null }
     const [w, f, l] = await Promise.all([
-      getMostRecentQuantitySample('HKQuantityTypeIdentifierBodyMass', 'kg'),
-      getMostRecentQuantitySample('HKQuantityTypeIdentifierBodyFatPercentage', '%'),
-      getMostRecentQuantitySample('HKQuantityTypeIdentifierLeanBodyMass', 'kg'),
+      healthkit.getMostRecentQuantitySample('HKQuantityTypeIdentifierBodyMass', 'kg'),
+      healthkit.getMostRecentQuantitySample('HKQuantityTypeIdentifierBodyFatPercentage', '%'),
+      healthkit.getMostRecentQuantitySample('HKQuantityTypeIdentifierLeanBodyMass', 'kg'),
     ])
     // body fat % bývá v HealthKitu zlomek (0–1) → převedeme na procenta.
     const fat = f ? (f.quantity <= 1 ? f.quantity * 100 : f.quantity) : null
@@ -67,10 +96,13 @@ export async function readBodyMetrics(): Promise<BodyMetrics> {
 /** Historie váhy z Health jako body grafu (datum YYYY-MM-DD → kg). */
 export async function readWeightHistory(): Promise<{ date: string; kg: number }[]> {
   try {
-    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierBodyMass', {
+    const healthkit = await getHealthKit()
+    if (!healthkit) return []
+    const samples = await healthkit.queryQuantitySamples('HKQuantityTypeIdentifierBodyMass', {
       unit: 'kg',
       limit: 365,
-    } as never)
+      ascending: true,
+    })
     return samples
       .map((s) => ({ date: new Date(s.startDate).toISOString().slice(0, 10), kg: Math.round(s.quantity * 10) / 10 }))
       .sort((a, b) => a.date.localeCompare(b.date))
@@ -81,6 +113,7 @@ export async function readWeightHistory(): Promise<{ date: string; kg: number }[
 
 export interface HealthWorkout {
   date: string
+  activity: string
   durationMin: number
   energyKcal: number | null
 }
@@ -88,7 +121,9 @@ export interface HealthWorkout {
 /** Posledních N tréninků z Apple Watch (počítáno z časů → jednotkově robustní). */
 export async function readRecentWorkouts(limit = 20): Promise<HealthWorkout[]> {
   try {
-    const samples = await queryWorkoutSamples({ limit } as never)
+    const healthkit = await getHealthKit()
+    if (!healthkit) return []
+    const samples = await healthkit.queryWorkoutSamples({ limit, ascending: false })
     return samples.map((w) => {
       const start = new Date(w.startDate).getTime()
       const end = new Date(w.endDate).getTime()
@@ -96,6 +131,7 @@ export async function readRecentWorkouts(limit = 20): Promise<HealthWorkout[]> {
       const energy = w.totalEnergyBurned?.quantity
       return {
         date: new Date(w.startDate).toISOString().slice(0, 10),
+        activity: workoutLabel(w.workoutActivityType),
         durationMin,
         energyKcal: typeof energy === 'number' ? Math.round(energy) : null,
       }
