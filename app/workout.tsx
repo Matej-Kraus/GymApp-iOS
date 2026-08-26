@@ -83,7 +83,7 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
         editable={!set.skipped}
         onChangeText={(t) => onChange({ weight: t })}
         accessibilityLabel="Weight in kg"
-        className="flex-1 h-9 rounded-lg bg-panel px-1 text-center font-display text-sm text-white"
+        className="flex-1 h-9 rounded-2xl bg-panel px-1 text-center font-display text-sm text-white"
         style={{ fontVariant: ['tabular-nums'] }}
       />
       <TextInput
@@ -94,16 +94,16 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
         editable={!set.skipped}
         onChangeText={(t) => onChange({ reps: t })}
         accessibilityLabel="Reps"
-        className="flex-1 h-9 rounded-lg bg-panel px-1 text-center font-display text-sm text-white"
+        className="flex-1 h-9 rounded-2xl bg-panel px-1 text-center font-display text-sm text-white"
         style={{ fontVariant: ['tabular-nums'] }}
       />
-      <Pressable onPress={cycleRpe} disabled={set.skipped} accessibilityLabel="RPE" className="w-11 h-9 rounded-lg bg-panel items-center justify-center">
+      <Pressable onPress={cycleRpe} disabled={set.skipped} accessibilityLabel="RPE" className="w-11 h-9 rounded-2xl bg-panel items-center justify-center">
         <Text className="text-xs text-muted">{set.rpe ? `@${set.rpe}` : '—'}</Text>
       </Pressable>
       <Pressable
         onPress={onToggleSkip}
         accessibilityLabel={set.skipped ? 'Un-skip set' : 'Skip set'}
-        className={cn('w-7 h-8 rounded-lg bg-panel2 items-center justify-center')}
+        className={cn('w-7 h-8 rounded-2xl bg-panel2 items-center justify-center')}
       >
         <Text className={cn('text-xs font-bold', set.skipped ? 'text-accent' : 'text-muted/40')}>—</Text>
       </Pressable>
@@ -387,7 +387,7 @@ export default function Workout() {
                   onPress={() => openPlates(entry)}
                   hitSlop={6}
                   accessibilityLabel="Plate calculator"
-                  className="h-8 w-8 items-center justify-center rounded-lg bg-panel2"
+                  className="h-8 w-8 items-center justify-center rounded-2xl bg-panel2"
                 >
                   <Text className="text-sm">🏋️</Text>
                 </Pressable>
@@ -442,13 +442,13 @@ export default function Workout() {
               )}
 
               <View className="flex-row gap-2 px-3 py-2.5 border-t border-white/10">
-                <Pressable onPress={() => addSet(ei, 'warmup')} accessibilityLabel="Add warm-up set" className="flex-1 border border-dashed border-white/15 rounded-md py-1.5 items-center">
+                <Pressable onPress={() => addSet(ei, 'warmup')} accessibilityLabel="Add warm-up set" className="flex-1 border border-dashed border-white/15 rounded-xl py-1.5 items-center">
                   <Text className="text-xs text-muted/50">+ W</Text>
                 </Pressable>
-                <Pressable onPress={() => addSet(ei, 'working')} accessibilityLabel="Add working set" className="flex-[2] border border-dashed border-white/15 rounded-md py-1.5 items-center">
+                <Pressable onPress={() => addSet(ei, 'working')} accessibilityLabel="Add working set" className="flex-[2] border border-dashed border-white/15 rounded-xl py-1.5 items-center">
                   <Text className="text-xs text-muted">+ Working</Text>
                 </Pressable>
-                <Pressable onPress={() => addSet(ei, 'backoff')} accessibilityLabel="Add back-off set" className="flex-1 border border-dashed border-accent/20 rounded-md py-1.5 items-center">
+                <Pressable onPress={() => addSet(ei, 'backoff')} accessibilityLabel="Add back-off set" className="flex-1 border border-dashed border-accent/20 rounded-xl py-1.5 items-center">
                   <Text className="text-xs text-accent/50">+ B</Text>
                 </Pressable>
               </View>

@@ -367,7 +367,7 @@ export default function Progresss() {
 
           <View className="flex-row flex-wrap gap-3">
             <Stat label="Weight" value={formatHealthValue(healthMetrics?.weightKg)} unit={healthMetrics?.weightKg != null ? 'kg' : undefined} />
-            <Stat label="Tuk" value={formatHealthValue(healthMetrics?.bodyFatPct)} unit={healthMetrics?.bodyFatPct != null ? '%' : undefined} />
+            <Stat label="Body fat" value={formatHealthValue(healthMetrics?.bodyFatPct)} unit={healthMetrics?.bodyFatPct != null ? '%' : undefined} />
             <Stat label="Lean mass" value={formatHealthValue(healthMetrics?.leanMassKg)} unit={healthMetrics?.leanMassKg != null ? 'kg' : undefined} />
           </View>
 

@@ -49,7 +49,7 @@ function Calendar({ year, month, trainingDays, selected, onSelect, onPrev, onNex
                 disabled={!hasWorkout}
                 onPress={() => onSelect(key)}
                 className={cn(
-                  'flex-1 rounded-lg items-center justify-center',
+                  'flex-1 rounded-2xl items-center justify-center',
                   isSelected ? 'bg-accent' : isToday ? 'border border-accent/40' : '',
                   hasWorkout && !isSelected ? 'bg-panel2' : '',
                 )}

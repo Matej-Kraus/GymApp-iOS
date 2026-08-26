@@ -43,7 +43,7 @@ export function TrainingHeatmap({ sessions }: Props) {
   return (
     <View className="gap-1.5">
       <View className="flex-row items-center justify-between">
-        <Text className="font-mono text-[10px] uppercase tracking-[2px] text-faint">Activity</Text>
+        <Text className="font-mono text-[10px] uppercase tracking-[1.4px] text-faint">Activity</Text>
         <Text className="font-mono text-[10px] text-faint">{sessions.length} sessions</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -60,7 +60,7 @@ export function TrainingHeatmap({ sessions }: Props) {
                     className={cn(
                       'w-3 h-3 rounded-sm',
                       key === todayKey ? 'border border-accent' : '',
-                      count === 0 ? 'bg-panel2' : count === 1 ? 'bg-accent/50' : 'bg-accent',
+                      count === 0 ? 'bg-panel2' : count === 1 ? 'bg-accent/35' : count === 2 ? 'bg-accent/70' : 'bg-accent',
                     )}
                   />
                 )

@@ -73,19 +73,19 @@ export default function Splits() {
                   <View className="flex-row gap-1.5">
                     <Pressable
                       onPress={() => router.push({ pathname: '/split-form', params: { id: split.id } })}
-                      className="rounded-md border border-white/15 px-3 py-1.5"
+                      className="rounded-xl border border-white/15 px-3 py-1.5"
                     >
                       <Text className="text-xs text-muted">Edit</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => duplicateSplit(split.id)}
-                      className="rounded-md border border-white/15 px-3 py-1.5"
+                      className="rounded-xl border border-white/15 px-3 py-1.5"
                     >
                       <Text className="text-xs text-muted">Duplicate</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => confirmDelete(split.id)}
-                      className="rounded-md border border-danger/30 px-3 py-1.5"
+                      className="rounded-xl border border-danger/30 px-3 py-1.5"
                     >
                       <Text className="text-xs text-danger/80">Delete</Text>
                     </Pressable>

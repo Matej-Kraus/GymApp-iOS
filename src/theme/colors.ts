@@ -1,11 +1,11 @@
-// PLATE CODE — barevný systém odvozený z kotoučů, ne vymyšlený.
+// Barevný systém — téměř černý podklad, jediný zelený akcent.
 //
-// Kotouče mají podle IWF/IPF pevně dané barvy a každý, kdo zvedá, je čte
-// z naložené osy bez přemýšlení. Appka ten samý kód používá všude:
-// v kalkulačce kotoučů, u objemových pásem, u rekordů. Barva nese váhu.
+// Pravidlo, které drží celý vzhled pohromadě: zelená je vyhrazená pro
+// postup a hlavní akce. Nic dekorativního ji nesmí použít, jinak přestane
+// znamenat „tohle je důležité". Všechno ostatní je šedá škála.
 //
-// Podklad je studený uhel (gumová podlaha), ne teplý grafit — aby barvy
-// kotoučů zůstaly jediná sytá věc na obrazovce.
+// Výjimka jsou barvy kotoučů: na naložené ose nesou skutečnou informaci
+// (červená = 25 kg), takže tam sytá barva smysl má. Nikde jinde.
 
 /** Oficiální barvy kotoučů (IWF). Klíč = hmotnost v kg. */
 export const PLATE_COLORS = {
@@ -19,30 +19,28 @@ export const PLATE_COLORS = {
 } as const
 
 export const colors = {
-  // Podklad a povrchy
-  bg: '#0E1116', // studený uhel
-  panel: '#161B22', // karta
-  panel2: '#1D242E', // vyvýšený povrch
-  line: '#252D38', // hairline
+  // Podklad a povrchy — téměř černá s nepatrným zeleným nádechem.
+  bg: '#070A08',
+  panel: '#101511',
+  panel2: '#18201A',
+  line: '#232C26',
 
-  // Text
-  text: '#E8EDF2', // studená bílá
-  muted: '#7D8794', // ocelová šedá
-  faint: '#4A5462', // popisky, osy grafů
+  // Text — tři úrovně, víc není potřeba.
+  text: '#ECF2ED',
+  muted: '#8A9690',
+  faint: '#5A665F',
 
-  // Interakce — modrá je 20kg kotouč, nejběžnější olympijský.
-  accent: '#2F6FE0',
-  accentText: '#FFFFFF',
+  // Akcent. Jen postup a hlavní akce.
+  accent: '#00E676',
+  accentText: '#04140B', // na sytě zelené čte černý text líp než bílý
 
-  // Sémantika objemu. Odpovídá kotoučům i běžnému čtení semaforu.
-  under: '#7D8794', // pod MEV — málo
-  optimal: '#34A853', // MAV — akorát
-  warn: '#F5C518', // blízko MRV
-  over: '#E5322D', // nad MRV — přepal
-  danger: '#E5322D',
-
-  // Rekord. Žlutá z 15kg kotouče — vydřená, ne „prémiová".
-  pr: '#F5C518',
+  // Stavy. Zelená / jantarová / červená jako na semaforu.
+  optimal: '#00E676',
+  warn: '#FFC53D',
+  over: '#FF4D4F',
+  danger: '#FF4D4F',
+  under: '#5A665F',
+  pr: '#00E676',
 } as const
 
 export type PlateWeight = keyof typeof PLATE_COLORS

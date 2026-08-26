@@ -25,7 +25,7 @@ export function Onboarding({ visible }: { visible: boolean }) {
     <Modal visible={visible} animationType="fade" onRequestClose={() => finish()}>
       <SafeAreaView className="flex-1 bg-bg">
         <View className="flex-1 px-6 pt-10">
-          <Text className="text-[11px] font-semibold uppercase tracking-[2px] text-accent">Welcome</Text>
+          <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-accent">Welcome</Text>
           <Text className="mt-1 font-display text-4xl text-white">Workout</Text>
           <Text className="mt-2 text-sm text-muted">Your training log, with a suggestion for every set.</Text>
 

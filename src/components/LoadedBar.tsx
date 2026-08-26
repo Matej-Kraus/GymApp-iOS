@@ -60,7 +60,7 @@ export function LoadedBar({
   if (result.belowBar) {
     return (
       <View className="items-center justify-center" style={{ height }}>
-        <Text className="font-mono text-[11px] uppercase tracking-[1.5px] text-faint">
+        <Text className="font-mono text-[11px] uppercase tracking-[1.2px] text-faint">
           Below bar weight
         </Text>
       </View>
@@ -95,7 +95,7 @@ export function LoadedBar({
 
       {showLabels ? (
         <View className="mt-2 flex-row items-center justify-center gap-2">
-          <Text className="font-mono text-[10px] uppercase tracking-[1.5px] text-faint">
+          <Text className="font-mono text-[10px] uppercase tracking-[1.2px] text-faint">
             bar {barKg}
           </Text>
           {result.perSide.map(({ plate, count }) => (

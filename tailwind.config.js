@@ -8,39 +8,39 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // PLATE CODE — viz src/theme/colors.ts (jeden zdroj pravdy, tohle je jeho zrcadlo).
-        bg: '#0E1116',
-        panel: '#161B22',
-        panel2: '#1D242E',
-        line: '#252D38',
-        muted: '#7D8794',
-        faint: '#4A5462',
-        accent: '#2F6FE0', // 20kg kotouc
-        // Semantika objemu
-        under: '#7D8794',
-        optimal: '#34A853',
-        warn: '#F5C518',
-        over: '#E5322D',
-        danger: '#E5322D',
-        pr: '#F5C518',
+        // Viz src/theme/colors.ts - tam je zdroj pravdy, tohle je jeho zrcadlo.
+        bg: '#070A08',
+        panel: '#101511',
+        panel2: '#18201A',
+        line: '#232C26',
+        muted: '#8A9690',
+        faint: '#5A665F',
+        accent: '#00E676',
+        'accent-text': '#04140B',
+        optimal: '#00E676',
+        warn: '#FFC53D',
+        over: '#FF4D4F',
+        danger: '#FF4D4F',
+        under: '#5A665F',
+        pr: '#00E676',
         // Barvy kotoucu pro primy zapis v UI
         'plate-25': '#E5322D',
         'plate-20': '#2F6FE0',
         'plate-15': '#F5C518',
         'plate-10': '#34A853',
         'plate-5': '#E8EDF2',
-        // Studena bila misto ostre #FFF — propisuje se do vsech `text-white`.
-        white: '#E8EDF2',
+        white: '#ECF2ED',
       },
       fontFamily: {
-        // Display = Archivo Black (tezky industrialni grotesk, verzalky).
-        // Body = Archivo. Data/cisla = IBM Plex Mono (tabulkove).
-        display: ['ArchivoBlack'],
-        sans: ['Archivo'],
-        'sans-medium': ['ArchivoMedium'],
-        'sans-semibold': ['ArchivoSemiBold'],
-        mono: ['PlexMono'],
-        'mono-semibold': ['PlexMonoSemiBold'],
+        // Jedna rodina, hierarchii nese velikost a vaha - jako Whoop, Nike, Apple Fitness.
+        // Nazvy trid zustavaji, aby se zmena propsala do vsech obrazovek naraz.
+        sans: ['Jakarta'],
+        display: ['JakartaExtraBold'], // nadpisy a prerostla cisla
+        'display-bold': ['JakartaBold'],
+        'sans-medium': ['JakartaMedium'],
+        'sans-semibold': ['JakartaSemiBold'],
+        mono: ['JakartaMedium'], // drobne popisky
+        'mono-semibold': ['JakartaBold'], // cisla ve statistikach
       },
     },
   },

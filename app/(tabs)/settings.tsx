@@ -210,7 +210,7 @@ export default function Settings() {
                       const d = i + 1
                       const on = reminder.days.includes(d)
                       return (
-                        <Pressable key={d} onPress={() => toggleDay(d)} className={cn('flex-1 rounded-lg py-2 items-center', on ? 'bg-accent' : 'bg-panel2')}>
+                        <Pressable key={d} onPress={() => toggleDay(d)} className={cn('flex-1 rounded-2xl py-2 items-center', on ? 'bg-accent' : 'bg-panel2')}>
                           <Text className={cn('text-xs font-semibold', on ? 'text-black' : 'text-muted')}>{lbl}</Text>
                         </Pressable>
                       )

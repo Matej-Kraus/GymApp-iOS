@@ -117,11 +117,11 @@ export default function Dashboard() {
             <Pressable
               onPress={() => router.push({ pathname: '/workout', params: { resume: '1' } })}
               accessibilityLabel="Resume unfinished session"
-              className="flex-row items-center gap-3 rounded-lg border border-accent bg-accent/10 px-4 py-3.5 active:opacity-80"
+              className="flex-row items-center gap-3 rounded-2xl border border-accent bg-accent/10 px-4 py-3.5 active:opacity-80"
             >
               <Ionicons name="play-circle" size={22} color={colors.accent} />
               <View className="flex-1">
-                <Text className="font-display text-[13px] uppercase tracking-[1px] text-accent">
+                <Text className="font-display text-[13px] tracking-[1px] text-accent">
                   Resume session
                 </Text>
                 <Text className="mt-0.5 font-mono text-[11px] text-muted">
@@ -148,10 +148,10 @@ export default function Dashboard() {
               <Card className="gap-4">
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1">
-                    <Text className="font-mono text-[10px] uppercase tracking-[2.5px] text-accent">
+                    <Text className="font-mono text-[10px] uppercase tracking-[1.6px] text-accent">
                       {recommendedSplit ? 'Next up' : 'Ready when you are'}
                     </Text>
-                    <Text className="mt-1.5 font-display text-2xl uppercase leading-7 text-white">
+                    <Text className="mt-1.5 font-display text-2xl leading-7 text-white">
                       {recommendedSplit ? recommendedSplit.name : 'Pick a session'}
                     </Text>
                     {recommendedSplit ? (
@@ -163,8 +163,8 @@ export default function Dashboard() {
                 </View>
 
                 {lastTop ? (
-                  <View className="gap-2 rounded-lg border border-line bg-bg px-3 py-3">
-                    <Text className="font-mono text-[10px] uppercase tracking-[1.5px] text-faint">
+                  <View className="gap-2 rounded-2xl border border-line bg-bg px-3 py-3">
+                    <Text className="font-mono text-[10px] uppercase tracking-[1.2px] text-faint">
                       Last top set · {lastTop.name}
                     </Text>
                     <LoadedBar
@@ -193,7 +193,7 @@ export default function Dashboard() {
             {/* Compact metric strip — data, not decoration. */}
             <Animated.View entering={stage(3)}>
               <SectionTitle>This week</SectionTitle>
-              <View className="flex-row rounded-lg border border-line bg-panel">
+              <View className="flex-row rounded-2xl border border-line bg-panel">
                 <Metric value={weekCount} label="sessions" />
                 <Divider />
                 <Metric value={monthCount} label="this month" />
@@ -245,7 +245,7 @@ export default function Dashboard() {
                 <SectionTitle>Last session</SectionTitle>
                 <Card className="gap-3">
                   <View>
-                    <Text className="font-display text-base uppercase tracking-wide text-white">
+                    <Text className="font-display text-base tracking-wide text-white">
                       {lastSession.splitName}
                     </Text>
                     <Text className="mt-0.5 font-mono text-[11px] text-muted">
@@ -260,7 +260,7 @@ export default function Dashboard() {
                         </Text>
                         <Text className="ml-1 font-mono text-[11px] text-muted">kg</Text>
                       </View>
-                      <Text className="mt-1 font-mono text-[10px] uppercase tracking-[1.5px] text-faint">
+                      <Text className="mt-1 font-mono text-[10px] uppercase tracking-[1.2px] text-faint">
                         Volume
                       </Text>
                     </View>
@@ -268,7 +268,7 @@ export default function Dashboard() {
                       <Text className="font-mono-semibold text-lg text-white" style={tnum}>
                         {countScoringSets(lastSession)}
                       </Text>
-                      <Text className="mt-1 font-mono text-[10px] uppercase tracking-[1.5px] text-faint">
+                      <Text className="mt-1 font-mono text-[10px] uppercase tracking-[1.2px] text-faint">
                         Sets
                       </Text>
                     </View>
@@ -294,14 +294,14 @@ export default function Dashboard() {
                       key={split.id}
                       onPress={() => startWorkout(split.id)}
                       className={cn(
-                        'mb-2 flex-row items-center justify-between rounded-lg px-4 py-4 active:opacity-80',
+                        'mb-2 flex-row items-center justify-between rounded-2xl px-4 py-4 active:opacity-80',
                         isRec ? 'border border-accent bg-accent/10' : 'border border-line bg-panel',
                       )}
                     >
                       <View>
                         <Text
                           className={cn(
-                            'font-display text-base uppercase tracking-wide',
+                            'font-display text-base tracking-wide',
                             isRec ? 'text-accent' : 'text-white',
                           )}
                         >
@@ -312,7 +312,7 @@ export default function Dashboard() {
                         </Text>
                       </View>
                       {isRec ? (
-                        <Text className="font-mono text-[10px] uppercase tracking-[1.5px] text-accent">
+                        <Text className="font-mono text-[10px] uppercase tracking-[1.2px] text-accent">
                           Today
                         </Text>
                       ) : (
@@ -329,7 +329,7 @@ export default function Dashboard() {
                 />
                 {groups.length > 1 || (groups.length === 1 && groups[0][0] !== activeProgramId) ? (
                   <Pressable onPress={() => setPickerStep('groups')} className="items-center py-3">
-                    <Text className="font-mono text-[11px] uppercase tracking-[1.5px] text-muted">
+                    <Text className="font-mono text-[11px] uppercase tracking-[1.2px] text-muted">
                       Other splits
                     </Text>
                   </Pressable>
@@ -364,7 +364,7 @@ export default function Dashboard() {
                   <Pressable onPress={() => setPickerStep('groups')} hitSlop={12}>
                     <Ionicons name="chevron-back" size={22} color={colors.muted} />
                   </Pressable>
-                  <Text className="flex-1 font-display text-lg uppercase tracking-wide text-white">
+                  <Text className="flex-1 font-display text-lg tracking-wide text-white">
                     {groupMap.get(pickerStep)?.groupName}
                   </Text>
                   <Pressable onPress={closePicker} hitSlop={12}>
@@ -411,7 +411,7 @@ function Divider() {
 function PickerHeader({ title, onClose }: { title: string; onClose: () => void }) {
   return (
     <View className="mb-5 flex-row items-center justify-between">
-      <Text className="font-display text-lg uppercase tracking-wide text-white">{title}</Text>
+      <Text className="font-display text-lg tracking-wide text-white">{title}</Text>
       <Pressable onPress={onClose} hitSlop={12}>
         <Ionicons name="close" size={22} color={colors.muted} />
       </Pressable>
@@ -436,12 +436,12 @@ function PickerRow({
     <Pressable
       onPress={onPress}
       className={cn(
-        'mb-2 flex-row items-center justify-between rounded-lg bg-panel px-4 py-4 active:opacity-80',
+        'mb-2 flex-row items-center justify-between rounded-2xl bg-panel px-4 py-4 active:opacity-80',
         dashed ? 'border border-dashed border-line' : 'border border-line',
       )}
     >
       <View>
-        <Text className="font-display text-base uppercase tracking-wide text-white">{title}</Text>
+        <Text className="font-display text-base tracking-wide text-white">{title}</Text>
         <Text className="mt-0.5 font-mono text-[11px] text-muted">{subtitle}</Text>
       </View>
       {chevron ? <Ionicons name="chevron-forward" size={18} color={colors.muted} /> : null}
