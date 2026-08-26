@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Dimensions, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { useEffect, useMemo, useState } from 'react'
+import { ActivityIndicator, Dimensions, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LineChart } from 'react-native-gifted-charts'
 import { useAppState } from '@/state/AppStateContext'
@@ -7,9 +7,19 @@ import { epley1RM, countsTowardProgress, findExercise, allExercises, createId } 
 import type { WorkoutSession } from '@/core'
 import { PageHeader, Card, Button, cn } from '@/components/ui'
 import { formatDateCZ } from '@/lib/format'
+import {
+  isHealthAvailable,
+  requestHealthAccess,
+  readBodyMetrics,
+  readRecentWorkouts,
+  readWeightHistory,
+  type BodyMetrics,
+  type HealthWorkout,
+} from '@/lib/health'
 import { colors } from '@/theme/colors'
 
 type Metric = 'maxWeight' | 'e1rm' | 'volume'
+type HealthWeightPoint = { date: string; kg: number }
 const METRIC_LABELS: Record<Metric, string> = { maxWeight: 'Max váha (kg)', e1rm: 'Odh. 1RM (kg)', volume: 'Objem (kg)' }
 const CHART_WIDTH = Dimensions.get('window').width - 80
 
@@ -50,6 +60,32 @@ function Chart({ data }: { data: { value: number; label: string }[] }) {
       rulesColor="#2a2a2e"
       noOfSections={4}
     />
+  )
+}
+
+function formatHealthValue(value: number | null | undefined, unit: string): string {
+  return typeof value === 'number' ? `${value} ${unit}` : '—'
+}
+
+function formatMinutes(min: number): string {
+  if (min < 60) return `${min} min`
+  const h = Math.floor(min / 60)
+  const rest = min % 60
+  return rest ? `${h} h ${rest} min` : `${h} h`
+}
+
+function formatWeightImport(count: number): string {
+  if (count === 1) return 'Importován 1 záznam váhy.'
+  if (count > 1 && count < 5) return `Importovány ${count} záznamy váhy.`
+  return `Importováno ${count} záznamů váhy.`
+}
+
+function HealthMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="flex-1" style={{ minWidth: '30%' }}>
+      <Text className="font-display text-lg font-bold text-white">{value}</Text>
+      <Text className="mt-0.5 text-xs text-muted">{label}</Text>
+    </View>
   )
 }
 
@@ -182,6 +218,115 @@ export default function Progress() {
       .map((m) => ({ value: m[key] as number, label: formatDateCZ(m.date + 'T12:00:00').slice(0, 5) }))
   }
 
+  const [healthAvailable, setHealthAvailable] = useState<boolean | null>(null)
+  const [healthConnected, setHealthConnected] = useState(false)
+  const [healthBusy, setHealthBusy] = useState(false)
+  const [healthNotice, setHealthNotice] = useState<string | null>(null)
+  const [healthMetrics, setHealthMetrics] = useState<BodyMetrics | null>(null)
+  const [healthWeightHistory, setHealthWeightHistory] = useState<HealthWeightPoint[]>([])
+  const [healthWorkouts, setHealthWorkouts] = useState<HealthWorkout[]>([])
+
+  useEffect(() => {
+    let mounted = true
+    isHealthAvailable().then((available) => {
+      if (!mounted) return
+      setHealthAvailable(available)
+      if (!available) {
+        setHealthNotice(
+          Platform.OS === 'ios'
+            ? 'Apple Health není v tomhle buildu dostupný.'
+            : 'Apple Health je dostupný jen na iPhonu.',
+        )
+      }
+    })
+    return () => { mounted = false }
+  }, [])
+
+  async function readHealthSnapshot() {
+    const [metrics, weightHistory, workouts] = await Promise.all([
+      readBodyMetrics(),
+      readWeightHistory(),
+      readRecentWorkouts(8),
+    ])
+    setHealthMetrics(metrics)
+    setHealthWeightHistory(weightHistory)
+    setHealthWorkouts(workouts)
+    if (metrics.weightKg != null) setWeightInput(String(metrics.weightKg))
+
+    const hasAnyData =
+      metrics.weightKg != null ||
+      metrics.bodyFatPct != null ||
+      metrics.leanMassKg != null ||
+      weightHistory.length > 0 ||
+      workouts.length > 0
+    setHealthNotice(hasAnyData ? 'Data z Apple Health načtena.' : 'Přístup je aktivní, ale Health zatím nevrátil žádná data.')
+  }
+
+  async function handleConnectHealth() {
+    if (healthAvailable !== true || healthBusy) return
+    setHealthBusy(true)
+    setHealthNotice(null)
+    try {
+      const ok = await requestHealthAccess()
+      if (!ok) {
+        setHealthConnected(false)
+        setHealthNotice('Přístup k Apple Health se nepodařilo potvrdit.')
+        return
+      }
+      setHealthConnected(true)
+      await readHealthSnapshot()
+    } catch {
+      setHealthNotice('Apple Health data se nepodařilo načíst.')
+    } finally {
+      setHealthBusy(false)
+    }
+  }
+
+  async function handleReloadHealth() {
+    if (healthAvailable !== true || healthBusy) return
+    setHealthBusy(true)
+    setHealthNotice(null)
+    try {
+      await readHealthSnapshot()
+    } catch {
+      setHealthNotice('Apple Health data se nepodařilo načíst.')
+    } finally {
+      setHealthBusy(false)
+    }
+  }
+
+  function handleImportHealthWeights() {
+    const importable =
+      healthWeightHistory.length > 0
+        ? healthWeightHistory
+        : healthMetrics?.weightKg != null
+          ? [{ date: today, kg: healthMetrics.weightKg }]
+          : []
+    if (importable.length === 0) {
+      setHealthNotice('Health nevrátil žádnou váhu k importu.')
+      return
+    }
+
+    const existing = new Map(data.bodyWeightLog.map((e) => [e.date, e.kg]))
+    let changed = 0
+    for (const entry of importable) {
+      if (existing.get(entry.date) !== entry.kg) changed += 1
+      logBodyWeight(entry)
+    }
+    setHealthNotice(changed > 0 ? formatWeightImport(changed) : 'Váha už je aktuální.')
+  }
+
+  const healthWorkoutSummary = useMemo(() => {
+    const totalMinutes = healthWorkouts.reduce((sum, workout) => sum + workout.durationMin, 0)
+    const totalKcal = healthWorkouts.reduce((sum, workout) => sum + (workout.energyKcal ?? 0), 0)
+    return {
+      count: healthWorkouts.length,
+      totalMinutes,
+      totalKcal: totalKcal > 0 ? totalKcal : null,
+    }
+  }, [healthWorkouts])
+  const canImportHealthWeight = healthWeightHistory.length > 0 || healthMetrics?.weightKg != null
+
   const goalPct = currentGoal ? Math.min(100, Math.round((currentE1RM / currentGoal.targetE1RM) * 100)) : 0
 
   return (
@@ -209,6 +354,82 @@ export default function Progress() {
             <Text className="text-sm text-muted">kg</Text>
             <Button title={todayEntry ? 'Aktualizovat' : 'Uložit'} size="sm" disabled={!weightInput} onPress={handleSaveWeight} />
           </View>
+        </Card>
+
+        <Card className="gap-3">
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-1">
+              <Text className="text-sm font-semibold text-white">Apple Health</Text>
+              <Text className="text-xs text-muted">
+                {healthAvailable === null
+                  ? 'Kontrola dostupnosti'
+                  : healthAvailable
+                    ? healthConnected
+                      ? 'Připojeno'
+                      : 'Připraveno'
+                    : 'Nedostupné'}
+              </Text>
+            </View>
+            {healthBusy ? <ActivityIndicator color={colors.accent} /> : null}
+          </View>
+
+          <View className="flex-row flex-wrap gap-3">
+            <HealthMetric label="Váha" value={formatHealthValue(healthMetrics?.weightKg, 'kg')} />
+            <HealthMetric label="Tuk" value={formatHealthValue(healthMetrics?.bodyFatPct, '%')} />
+            <HealthMetric label="Svalová hmota" value={formatHealthValue(healthMetrics?.leanMassKg, 'kg')} />
+          </View>
+
+          <View className="border-t border-white/10 pt-3">
+            <View className="flex-row items-center justify-between">
+              <View>
+                <Text className="text-sm font-semibold text-white">Apple Watch tréninky</Text>
+                <Text className="text-xs text-muted">
+                  {healthWorkoutSummary.count > 0
+                    ? `${healthWorkoutSummary.count} záznamů, ${formatMinutes(healthWorkoutSummary.totalMinutes)}`
+                    : 'Žádné načtené záznamy'}
+                </Text>
+              </View>
+              {healthWorkoutSummary.totalKcal != null ? (
+                <Text className="font-display text-sm font-bold text-white">{healthWorkoutSummary.totalKcal} kcal</Text>
+              ) : null}
+            </View>
+            {healthWorkouts.length > 0 ? (
+              <View className="mt-2 gap-1.5">
+                {healthWorkouts.slice(0, 3).map((workout, i) => (
+                  <View key={`${workout.date}-${i}`} className="flex-row items-center justify-between gap-3">
+                    <View className="flex-1">
+                      <Text className="text-xs font-semibold text-white" numberOfLines={1}>{workout.activity}</Text>
+                      <Text className="text-[11px] text-muted">{formatDateCZ(workout.date + 'T12:00:00')}</Text>
+                    </View>
+                    <Text className="text-xs text-muted">
+                      {formatMinutes(workout.durationMin)}
+                      {workout.energyKcal != null ? ` · ${workout.energyKcal} kcal` : ''}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </View>
+
+          <View className="flex-row gap-2">
+            <Button
+              title={healthConnected ? 'Načíst znovu' : 'Připojit'}
+              size="sm"
+              className="flex-1"
+              disabled={healthAvailable !== true || healthBusy}
+              onPress={healthConnected ? handleReloadHealth : handleConnectHealth}
+            />
+            <Button
+              title="Importovat váhu"
+              variant="secondary"
+              size="sm"
+              className="flex-1"
+              disabled={!canImportHealthWeight || healthBusy}
+              onPress={handleImportHealthWeights}
+            />
+          </View>
+
+          {healthNotice ? <Text className="text-xs text-muted">{healthNotice}</Text> : null}
         </Card>
 
         {loggedIds.length === 0 ? (
