@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Dimensions, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { LineChart } from 'react-native-gifted-charts'
 import { useAppState } from '@/state/AppStateContext'
 import { epley1RM, countsTowardProgress, findExercise, allExercises, createId } from '@/core'
 import type { WorkoutSession } from '@/core'
@@ -17,11 +16,11 @@ import {
   type HealthWorkout,
 } from '@/lib/health'
 import { colors } from '@/theme/colors'
+import { AreaChart } from '@/components/charts/AreaChart'
 
 type Metric = 'maxWeight' | 'e1rm' | 'volume'
 type HealthWeightPoint = { date: string; kg: number }
 const METRIC_LABELS: Record<Metric, string> = { maxWeight: 'Top weight (kg)', e1rm: 'Odh. 1RM (kg)', volume: 'Volume (kg)' }
-const CHART_WIDTH = Dimensions.get('window').width - 80
 
 function getDataPoints(sessions: WorkoutSession[], exerciseId: string, metric: Metric) {
   return sessions
@@ -38,29 +37,8 @@ function getDataPoints(sessions: WorkoutSession[], exerciseId: string, metric: M
     })
 }
 
-function Chart({ data }: { data: { value: number; label: string }[] }) {
-  return (
-    <LineChart
-      data={data}
-      areaChart
-      curved
-      width={CHART_WIDTH}
-      height={180}
-      thickness={2}
-      color={colors.accent}
-      startFillColor={colors.accent}
-      endFillColor={colors.accent}
-      startOpacity={0.25}
-      endOpacity={0.02}
-      dataPointsColor={colors.accent}
-      xAxisColor="#2a2a2e"
-      yAxisColor="#2a2a2e"
-      yAxisTextStyle={{ color: colors.muted, fontSize: 9 }}
-      xAxisLabelTextStyle={{ color: colors.muted, fontSize: 8 }}
-      rulesColor="#2a2a2e"
-      noOfSections={4}
-    />
-  )
+function Chart({ data, unit }: { data: { value: number; label: string }[]; unit?: string }) {
+  return <AreaChart data={data} unit={unit} height={190} color={colors.accent} />
 }
 
 function formatHealthValue(value: number | null | undefined): string {

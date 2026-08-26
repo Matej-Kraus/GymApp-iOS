@@ -16,6 +16,9 @@ import { useAppState } from '@/state/AppStateContext'
 import { Button, cn } from '@/components/ui'
 import { formatLong } from '@/lib/format'
 import { celebrate } from '@/lib/haptics'
+import { colors } from '@/theme/colors'
+import { ShimmerText } from '@/components/Shimmer'
+import Ionicons from '@expo/vector-icons/Ionicons'
 
 function StatCard({ value, unit, label, accent, delay = 0 }: { value: string; unit?: string; label: string; accent?: boolean; delay?: number }) {
   return (
@@ -120,9 +123,9 @@ export default function WorkoutSummary() {
             style={pulseStyle}
             className="flex-row items-center gap-3 rounded-2xl bg-accent/10 border border-accent/30 px-4 py-3"
           >
-            <Text className="text-2xl">🏆</Text>
+            <Ionicons name="trophy" size={22} color={colors.accent} />
             <View className="flex-1">
-              <Text className="text-sm font-bold text-accent">New personal record</Text>
+              <ShimmerText className="text-sm">New personal record</ShimmerText>
               <Text className="text-xs text-muted">
                 {prEntries
                   .map((e) => {
