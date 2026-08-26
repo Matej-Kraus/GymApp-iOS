@@ -1,17 +1,25 @@
 import '../global.css'
 import { useEffect } from 'react'
 import { Stack } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
-import { useFonts, Fraunces_500Medium, Fraunces_700Bold } from '@expo-google-fonts/fraunces'
+import { useFonts, Archivo_400Regular, Archivo_500Medium, Archivo_600SemiBold } from '@expo-google-fonts/archivo'
+import { ArchivoBlack_400Regular } from '@expo-google-fonts/archivo-black'
+import { IBMPlexMono_400Regular, IBMPlexMono_600SemiBold } from '@expo-google-fonts/ibm-plex-mono'
 import { AppStateProvider } from '@/state/AppStateContext'
 
 SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
-  // Display font = Fraunces (luxusní high-contrast serif). Body zůstává systémový.
+  // PLATE CODE: Archivo Black na nadpisy (verzálky), Archivo na text,
+  // IBM Plex Mono na všechna čísla — váhy, opakování, objem.
   const [fontsLoaded] = useFonts({
-    Fraunces: Fraunces_500Medium,
-    FrauncesBold: Fraunces_700Bold,
+    Archivo: Archivo_400Regular,
+    ArchivoMedium: Archivo_500Medium,
+    ArchivoSemiBold: Archivo_600SemiBold,
+    ArchivoBlack: ArchivoBlack_400Regular,
+    PlexMono: IBMPlexMono_400Regular,
+    PlexMonoSemiBold: IBMPlexMono_600SemiBold,
   })
 
   useEffect(() => {
@@ -22,6 +30,7 @@ export default function RootLayout() {
 
   return (
     <AppStateProvider>
+      <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }} />
     </AppStateProvider>
   )

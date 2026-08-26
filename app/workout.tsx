@@ -83,7 +83,7 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
         editable={!set.skipped}
         onChangeText={(t) => onChange({ weight: t })}
         accessibilityLabel="Váha v kg"
-        className="flex-1 h-9 rounded-lg bg-card px-1 text-center font-display text-sm text-white"
+        className="flex-1 h-9 rounded-lg bg-panel px-1 text-center font-display text-sm text-white"
         style={{ fontVariant: ['tabular-nums'] }}
       />
       <TextInput
@@ -94,16 +94,16 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
         editable={!set.skipped}
         onChangeText={(t) => onChange({ reps: t })}
         accessibilityLabel="Počet opakování"
-        className="flex-1 h-9 rounded-lg bg-card px-1 text-center font-display text-sm text-white"
+        className="flex-1 h-9 rounded-lg bg-panel px-1 text-center font-display text-sm text-white"
         style={{ fontVariant: ['tabular-nums'] }}
       />
-      <Pressable onPress={cycleRpe} disabled={set.skipped} accessibilityLabel="RPE" className="w-11 h-9 rounded-lg bg-card items-center justify-center">
+      <Pressable onPress={cycleRpe} disabled={set.skipped} accessibilityLabel="RPE" className="w-11 h-9 rounded-lg bg-panel items-center justify-center">
         <Text className="text-xs text-muted">{set.rpe ? `@${set.rpe}` : '—'}</Text>
       </Pressable>
       <Pressable
         onPress={onToggleSkip}
         accessibilityLabel={set.skipped ? 'Zrušit přeskočení série' : 'Přeskočit sérii'}
-        className={cn('w-7 h-8 rounded-lg bg-card2 items-center justify-center')}
+        className={cn('w-7 h-8 rounded-lg bg-panel2 items-center justify-center')}
       >
         <Text className={cn('text-xs font-bold', set.skipped ? 'text-accent' : 'text-muted/40')}>—</Text>
       </Pressable>
@@ -111,7 +111,7 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
         onPress={onToggleComplete}
         disabled={set.skipped}
         accessibilityLabel={accepted ? 'Zrušit dokončení série' : 'Označit sérii za dokončenou'}
-        className={cn('w-8 h-8 rounded-xl items-center justify-center', accepted ? 'bg-accent' : 'bg-card')}
+        className={cn('w-8 h-8 rounded-xl items-center justify-center', accepted ? 'bg-accent' : 'bg-panel')}
       >
         <Text className={cn('text-sm font-bold', accepted ? 'text-black' : 'text-muted')}>{accepted ? '✓' : '○'}</Text>
       </Pressable>
@@ -372,7 +372,7 @@ export default function Workout() {
             <Animated.View
               key={entry.exerciseId}
               entering={FadeInDown.delay(Math.min(ei, 6) * 50).springify().damping(18)}
-              className="rounded-3xl bg-card border border-white/[0.06] overflow-hidden"
+              className="rounded-3xl bg-panel border border-white/[0.06] overflow-hidden"
             >
               <View className="flex-row items-center gap-3 px-3 py-2.5 border-b border-white/10">
                 <ExerciseImage exercise={exercise} size={40} />
@@ -387,7 +387,7 @@ export default function Workout() {
                   onPress={() => openPlates(entry)}
                   hitSlop={6}
                   accessibilityLabel="Kalkulačka kotoučů"
-                  className="h-8 w-8 items-center justify-center rounded-lg bg-card2"
+                  className="h-8 w-8 items-center justify-center rounded-lg bg-panel2"
                 >
                   <Text className="text-sm">🏋️</Text>
                 </Pressable>
@@ -406,7 +406,7 @@ export default function Workout() {
               </View>
 
               {/* hlavička sloupců */}
-              <View className="flex-row items-center gap-1.5 px-3 py-1.5 bg-card2">
+              <View className="flex-row items-center gap-1.5 px-3 py-1.5 bg-panel2">
                 <Text className="w-4" />
                 <Text className="flex-1 text-center text-[9px] text-muted uppercase font-semibold">kg</Text>
                 <Text className="flex-1 text-center text-[9px] text-muted uppercase font-semibold">rep</Text>
@@ -473,7 +473,7 @@ export default function Workout() {
             placeholder="Volitelná poznámka…"
             placeholderTextColor={colors.muted}
             multiline
-            className="mt-1 rounded-2xl bg-card2 px-4 py-3 text-sm text-white min-h-16"
+            className="mt-1 rounded-2xl bg-panel2 px-4 py-3 text-sm text-white min-h-16"
           />
         </View>
       </ScrollView>

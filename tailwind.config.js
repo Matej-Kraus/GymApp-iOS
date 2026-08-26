@@ -8,22 +8,39 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // LUXURY INSTRUMENT — grafitový základ, šampaňsko-bronzový akcent.
-        bg: '#0B0B0D', // grafit (teplejší než čistá čerň)
-        card: '#16161A', // matný kov
-        card2: '#212128', // vyvýšený povrch
-        cardTop: '#1C1C22', // světlejší okraj gradientu karty (brushed metal)
-        muted: '#8A8A93',
-        accent: '#C8A961', // šampaň / bronz
-        accentSoft: '#3A331F', // tlumené bronzové pozadí (chip/badge)
-        danger: '#E5484D', // rafinovanější červená
-        // Teple bílá místo ostré #FFF — propisuje se do všech `text-white`.
-        white: '#F4F1EA',
+        // PLATE CODE — viz src/theme/colors.ts (jeden zdroj pravdy, tohle je jeho zrcadlo).
+        bg: '#0E1116',
+        panel: '#161B22',
+        panel2: '#1D242E',
+        line: '#252D38',
+        muted: '#7D8794',
+        faint: '#4A5462',
+        accent: '#2F6FE0', // 20kg kotouc
+        // Semantika objemu
+        under: '#7D8794',
+        optimal: '#34A853',
+        warn: '#F5C518',
+        over: '#E5322D',
+        danger: '#E5322D',
+        pr: '#F5C518',
+        // Barvy kotoucu pro primy zapis v UI
+        'plate-25': '#E5322D',
+        'plate-20': '#2F6FE0',
+        'plate-15': '#F5C518',
+        'plate-10': '#34A853',
+        'plate-5': '#E8EDF2',
+        // Studena bila misto ostre #FFF — propisuje se do vsech `text-white`.
+        white: '#E8EDF2',
       },
       fontFamily: {
-        // Display = Fraunces (luxusní high-contrast serif). Body zůstává systémový (SF/Roboto).
-        display: ['FrauncesBold'],
-        'display-light': ['Fraunces'],
+        // Display = Archivo Black (tezky industrialni grotesk, verzalky).
+        // Body = Archivo. Data/cisla = IBM Plex Mono (tabulkove).
+        display: ['ArchivoBlack'],
+        sans: ['Archivo'],
+        'sans-medium': ['ArchivoMedium'],
+        'sans-semibold': ['ArchivoSemiBold'],
+        mono: ['PlexMono'],
+        'mono-semibold': ['PlexMonoSemiBold'],
       },
     },
   },

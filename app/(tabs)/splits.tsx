@@ -63,7 +63,7 @@ export default function Splits() {
                 <Card key={split.id} className="gap-2">
                   <View className="flex-row items-center gap-3">
                     <View className="flex-1">
-                      <Text className="font-display text-lg font-bold text-white">{split.name}</Text>
+                      <Text className="font-display text-lg text-white">{split.name}</Text>
                       <Text className="text-xs text-muted" numberOfLines={1}>
                         {count} cviků · {preview}{count > 3 ? '…' : ''}
                       </Text>
@@ -100,7 +100,7 @@ export default function Splits() {
         <View className="gap-2">
           <Pressable
             onPress={() => setTemplatesOpen((o) => !o)}
-            className="flex-row items-center justify-between rounded-2xl border border-white/10 bg-card px-4 py-3"
+            className="flex-row items-center justify-between rounded-2xl border border-white/10 bg-panel px-4 py-3"
           >
             <Text className="text-sm font-semibold text-white">Šablony (PPL, Upper-Lower, Full Body)</Text>
             <Text className={cn('text-muted', templatesOpen && 'rotate-180')}>▾</Text>
@@ -132,7 +132,7 @@ export default function Splits() {
             {data.customExercises.map((e) => (
               <View
                 key={e.id}
-                className="flex-row items-center gap-2 rounded-2xl border border-white/10 bg-card px-3 py-2"
+                className="flex-row items-center gap-2 rounded-2xl border border-white/10 bg-panel px-3 py-2"
               >
                 <Text className="text-sm font-semibold text-white flex-1">{e.name}</Text>
                 <Text className="text-xs text-muted">{e.muscleGroup}</Text>

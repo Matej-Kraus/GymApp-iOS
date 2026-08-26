@@ -102,14 +102,14 @@ function PRList({ sessions }: { sessions: WorkoutSession[] }) {
   return (
     <View className="gap-1.5">
       {prs.map((pr, i) => (
-        <View key={i} className="flex-row items-center gap-3 rounded-2xl border border-white/10 bg-card px-3 py-2">
-          <Text className="font-display text-lg font-bold text-accent w-7 text-center">{i + 1}</Text>
+        <View key={i} className="flex-row items-center gap-3 rounded-2xl border border-white/10 bg-panel px-3 py-2">
+          <Text className="font-display text-lg text-accent w-7 text-center">{i + 1}</Text>
           <View className="flex-1">
             <Text className="text-sm font-semibold text-white" numberOfLines={1}>{pr.name}</Text>
             <Text className="text-xs text-muted">{formatDateCZ(pr.date)}</Text>
           </View>
           <View className="items-end">
-            <Text className="font-display font-bold text-white">{pr.reps}×{pr.weight} kg</Text>
+            <Text className="font-display text-white">{pr.reps}×{pr.weight} kg</Text>
             <Text className="text-xs text-muted">1RM≈{Math.round(pr.e1rm)} kg</Text>
           </View>
         </View>
@@ -341,7 +341,7 @@ export default function Progress() {
               placeholderTextColor={colors.muted}
               value={weightInput}
               onChangeText={setWeightInput}
-              className="h-11 flex-1 rounded-2xl bg-card2 px-4 text-sm text-white"
+              className="h-11 flex-1 rounded-2xl bg-panel2 px-4 text-sm text-white"
             />
             <Text className="text-sm text-muted">kg</Text>
             <Button title={todayEntry ? 'Aktualizovat' : 'Uložit'} size="sm" disabled={!weightInput} onPress={handleSaveWeight} />
@@ -382,7 +382,7 @@ export default function Progress() {
                 </Text>
               </View>
               {healthWorkoutSummary.totalKcal != null ? (
-                <Text className="font-display text-sm font-bold text-white">{healthWorkoutSummary.totalKcal} kcal</Text>
+                <Text className="font-display text-sm text-white">{healthWorkoutSummary.totalKcal} kcal</Text>
               ) : null}
             </View>
             {healthWorkouts.length > 0 ? (
@@ -433,7 +433,7 @@ export default function Progress() {
               {loggedIds.map((id) => {
                 const ex = findExercise(id, data.customExercises) ?? exercises.find((e) => e.id === id)
                 return (
-                  <Pressable key={id} onPress={() => setSelectedId(id)} className={cn('rounded-full px-3 py-1.5', id === selId ? 'bg-accent' : 'bg-card2')}>
+                  <Pressable key={id} onPress={() => setSelectedId(id)} className={cn('rounded-full px-3 py-1.5', id === selId ? 'bg-accent' : 'bg-panel2')}>
                     <Text className={cn('text-xs font-semibold', id === selId ? 'text-black' : 'text-muted')}>{ex?.name ?? id}</Text>
                   </Pressable>
                 )
@@ -441,7 +441,7 @@ export default function Progress() {
             </ScrollView>
 
             {/* Metriky */}
-            <View className="flex-row gap-1 rounded-2xl bg-card2 p-1">
+            <View className="flex-row gap-1 rounded-2xl bg-panel2 p-1">
               {(Object.keys(METRIC_LABELS) as Metric[]).map((m) => (
                 <Pressable key={m} onPress={() => setMetric(m)} className={cn('flex-1 rounded-xl py-2 items-center', metric === m && 'bg-accent')}>
                   <Text className={cn('text-xs font-semibold', metric === m ? 'text-black' : 'text-muted')}>
@@ -453,7 +453,7 @@ export default function Progress() {
 
             {/* Graf */}
             <Card>
-              <Text className="font-display text-sm font-bold text-white">{exercise?.name ?? selId}</Text>
+              <Text className="font-display text-sm text-white">{exercise?.name ?? selId}</Text>
               <Text className="text-xs text-muted mb-2">{METRIC_LABELS[metric]}</Text>
               {chartData.length < 2 ? (
                 <Text className="text-center text-xs text-muted py-8">Potřebuješ aspoň 2 tréninky pro zobrazení trendu.</Text>
@@ -474,7 +474,7 @@ export default function Progress() {
                       </Text>
                       <Text className="text-xs text-muted">{goalPct} %</Text>
                     </View>
-                    <View className="h-2 w-full rounded-full bg-card2 overflow-hidden">
+                    <View className="h-2 w-full rounded-full bg-panel2 overflow-hidden">
                       <View className="h-full rounded-full bg-accent" style={{ width: `${goalPct}%` }} />
                     </View>
                     {currentGoal.deadline ? <Text className="text-xs text-muted">Deadline: {currentGoal.deadline}</Text> : null}
@@ -490,7 +490,7 @@ export default function Progress() {
                         placeholderTextColor={colors.muted}
                         value={goalInput}
                         onChangeText={setGoalInput}
-                        className="h-10 flex-1 rounded-2xl bg-card2 px-3 text-sm text-white"
+                        className="h-10 flex-1 rounded-2xl bg-panel2 px-3 text-sm text-white"
                       />
                       <Text className="text-sm text-muted">kg 1RM</Text>
                     </View>
@@ -499,7 +499,7 @@ export default function Progress() {
                       placeholderTextColor={colors.muted}
                       value={deadlineInput}
                       onChangeText={setDeadlineInput}
-                      className="h-10 rounded-2xl bg-card2 px-3 text-sm text-white"
+                      className="h-10 rounded-2xl bg-panel2 px-3 text-sm text-white"
                     />
                     <Button title="Nastavit cíl" size="sm" disabled={!goalInput} onPress={handleAddGoal} />
                   </>
@@ -522,7 +522,7 @@ export default function Progress() {
             <Card>
               <View className="flex-row items-center justify-between mb-2">
                 <View>
-                  <Text className="font-display text-sm font-bold text-white">{lastWeightEntry?.kg} kg</Text>
+                  <Text className="font-display text-sm text-white">{lastWeightEntry?.kg} kg</Text>
                   <Text className="text-xs text-muted">Aktuální váha</Text>
                 </View>
                 {lastWeightEntry ? (
@@ -550,7 +550,7 @@ export default function Progress() {
                     placeholderTextColor={colors.muted}
                     value={measureInputs[key]}
                     onChangeText={(t) => setMeasureInputs((p) => ({ ...p, [key]: t }))}
-                    className="h-11 rounded-2xl bg-card2 px-3 text-sm text-white"
+                    className="h-11 rounded-2xl bg-panel2 px-3 text-sm text-white"
                   />
                 </View>
               ))}
@@ -563,7 +563,7 @@ export default function Progress() {
             if (series.length < 2) return null
             return (
               <Card key={key}>
-                <Text className="font-display text-sm font-bold text-white mb-2">{label} — {series[series.length - 1].value} cm</Text>
+                <Text className="font-display text-sm text-white mb-2">{label} — {series[series.length - 1].value} cm</Text>
                 <Chart data={series} />
               </Card>
             )

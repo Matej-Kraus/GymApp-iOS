@@ -64,14 +64,14 @@ export function PlateCalculator({
               onChangeText={setWeight}
               placeholder="např. 100"
               placeholderTextColor={colors.muted}
-              className="h-14 rounded-2xl bg-card2 px-4 font-display text-2xl text-white"
+              className="h-14 rounded-2xl bg-panel2 px-4 font-display text-2xl text-white"
               style={{ fontVariant: ['tabular-nums'] }}
             />
           </View>
 
           <View className="mt-4 gap-2">
             <Text className="text-[11px] font-semibold uppercase tracking-wide text-muted">Hmotnost osy</Text>
-            <View className="flex-row gap-1 rounded-2xl bg-card2 p-1">
+            <View className="flex-row gap-1 rounded-2xl bg-panel2 p-1">
               {BAR_OPTIONS.map((b) => (
                 <Pressable
                   key={b}
@@ -120,7 +120,7 @@ export function PlateCalculator({
                 <Text className="mt-6 text-center text-sm text-muted">Na každou stranu:</Text>
                 <View className="mt-2 flex-row flex-wrap justify-center gap-2">
                   {result.perSide.map((p) => (
-                    <View key={p.plate} className="rounded-xl bg-card2 px-3 py-2">
+                    <View key={p.plate} className="rounded-xl bg-panel2 px-3 py-2">
                       <Text className="font-display text-base text-white" style={{ fontVariant: ['tabular-nums'] }}>
                         {p.count}× {fmt(p.plate)}
                       </Text>

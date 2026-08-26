@@ -60,7 +60,7 @@ export function TrainingHeatmap({ sessions }: Props) {
                     className={cn(
                       'w-3 h-3 rounded-sm',
                       key === todayKey ? 'border border-accent' : '',
-                      count === 0 ? 'bg-card2' : count === 1 ? 'bg-accent/50' : 'bg-accent',
+                      count === 0 ? 'bg-panel2' : count === 1 ? 'bg-accent/50' : 'bg-accent',
                     )}
                   />
                 )

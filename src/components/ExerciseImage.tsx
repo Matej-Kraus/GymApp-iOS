@@ -13,7 +13,7 @@ export function ExerciseImage({ exercise, size = 48 }: { exercise: Exercise; siz
 
   if (!exercise.imageUrl || error) {
     return (
-      <View className="rounded-lg bg-card2 items-center justify-center" style={{ width: size, height: size }}>
+      <View className="rounded-lg bg-panel2 items-center justify-center" style={{ width: size, height: size }}>
         <Text style={{ fontSize: size * 0.45 }}>{FALLBACK_ICONS[exercise.muscleGroup]}</Text>
       </View>
     )

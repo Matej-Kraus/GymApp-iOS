@@ -58,7 +58,7 @@ export function ExercisePicker({ visible, exercises, selectedIds, onToggle, onCl
             placeholderTextColor={colors.muted}
             value={search}
             onChangeText={setSearch}
-            className="h-11 rounded-2xl bg-card2 px-4 text-sm text-white"
+            className="h-11 rounded-2xl bg-panel2 px-4 text-sm text-white"
           />
           <View className="flex-row gap-1.5">
             {CATEGORIES.map(({ value, label }) => (
@@ -67,7 +67,7 @@ export function ExercisePicker({ visible, exercises, selectedIds, onToggle, onCl
                 onPress={() => setCategory(value)}
                 className={cn(
                   'rounded-full px-3 py-1',
-                  category === value ? 'bg-accent' : 'bg-card2',
+                  category === value ? 'bg-accent' : 'bg-panel2',
                 )}
               >
                 <Text className={cn('text-xs font-semibold', category === value ? 'text-black' : 'text-muted')}>
@@ -91,7 +91,7 @@ export function ExercisePicker({ visible, exercises, selectedIds, onToggle, onCl
                 onPress={() => onToggle(item)}
                 className={cn(
                   'flex-row items-center gap-3 rounded-2xl border p-3',
-                  selected ? 'border-accent bg-accent/10' : 'border-white/10 bg-card',
+                  selected ? 'border-accent bg-accent/10' : 'border-white/10 bg-panel',
                 )}
               >
                 <ExerciseImage exercise={item} size={48} />

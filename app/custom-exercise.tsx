@@ -21,7 +21,7 @@ function Chip({ label, active, onPress, flex }: { label: string; active: boolean
   return (
     <Pressable
       onPress={onPress}
-      className={cn('rounded-full px-3 py-1.5', flex && 'flex-1 items-center', active ? 'bg-accent' : 'bg-card2')}
+      className={cn('rounded-full px-3 py-1.5', flex && 'flex-1 items-center', active ? 'bg-accent' : 'bg-panel2')}
     >
       <Text className={cn('text-xs font-semibold', active ? 'text-black' : 'text-muted')}>{label}</Text>
     </Pressable>
@@ -68,7 +68,7 @@ export default function CustomExerciseScreen() {
               onChangeText={(t) => { setName(t); setError('') }}
               placeholder="např. Paused Bench Press"
               placeholderTextColor={colors.muted}
-              className="mt-1 h-12 rounded-2xl bg-card2 px-4 text-base text-white"
+              className="mt-1 h-12 rounded-2xl bg-panel2 px-4 text-base text-white"
             />
           </View>
 
@@ -100,7 +100,7 @@ export default function CustomExerciseScreen() {
           </View>
 
           <Pressable onPress={() => setIsBodyweight((v) => !v)} className="flex-row items-center gap-3">
-            <View className={cn('h-6 w-11 rounded-full justify-center', isBodyweight ? 'bg-accent' : 'bg-card2')}>
+            <View className={cn('h-6 w-11 rounded-full justify-center', isBodyweight ? 'bg-accent' : 'bg-panel2')}>
               <View className={cn('h-5 w-5 rounded-full bg-white', isBodyweight ? 'ml-5' : 'ml-0.5')} />
             </View>
             <Text className="text-sm text-white flex-1">Cvik s vlastní váhou (váha = přidané závaží)</Text>

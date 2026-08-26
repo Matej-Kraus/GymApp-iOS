@@ -28,7 +28,7 @@ function Calendar({ year, month, trainingDays, selected, onSelect, onPrev, onNex
     <Card>
       <View className="flex-row items-center justify-between mb-3">
         <Pressable onPress={onPrev} hitSlop={10}><Text className="text-muted text-xl">‹</Text></Pressable>
-        <Text className="font-display font-bold text-white">{MONTHS_CZ[month]} {year}</Text>
+        <Text className="font-display text-white">{MONTHS_CZ[month]} {year}</Text>
         <Pressable onPress={onNext} hitSlop={10}><Text className="text-muted text-xl">›</Text></Pressable>
       </View>
       <View className="flex-row flex-wrap">
@@ -51,7 +51,7 @@ function Calendar({ year, month, trainingDays, selected, onSelect, onPrev, onNex
                 className={cn(
                   'flex-1 rounded-lg items-center justify-center',
                   isSelected ? 'bg-accent' : isToday ? 'border border-accent/40' : '',
-                  hasWorkout && !isSelected ? 'bg-card2' : '',
+                  hasWorkout && !isSelected ? 'bg-panel2' : '',
                 )}
               >
                 <Text className={cn('text-sm font-medium', isSelected ? 'text-black' : hasWorkout ? 'text-white' : 'text-muted')}>{day}</Text>
@@ -73,7 +73,7 @@ function WorkoutDetail({ session, onDelete, onRepeat }: { session: WorkoutSessio
     <Card className="gap-4">
       <View className="flex-row items-start justify-between">
         <View className="flex-1">
-          <Text className="font-display text-xl font-bold text-white">{session.splitName}</Text>
+          <Text className="font-display text-xl text-white">{session.splitName}</Text>
           <Text className="text-xs text-muted">
             {formatLongCZ(session.date)}{session.durationMinutes ? ` · ${session.durationMinutes} min` : ''}
           </Text>
@@ -83,13 +83,13 @@ function WorkoutDetail({ session, onDelete, onRepeat }: { session: WorkoutSessio
       <View className="flex-row gap-6">
         <View>
           <View className="flex-row items-baseline">
-            <Text className="font-display text-2xl font-bold text-white">{vol.toLocaleString('cs-CZ')}</Text>
+            <Text className="font-display text-2xl text-white">{vol.toLocaleString('cs-CZ')}</Text>
             <Text className="ml-1 text-xs text-muted">kg</Text>
           </View>
           <Text className="text-xs text-muted">Objem</Text>
         </View>
         <View>
-          <Text className="font-display text-2xl font-bold text-white">{sets}</Text>
+          <Text className="font-display text-2xl text-white">{sets}</Text>
           <Text className="text-xs text-muted">Sérií</Text>
         </View>
       </View>
@@ -168,7 +168,7 @@ export default function History() {
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-4 pb-8">
         <View className="mt-2"><PageHeader title="Historie" subtitle={`${data.sessions.length} tréninků`} /></View>
 
-        <View className="flex-row gap-1 rounded-2xl bg-card2 p-1">
+        <View className="flex-row gap-1 rounded-2xl bg-panel2 p-1">
           {(['calendar', 'exercise'] as const).map((t) => (
             <Pressable key={t} onPress={() => setTab(t)} className={cn('flex-1 rounded-xl py-2 items-center', tab === t && 'bg-accent')}>
               <Text className={cn('text-xs font-semibold', tab === t ? 'text-black' : 'text-muted')}>{t === 'calendar' ? 'Kalendář' : 'Cvik'}</Text>
@@ -198,7 +198,7 @@ export default function History() {
                 <Pressable
                   key={ex.id}
                   onPress={() => setSelectedExerciseId(ex.id)}
-                  className={cn('rounded-full px-3 py-1.5', ex.id === exerciseForHistory ? 'bg-accent' : 'bg-card2')}
+                  className={cn('rounded-full px-3 py-1.5', ex.id === exerciseForHistory ? 'bg-accent' : 'bg-panel2')}
                 >
                   <Text className={cn('text-xs font-semibold', ex.id === exerciseForHistory ? 'text-black' : 'text-muted')}>{ex.name}</Text>
                 </Pressable>
@@ -213,7 +213,7 @@ export default function History() {
               return (
                 <Card key={session.id} className="gap-1.5">
                   <View className="flex-row items-center justify-between">
-                    <Text className="font-display font-bold text-white">{session.splitName}</Text>
+                    <Text className="font-display text-white">{session.splitName}</Text>
                     <Text className="text-xs text-muted">{formatLongCZ(session.date)}</Text>
                   </View>
                   {warmups.length > 0 ? (

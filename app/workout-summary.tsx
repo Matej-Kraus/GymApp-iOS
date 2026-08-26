@@ -21,7 +21,7 @@ function StatCard({ value, unit, label, accent, delay = 0 }: { value: string; un
   return (
     <Animated.View
       entering={FadeInDown.delay(delay).springify().damping(16)}
-      className="flex-1 rounded-2xl bg-card border border-white/[0.06] p-4 items-center"
+      className="flex-1 rounded-2xl bg-panel border border-white/[0.06] p-4 items-center"
     >
       <View className="flex-row items-baseline">
         <Text className={cn('font-display text-2xl', accent ? 'text-accent' : 'text-white')} style={{ fontVariant: ['tabular-nums'] }}>{value}</Text>

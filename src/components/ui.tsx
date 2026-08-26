@@ -1,71 +1,90 @@
-import { ReactNode } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
+import { ReactNode, useEffect, useRef, useState } from 'react'
+import { Pressable, Text, View } from 'react-native'
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated'
 import { colors } from '@/theme/colors'
 
-/** Malá knihovna znovupoužitelných UI prvků (RN verze webového ui.tsx).
- *  Vizuál: LUXURY INSTRUMENT — grafit, jemný „brushed metal" gradient,
- *  hairline okraje, bronzový akcent, tabulkové číslice u dat. */
+/** PLATE CODE — design systém.
+ *
+ *  Ploché panely s hairline okrajem místo gradientů, verzálky v Archivo Black
+ *  na nadpisy, IBM Plex Mono na všechna čísla. Sytá barva patří jen kotoučům
+ *  a stavům objemu — nikde jinde, aby si udržela význam.
+ *
+ *  POZOR: `font-display` se nikdy nekombinuje s `font-bold`. Archivo Black
+ *  je samostatný soubor; přidaná váha by rodinu shodila na systémový fallback. */
 
 /** Spojí podmíněně třídy (ignoruje prázdné / false hodnoty). */
 export function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(' ')
 }
 
-/** Tabulkové (monospace) číslice — aby data „seděla v zákrytu" jako na přístroji. */
+/** Tabulkové číslice — data musí sedět v zákrytu jako na měřidle. */
 export const tnum = { fontVariant: ['tabular-nums' as const] }
 
-/** Jemný gradient povrch s hairline okrajem — základ pro karty a statistiky. */
-function Surface({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <View className={cn('relative overflow-hidden rounded-3xl border border-white/[0.06] bg-card', className)}>
-      <LinearGradient
-        colors={[colors.cardTop, colors.card]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0.9, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* horní hairline odlesk pro dojem broušeného kovu */}
-      <View style={styles.topSheen} pointerEvents="none" />
-      {children}
-    </View>
-  )
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
+/** Odpočítá číslo nahoru při změně. Vrací aktuální hodnotu k vykreslení. */
+export function useCountUp(target: number, durationMs = 550): number {
+  const [value, setValue] = useState(target)
+  const fromRef = useRef(target)
+  const rafRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    const from = fromRef.current
+    if (from === target) return
+    const start = Date.now()
+
+    const tick = () => {
+      const t = Math.min(1, (Date.now() - start) / durationMs)
+      // easeOutCubic — rychlý náběh, měkké dosednutí
+      const eased = 1 - Math.pow(1 - t, 3)
+      setValue(from + (target - from) * eased)
+      if (t < 1) rafRef.current = requestAnimationFrame(tick)
+      else fromRef.current = target
+    }
+    rafRef.current = requestAnimationFrame(tick)
+
+    return () => {
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
+      fromRef.current = target
+    }
+  }, [target, durationMs])
+
+  return value
 }
 
-const styles = StyleSheet.create({
-  topSheen: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-  },
-})
+/** Plochý panel s hairline okrajem — základ pro karty a statistiky. */
+export function Panel({ children, className }: { children: ReactNode; className?: string }) {
+  return <View className={cn('rounded-lg border border-line bg-panel', className)}>{children}</View>
+}
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
 const variantBox: Record<Variant, string> = {
   primary: 'bg-accent',
-  secondary: 'bg-card2 border border-white/10',
+  secondary: 'bg-panel2 border border-line',
   ghost: '',
-  danger: 'border border-danger/40',
+  danger: 'border border-danger/50',
 }
 const variantText: Record<Variant, string> = {
-  primary: 'text-black',
+  primary: 'text-white',
   secondary: 'text-white',
   ghost: 'text-muted',
   danger: 'text-danger',
 }
 const sizeBox: Record<Size, string> = {
-  sm: 'h-10 px-4',
-  md: 'h-12 px-5', // 48px touch target
-  lg: 'h-14 px-6', // 56px hlavní CTA
+  sm: 'h-11 px-4', // 44pt — minimum podle Apple HIG
+  md: 'h-12 px-5',
+  lg: 'h-14 px-6',
 }
 const sizeText: Record<Size, string> = {
-  sm: 'text-sm',
-  md: 'text-base',
+  sm: 'text-[13px]',
+  md: 'text-sm',
   lg: 'text-base',
 }
 
@@ -84,12 +103,21 @@ export function Button({
   disabled?: boolean
   className?: string
 }) {
+  const pressed = useSharedValue(0)
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: withSpring(1 - pressed.value * 0.03, { damping: 18, stiffness: 320 }) }],
+    opacity: withTiming(1 - pressed.value * 0.15, { duration: 90 }),
+  }))
+
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
       disabled={disabled}
+      onPressIn={() => (pressed.value = 1)}
+      onPressOut={() => (pressed.value = 0)}
+      style={style}
       className={cn(
-        'flex-row items-center justify-center rounded-2xl active:opacity-90',
+        'flex-row items-center justify-center rounded-lg',
         variantBox[variant],
         sizeBox[size],
         disabled && 'opacity-40',
@@ -97,20 +125,24 @@ export function Button({
       )}
     >
       <Text
-        className={cn('font-semibold tracking-wide', variantText[variant], sizeText[size])}
+        className={cn(
+          'font-display uppercase tracking-[1.5px]',
+          variantText[variant],
+          sizeText[size],
+        )}
       >
         {title}
       </Text>
-    </Pressable>
+    </AnimatedPressable>
   )
 }
 
-/** Karta — základní plocha pro obsah (jemný kovový gradient + hairline). */
+/** Karta — základní plocha pro obsah. */
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <Surface className={cn('p-4', className)}>{children}</Surface>
+  return <Panel className={cn('p-4', className)}>{children}</Panel>
 }
 
-/** Hlavička obrazovky: malý nadpisek + velký titulek + volitelná akce vpravo. */
+/** Hlavička obrazovky: eyebrow + velký titulek + volitelná akce vpravo. */
 export function PageHeader({
   title,
   subtitle,
@@ -124,16 +156,31 @@ export function PageHeader({
     <View className="flex-row items-end justify-between gap-3">
       <View className="flex-1">
         {subtitle ? (
-          <Text className="text-[11px] font-semibold uppercase tracking-[2px] text-accent">{subtitle}</Text>
+          <Text className="font-mono text-[10px] uppercase tracking-[2.5px] text-accent">
+            {subtitle}
+          </Text>
         ) : null}
-        <Text className="mt-1 text-3xl font-display text-white">{title}</Text>
+        <Text className="mt-1.5 font-display text-[28px] uppercase leading-[32px] tracking-[-0.5px] text-white">
+          {title}
+        </Text>
       </View>
       {action ? <View>{action}</View> : null}
     </View>
   )
 }
 
-/** Prázdný stav — když ještě nejsou žádná data; navádí uživatele dál. */
+/** Popisek sekce — hairline linka a mono verzálky. */
+export function SectionTitle({ children, action }: { children: string; action?: ReactNode }) {
+  return (
+    <View className="mb-3 flex-row items-center gap-3">
+      <Text className="font-mono text-[10px] uppercase tracking-[2px] text-faint">{children}</Text>
+      <View className="h-px flex-1 bg-line" />
+      {action}
+    </View>
+  )
+}
+
+/** Prázdný stav — pozvánka k akci, ne omluva. */
 export function EmptyState({
   title,
   description,
@@ -144,27 +191,224 @@ export function EmptyState({
   action?: ReactNode
 }) {
   return (
-    <View className="items-center justify-center rounded-3xl border border-dashed border-white/15 bg-card/50 px-6 py-12">
-      <Text className="text-lg font-display text-white text-center">{title}</Text>
+    <View className="items-center justify-center rounded-lg border border-dashed border-line px-6 py-12">
+      <Text className="text-center font-display text-base uppercase tracking-wide text-white">
+        {title}
+      </Text>
       {description ? (
-        <Text className="mt-1.5 max-w-xs text-sm text-muted text-center leading-5">{description}</Text>
+        <Text className="mt-2 max-w-xs text-center text-sm leading-5 text-muted">{description}</Text>
       ) : null}
       {action ? <View className="mt-5">{action}</View> : null}
     </View>
   )
 }
 
-/** Malá statistika: velké číslo + popisek (čísla jsou hrdinové). */
-export function Stat({ label, value, unit }: { label: string; value: ReactNode; unit?: string }) {
+/** Statistika: velké mono číslo + popisek. Čísla jsou hrdinové obrazovky. */
+export function Stat({
+  label,
+  value,
+  unit,
+  animate = false,
+  decimals = 0,
+}: {
+  label: string
+  value: ReactNode
+  unit?: string
+  /** Když je hodnota číslo, vyjede odpočtem nahoru. */
+  animate?: boolean
+  decimals?: number
+}) {
+  const numeric = typeof value === 'number' ? value : 0
+  const counted = useCountUp(animate && typeof value === 'number' ? numeric : numeric, 550)
+  const shown =
+    animate && typeof value === 'number' ? counted.toFixed(decimals) : value
+
   return (
-    <Surface className="flex-1 px-4 py-3.5">
+    <Panel className="flex-1 px-3.5 py-3">
       <View className="flex-row items-baseline">
-        <Text className="font-display text-[26px] leading-tight text-white" style={tnum}>
-          {value}
+        <Text className="font-mono-semibold text-[24px] leading-tight text-white" style={tnum}>
+          {shown}
         </Text>
-        {unit ? <Text className="ml-1 text-sm font-medium text-muted">{unit}</Text> : null}
+        {unit ? <Text className="ml-1 font-mono text-xs text-muted">{unit}</Text> : null}
       </View>
-      <Text className="mt-2 text-[11px] font-medium uppercase tracking-wide text-muted">{label}</Text>
-    </Surface>
+      <Text className="mt-2 font-mono text-[10px] uppercase tracking-[1.5px] text-faint">
+        {label}
+      </Text>
+    </Panel>
+  )
+}
+
+/** Chip / pill — filtr, volba, štítek. Dřív duplikovaný na pěti místech. */
+export function Chip({
+  label,
+  active,
+  onPress,
+  color,
+  className,
+}: {
+  label: string
+  active?: boolean
+  onPress?: () => void
+  /** Vlastní barva aktivního stavu (např. barva kotouče nebo pásma objemu). */
+  color?: string
+  className?: string
+}) {
+  const pressed = useSharedValue(0)
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: withSpring(1 - pressed.value * 0.05, { damping: 18, stiffness: 340 }) }],
+  }))
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={() => (pressed.value = 1)}
+      onPressOut={() => (pressed.value = 0)}
+      style={[style, active && color ? { backgroundColor: color, borderColor: color } : null]}
+      className={cn(
+        'h-9 justify-center rounded-md border px-3',
+        active ? 'border-accent bg-accent' : 'border-line bg-panel',
+        className,
+      )}
+    >
+      <Text
+        className={cn(
+          'font-mono text-[11px] uppercase tracking-[1px]',
+          active ? 'text-white' : 'text-muted',
+        )}
+      >
+        {label}
+      </Text>
+    </AnimatedPressable>
+  )
+}
+
+/** Segmentovaný přepínač. Dřív ručně kopírovaný na třech obrazovkách. */
+export function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+  className,
+}: {
+  options: { label: string; value: T }[]
+  value: T
+  onChange: (v: T) => void
+  className?: string
+}) {
+  return (
+    <View className={cn('flex-row rounded-lg border border-line bg-panel p-1', className)}>
+      {options.map((o) => {
+        const active = o.value === value
+        return (
+          <Pressable
+            key={o.value}
+            onPress={() => onChange(o.value)}
+            className={cn(
+              'h-9 flex-1 items-center justify-center rounded-md',
+              active && 'bg-accent',
+            )}
+          >
+            <Text
+              className={cn(
+                'font-mono text-[11px] uppercase tracking-[1px]',
+                active ? 'text-white' : 'text-muted',
+              )}
+            >
+              {o.label}
+            </Text>
+          </Pressable>
+        )
+      })}
+    </View>
+  )
+}
+
+/** Přepínač. Palec plynule přejíždí — dřív skákal bez animace. */
+export function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  const on = useSharedValue(value ? 1 : 0)
+
+  useEffect(() => {
+    on.value = value ? 1 : 0
+  }, [value, on])
+
+  const knob = useAnimatedStyle(() => ({
+    transform: [{ translateX: withSpring(on.value * 20, { damping: 20, stiffness: 300 }) }],
+  }))
+  const track = useAnimatedStyle(() => ({
+    backgroundColor: withTiming(on.value ? colors.accent : colors.panel2, { duration: 160 }),
+    borderColor: withTiming(on.value ? colors.accent : colors.line, { duration: 160 }),
+  }))
+
+  return (
+    <Pressable onPress={() => onChange(!value)} hitSlop={10}>
+      <Animated.View className="h-7 w-12 justify-center rounded-full border px-0.5" style={track}>
+        <Animated.View className="h-6 w-6 rounded-full bg-white" style={knob} />
+      </Animated.View>
+    </Pressable>
+  )
+}
+
+/** Ukazatel postupu. Šířka dojede plynule. */
+export function ProgressBar({
+  value,
+  color = colors.accent,
+  className,
+}: {
+  /** 0–1 */
+  value: number
+  color?: string
+  className?: string
+}) {
+  const pct = Math.max(0, Math.min(1, value))
+  const w = useSharedValue(pct)
+
+  useEffect(() => {
+    w.value = pct
+  }, [pct, w])
+
+  const style = useAnimatedStyle(() => ({
+    width: withTiming(`${w.value * 100}%`, { duration: 480 }),
+  }))
+
+  return (
+    <View className={cn('h-1.5 overflow-hidden rounded-full bg-panel2', className)}>
+      <Animated.View className="h-full rounded-full" style={[style, { backgroundColor: color }]} />
+    </View>
+  )
+}
+
+/** Upozornění — deload, přepal objemu, stav připomínek. */
+export function Banner({
+  tone = 'info',
+  title,
+  description,
+  action,
+}: {
+  tone?: 'info' | 'warn' | 'over'
+  title: string
+  description?: string
+  action?: ReactNode
+}) {
+  const toneColor =
+    tone === 'over' ? colors.over : tone === 'warn' ? colors.warn : colors.accent
+
+  return (
+    <View
+      className="flex-row items-center gap-3 rounded-lg border bg-panel p-3.5"
+      style={{ borderColor: toneColor }}
+    >
+      <View className="h-full w-1 rounded-full" style={{ backgroundColor: toneColor }} />
+      <View className="flex-1">
+        <Text
+          className="font-display text-[13px] uppercase tracking-[1px]"
+          style={{ color: toneColor }}
+        >
+          {title}
+        </Text>
+        {description ? (
+          <Text className="mt-1 text-[13px] leading-[18px] text-muted">{description}</Text>
+        ) : null}
+      </View>
+      {action}
+    </View>
   )
 }

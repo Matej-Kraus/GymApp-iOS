@@ -60,7 +60,7 @@ export function SplitForm({ initial, onSave, onCancel }: Props) {
             placeholderTextColor={colors.muted}
             value={name}
             onChangeText={(t) => { setName(t); setError('') }}
-            className="mt-1 h-12 rounded-2xl bg-card2 px-4 text-base text-white"
+            className="mt-1 h-12 rounded-2xl bg-panel2 px-4 text-base text-white"
           />
         </View>
 
@@ -82,7 +82,7 @@ export function SplitForm({ initial, onSave, onCancel }: Props) {
                 const ex = exercises.find((e) => e.id === id)
                 if (!ex) return null
                 return (
-                  <View key={id} className="flex-row items-center gap-2 rounded-2xl border border-white/10 bg-card p-2">
+                  <View key={id} className="flex-row items-center gap-2 rounded-2xl border border-white/10 bg-panel p-2">
                     <ExerciseImage exercise={ex} size={40} />
                     <View className="flex-1">
                       <Text className="text-sm font-semibold text-white" numberOfLines={1}>{ex.name}</Text>

@@ -24,7 +24,7 @@ function Segmented({ options, value, onChange }: {
   onChange: (v: string) => void
 }) {
   return (
-    <View className="flex-row gap-1 rounded-2xl bg-card2 p-1">
+    <View className="flex-row gap-1 rounded-2xl bg-panel2 p-1">
       {options.map((opt) => (
         <Pressable
           key={opt.value}
@@ -132,7 +132,7 @@ export default function Settings() {
                     <Pressable
                       key={id}
                       onPress={() => updateSettings({ activeProgramId: active ? undefined : id })}
-                      className={cn('flex-row items-center justify-between rounded-xl px-3 py-3', active ? 'bg-accent/15 border border-accent/40' : 'bg-card2')}
+                      className={cn('flex-row items-center justify-between rounded-xl px-3 py-3', active ? 'bg-accent/15 border border-accent/40' : 'bg-panel2')}
                     >
                       <Text className={cn('text-sm font-semibold', active ? 'text-accent' : 'text-white')}>{name}</Text>
                       <Text className={cn('text-base', active ? 'text-accent' : 'text-muted/40')}>{active ? '📍' : '○'}</Text>
@@ -197,7 +197,7 @@ export default function Settings() {
           <Card className="gap-3">
             <Pressable onPress={() => updateReminder({ enabled: !reminder.enabled })} className="flex-row items-center justify-between">
               <Text className="text-sm text-white">Připomínat trénink</Text>
-              <View className={cn('h-6 w-11 rounded-full justify-center', reminder.enabled ? 'bg-accent' : 'bg-card2')}>
+              <View className={cn('h-6 w-11 rounded-full justify-center', reminder.enabled ? 'bg-accent' : 'bg-panel2')}>
                 <View className={cn('h-5 w-5 rounded-full bg-white', reminder.enabled ? 'ml-5' : 'ml-0.5')} />
               </View>
             </Pressable>
@@ -210,7 +210,7 @@ export default function Settings() {
                       const d = i + 1
                       const on = reminder.days.includes(d)
                       return (
-                        <Pressable key={d} onPress={() => toggleDay(d)} className={cn('flex-1 rounded-lg py-2 items-center', on ? 'bg-accent' : 'bg-card2')}>
+                        <Pressable key={d} onPress={() => toggleDay(d)} className={cn('flex-1 rounded-lg py-2 items-center', on ? 'bg-accent' : 'bg-panel2')}>
                           <Text className={cn('text-xs font-semibold', on ? 'text-black' : 'text-muted')}>{lbl}</Text>
                         </Pressable>
                       )
@@ -221,7 +221,7 @@ export default function Settings() {
                   <Text className="text-xs text-muted mb-1">Čas: {String(reminder.hour).padStart(2, '0')}:00</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-1.5">
                     {REMINDER_HOURS.map((h) => (
-                      <Pressable key={h} onPress={() => updateReminder({ hour: h })} className={cn('rounded-full px-3 py-1.5', reminder.hour === h ? 'bg-accent' : 'bg-card2')}>
+                      <Pressable key={h} onPress={() => updateReminder({ hour: h })} className={cn('rounded-full px-3 py-1.5', reminder.hour === h ? 'bg-accent' : 'bg-panel2')}>
                         <Text className={cn('text-xs font-semibold', reminder.hour === h ? 'text-black' : 'text-muted')}>{h}:00</Text>
                       </Pressable>
                     ))}

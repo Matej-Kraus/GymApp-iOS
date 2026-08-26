@@ -153,7 +153,7 @@ export default function Dashboard() {
                         return (
                           <View key={muscle} className="flex-row items-center gap-3">
                             <Text className="w-16 text-xs text-muted">{MUSCLE_CZ[muscle] ?? muscle}</Text>
-                            <View className="flex-1 h-2 rounded-full bg-card2 overflow-hidden">
+                            <View className="flex-1 h-2 rounded-full bg-panel2 overflow-hidden">
                               <View className="h-full rounded-full bg-accent" style={{ width: `${Math.max(8, (sets / max) * 100)}%` }} />
                             </View>
                             <Text className="w-6 text-right font-display text-sm text-white" style={{ fontVariant: ['tabular-nums'] }}>{sets}</Text>
@@ -173,13 +173,13 @@ export default function Dashboard() {
                 <Text className="text-sm font-semibold text-muted">Poslední trénink</Text>
                 <Card className="gap-3">
                   <View>
-                    <Text className="font-display text-lg font-bold text-white">{lastSession.splitName}</Text>
+                    <Text className="font-display text-lg text-white">{lastSession.splitName}</Text>
                     <Text className="text-xs text-muted">{formatLongCZ(lastSession.date)}</Text>
                   </View>
                   <View className="flex-row gap-8">
                     <View>
                       <View className="flex-row items-baseline">
-                        <Text className="font-display text-xl font-bold text-white">
+                        <Text className="font-display text-xl text-white">
                           {Math.round(sessionVolume(lastSession)).toLocaleString('cs-CZ')}
                         </Text>
                         <Text className="ml-1 text-xs font-medium text-muted">kg</Text>
@@ -187,7 +187,7 @@ export default function Dashboard() {
                       <Text className="mt-1 text-xs text-muted">Objem</Text>
                     </View>
                     <View>
-                      <Text className="font-display text-xl font-bold text-white">{countScoringSets(lastSession)}</Text>
+                      <Text className="font-display text-xl text-white">{countScoringSets(lastSession)}</Text>
                       <Text className="mt-1 text-xs text-muted">Sérií</Text>
                     </View>
                   </View>
@@ -205,7 +205,7 @@ export default function Dashboard() {
             {pickerStep === 'program' ? (
               <>
                 <View className="flex-row items-center justify-between mb-5">
-                  <Text className="font-display text-xl font-bold text-white">Tvůj program</Text>
+                  <Text className="font-display text-xl text-white">Tvůj program</Text>
                   <Pressable onPress={closePicker} hitSlop={12}>
                     <Text className="text-muted text-xl">✕</Text>
                   </Pressable>
@@ -218,11 +218,11 @@ export default function Dashboard() {
                       onPress={() => startWorkout(split.id)}
                       className={cn(
                         'flex-row items-center justify-between rounded-2xl px-4 py-4 mb-2 active:opacity-80',
-                        isRec ? 'bg-accent/15 border border-accent/50' : 'bg-card border border-white/10',
+                        isRec ? 'bg-accent/15 border border-accent/50' : 'bg-panel border border-white/10',
                       )}
                     >
                       <View>
-                        <Text className={cn('font-display text-lg font-bold', isRec ? 'text-accent' : 'text-white')}>{split.name}</Text>
+                        <Text className={cn('font-display text-lg', isRec ? 'text-accent' : 'text-white')}>{split.name}</Text>
                         <Text className="text-xs text-muted mt-0.5">{split.exerciseIds.length} cviků</Text>
                       </View>
                       {isRec ? <Text className="text-xs font-bold text-accent">🎯 Dnes</Text> : <Text className="text-muted text-lg">›</Text>}
@@ -239,7 +239,7 @@ export default function Dashboard() {
             ) : pickerStep === 'groups' ? (
               <>
                 <View className="flex-row items-center justify-between mb-5">
-                  <Text className="font-display text-xl font-bold text-white">Vyber trénink</Text>
+                  <Text className="font-display text-xl text-white">Vyber trénink</Text>
                   <Pressable onPress={closePicker} hitSlop={12}>
                     <Text className="text-muted text-xl">✕</Text>
                   </Pressable>
@@ -270,7 +270,7 @@ export default function Dashboard() {
                   <Pressable onPress={() => setPickerStep('groups')} hitSlop={12}>
                     <Text className="text-muted text-2xl">‹</Text>
                   </Pressable>
-                  <Text className="font-display text-xl font-bold text-white flex-1">
+                  <Text className="font-display text-xl text-white flex-1">
                     {groupMap.get(pickerStep)?.groupName}
                   </Text>
                   <Pressable onPress={closePicker} hitSlop={12}>
@@ -314,12 +314,12 @@ function PickerRow({
     <Pressable
       onPress={onPress}
       className={cn(
-        'flex-row items-center justify-between rounded-2xl bg-card px-4 py-4 mb-2 active:opacity-80',
+        'flex-row items-center justify-between rounded-2xl bg-panel px-4 py-4 mb-2 active:opacity-80',
         dashed ? 'border border-dashed border-white/20' : 'border border-white/10',
       )}
     >
       <View>
-        <Text className="font-display text-lg font-bold text-white">{title}</Text>
+        <Text className="font-display text-lg text-white">{title}</Text>
         <Text className="text-xs text-muted mt-0.5">{subtitle}</Text>
       </View>
       {chevron ? <Text className="text-muted text-lg">›</Text> : null}

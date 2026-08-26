@@ -53,7 +53,7 @@ export function RestTimer({
 
   return (
     <Animated.View entering={FadeInDown.springify().damping(18)} exiting={FadeOutDown.duration(180)}>
-      <View className="relative mx-4 mb-2 overflow-hidden rounded-2xl border border-accent/30 bg-card2">
+      <View className="relative mx-4 mb-2 overflow-hidden rounded-2xl border border-accent/30 bg-panel2">
         {/* progress výplň */}
         <LinearGradient
           colors={['rgba(200,169,97,0.22)', 'rgba(200,169,97,0.10)']}
@@ -73,7 +73,7 @@ export function RestTimer({
             onPress={() => { tapLight(); onAdjust(-15) }}
             hitSlop={8}
             accessibilityLabel="Odebrat 15 sekund"
-            className="h-9 w-12 items-center justify-center rounded-xl bg-card"
+            className="h-9 w-12 items-center justify-center rounded-xl bg-panel"
           >
             <Text className="text-xs font-bold text-white">−15</Text>
           </Pressable>
@@ -81,7 +81,7 @@ export function RestTimer({
             onPress={() => { tapLight(); onAdjust(15) }}
             hitSlop={8}
             accessibilityLabel="Přidat 15 sekund"
-            className="h-9 w-12 items-center justify-center rounded-xl bg-card"
+            className="h-9 w-12 items-center justify-center rounded-xl bg-panel"
           >
             <Text className="text-xs font-bold text-white">+15</Text>
           </Pressable>
