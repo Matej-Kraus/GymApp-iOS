@@ -5,7 +5,7 @@ import { LineChart } from 'react-native-gifted-charts'
 import { useAppState } from '@/state/AppStateContext'
 import { epley1RM, countsTowardProgress, findExercise, allExercises, createId } from '@/core'
 import type { WorkoutSession } from '@/core'
-import { PageHeader, Card, Button, cn } from '@/components/ui'
+import { PageHeader, Card, Button, Stat, cn } from '@/components/ui'
 import { formatDateCZ } from '@/lib/format'
 import {
   isHealthAvailable,
@@ -63,8 +63,8 @@ function Chart({ data }: { data: { value: number; label: string }[] }) {
   )
 }
 
-function formatHealthValue(value: number | null | undefined, unit: string): string {
-  return typeof value === 'number' ? `${value} ${unit}` : '—'
+function formatHealthValue(value: number | null | undefined): string {
+  return typeof value === 'number' ? String(Math.round(value * 10) / 10) : '—'
 }
 
 function formatMinutes(min: number): string {
@@ -78,15 +78,6 @@ function formatWeightImport(count: number): string {
   if (count === 1) return 'Importován 1 záznam váhy.'
   if (count > 1 && count < 5) return `Importovány ${count} záznamy váhy.`
   return `Importováno ${count} záznamů váhy.`
-}
-
-function HealthMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <View className="flex-1" style={{ minWidth: '30%' }}>
-      <Text className="font-display text-lg font-bold text-white">{value}</Text>
-      <Text className="mt-0.5 text-xs text-muted">{label}</Text>
-    </View>
-  )
 }
 
 function PRList({ sessions }: { sessions: WorkoutSession[] }) {
@@ -251,7 +242,8 @@ export default function Progress() {
     setHealthMetrics(metrics)
     setHealthWeightHistory(weightHistory)
     setHealthWorkouts(workouts)
-    if (metrics.weightKg != null) setWeightInput(String(metrics.weightKg))
+    // Nepřepisovat, co uživatel právě píše — doplnit jen do prázdného pole.
+    if (metrics.weightKg != null) setWeightInput((prev) => (prev.trim() === '' ? String(metrics.weightKg) : prev))
 
     const hasAnyData =
       metrics.weightKg != null ||
@@ -374,9 +366,9 @@ export default function Progress() {
           </View>
 
           <View className="flex-row flex-wrap gap-3">
-            <HealthMetric label="Váha" value={formatHealthValue(healthMetrics?.weightKg, 'kg')} />
-            <HealthMetric label="Tuk" value={formatHealthValue(healthMetrics?.bodyFatPct, '%')} />
-            <HealthMetric label="Svalová hmota" value={formatHealthValue(healthMetrics?.leanMassKg, 'kg')} />
+            <Stat label="Váha" value={formatHealthValue(healthMetrics?.weightKg)} unit={healthMetrics?.weightKg != null ? 'kg' : undefined} />
+            <Stat label="Tuk" value={formatHealthValue(healthMetrics?.bodyFatPct)} unit={healthMetrics?.bodyFatPct != null ? '%' : undefined} />
+            <Stat label="Svalová hmota" value={formatHealthValue(healthMetrics?.leanMassKg)} unit={healthMetrics?.leanMassKg != null ? 'kg' : undefined} />
           </View>
 
           <View className="border-t border-white/10 pt-3">
