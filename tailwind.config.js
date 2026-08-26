@@ -2,6 +2,9 @@
 module.exports = {
   content: ['./app/**/*.{js,jsx,ts,tsx}', './src/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
+  // Appka je dark-only. Bez tohohle se NativeWind na webu opira o prefers-color-scheme
+  // a expo-system-ui pak hodi: "Cannot manually set color scheme, as dark mode is type 'media'".
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
