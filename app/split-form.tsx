@@ -13,7 +13,7 @@ export default function SplitFormScreen() {
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <View className="px-4 pt-2 pb-3">
-        <Text className="text-3xl font-display text-white">{editing ? 'Upravit split' : 'Nový split'}</Text>
+        <Text className="text-3xl font-display text-white">{editing ? 'Edit split' : 'New split'}</Text>
       </View>
       <SplitForm
         initial={editing}

@@ -10,7 +10,7 @@ import { DATA_VERSION, deserialize } from '@/core'
 import type { Unit, ReminderConfig } from '@/core'
 import { applyReminders } from '@/lib/reminders'
 
-const WEEKDAYS = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const REMINDER_HOURS = [6, 7, 8, 9, 10, 12, 16, 17, 18, 19, 20, 21]
 
 const UNIT_OPTIONS: Unit[] = ['kg', 'lb']
@@ -71,12 +71,12 @@ export default function Settings() {
       const path = FileSystem.cacheDirectory + `workout-backup-${new Date().toISOString().slice(0, 10)}.json`
       await FileSystem.writeAsStringAsync(path, JSON.stringify(data, null, 2))
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(path, { mimeType: 'application/json', dialogTitle: 'Záloha tréninků' })
+        await Sharing.shareAsync(path, { mimeType: 'application/json', dialogTitle: 'Training backup' })
       } else {
-        Alert.alert('Záloha uložena', path)
+        Alert.alert('Backup saved', path)
       }
     } catch {
-      Alert.alert('Chyba', 'Export se nezdařil.')
+      Alert.alert('Error', 'Could not save the backup.')
     }
   }
 
@@ -90,41 +90,41 @@ export default function Settings() {
         throw new Error('invalid')
       }
       Alert.alert(
-        'Obnovit ze zálohy?',
-        `Přijdeš o ${data.sessions.length} tréninků a ${data.splits.length} splitů.`,
+        'Restore from backup?',
+        `This replaces ${data.sessions.length} sessions and ${data.splits.length} splits.`,
         [
-          { text: 'Zrušit', style: 'cancel' },
-          { text: 'Obnovit', style: 'destructive', onPress: () => { replaceAllData(parsed); setStatus('Záloha obnovena.') } },
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Obnovit', style: 'destructive', onPress: () => { replaceAllData(parsed); setStatus('Backup restored.') } },
         ],
       )
     } catch {
-      setStatus('Nepodařilo se načíst soubor — zkontroluj formát.')
+      setStatus('Could not read that file. Check it is a backup export.')
     }
   }
 
   function handleReset() {
-    Alert.alert('Smazat VŠECHNA data?', 'Tohle nejde vrátit.', [
-      { text: 'Zrušit', style: 'cancel' },
-      { text: 'Smazat vše', style: 'destructive', onPress: resetAllData },
+    Alert.alert('Delete ALL data?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete everything', style: 'destructive', onPress: resetAllData },
     ])
   }
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-6 pb-8">
-        <View className="mt-2"><PageHeader title="Nastavení" /></View>
+        <View className="mt-2"><PageHeader title="Settings" /></View>
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Můj program</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">My programme</Text>
           <Card className="gap-2">
             {programs.length === 0 ? (
               <Text className="text-xs text-muted">
-                Zatím nemáš žádný program. Přidej si šablonu (PPL, Upper/Lower…) v záložce Tréninky a pak ji tu nastav jako aktivní.
+                No programme yet. Add a template (PPL, Upper/Lower) on the Splits tab, then make it active here.
               </Text>
             ) : (
               <>
                 <Text className="text-xs text-muted">
-                  Aktivní program řídí doporučení dalšího tréninku (🎯 Dnes) a výběr při spuštění.
+                  The active programme decides which session comes up next.
                 </Text>
                 {programs.map(([id, name]) => {
                   const active = activeProgramId === id
@@ -145,58 +145,58 @@ export default function Settings() {
         </View>
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Jednotky</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Units</Text>
           <Card>
             <Segmented
               options={UNIT_OPTIONS.map((u) => ({ value: u, label: u.toUpperCase() }))}
               value={unit}
               onChange={(v) => updateSettings({ unit: v as Unit })}
             />
-            <Text className="mt-2 text-xs text-muted">Interně počítáme vždy v kg, lb je jen zobrazení.</Text>
+            <Text className="mt-2 text-xs text-muted">Everything is stored in kg. Pounds only change what you see.</Text>
           </Card>
         </View>
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Nejmenší kotouč</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Smallest plate</Text>
           <Card>
             <Segmented
               options={PLATE_OPTIONS.map((p) => ({ value: String(p), label: `${p} kg` }))}
               value={String(smallestPlateKg)}
               onChange={(v) => updateSettings({ smallestPlateKg: Number(v) })}
             />
-            <Text className="mt-2 text-xs text-muted">Na násobky zaokrouhlujeme návrhy váhy při progresivním přetížení.</Text>
+            <Text className="mt-2 text-xs text-muted">Suggested weights are rounded to multiples of this.</Text>
           </Card>
         </View>
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Odpočinek mezi sériemi</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Rest between sets</Text>
           <Card>
             <Segmented
               options={REST_OPTIONS.map((s) => ({ value: String(s), label: s < 60 ? `${s}s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` }))}
               value={String(restSeconds)}
               onChange={(v) => updateSettings({ restSeconds: Number(v) })}
             />
-            <Text className="mt-2 text-xs text-muted">Po dokončení pracovní/back-off série naskočí odpočet s touto délkou.</Text>
+            <Text className="mt-2 text-xs text-muted">The timer starts at this length when you finish a working or back-off set.</Text>
           </Card>
         </View>
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Hmotnost osy</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Bar weight</Text>
           <Card>
             <Segmented
               options={BAR_OPTIONS.map((b) => ({ value: String(b), label: `${b} kg` }))}
               value={String(barWeightKg)}
               onChange={(v) => updateSettings({ barWeightKg: Number(v) })}
             />
-            <Text className="mt-2 text-xs text-muted">Výchozí hmotnost osy pro kalkulačku kotoučů v tréninku.</Text>
+            <Text className="mt-2 text-xs text-muted">Default bar weight for the plate calculator.</Text>
           </Card>
         </View>
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Připomínky tréninku</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Training reminders</Text>
           <Card className="gap-3">
             <Pressable onPress={() => updateReminder({ enabled: !reminder.enabled })} className="flex-row items-center justify-between">
-              <Text className="text-sm text-white">Připomínat trénink</Text>
+              <Text className="text-sm text-white">Remind me to train</Text>
               <View className={cn('h-6 w-11 rounded-full justify-center', reminder.enabled ? 'bg-accent' : 'bg-panel2')}>
                 <View className={cn('h-5 w-5 rounded-full bg-white', reminder.enabled ? 'ml-5' : 'ml-0.5')} />
               </View>
@@ -227,40 +227,40 @@ export default function Settings() {
                     ))}
                   </ScrollView>
                 </View>
-                <Text className="text-xs text-muted">Pozn.: notifikace fungují až ve finálním buildu na iPhonu (ne v Expo Go).</Text>
+                <Text className="text-xs text-muted">Note: notifications only work in a native build, not in Expo Go.</Text>
               </>
             )}
           </Card>
         </View>
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Data & záloha</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Data & backup</Text>
           <Card className="gap-3">
             <Text className="text-xs text-muted">
               {data.sessions.length} tréninků · {data.splits.length} splitů · {data.customExercises.length} vlastních cviků
             </Text>
-            <Button title="Exportovat zálohu (JSON)" variant="secondary" onPress={handleExport} />
-            <Button title="Importovat ze zálohy" variant="secondary" onPress={handleImport} />
+            <Button title="Export backup (JSON)" variant="secondary" onPress={handleExport} />
+            <Button title="Restore from backup" variant="secondary" onPress={handleImport} />
             {status ? <Text className="text-xs text-accent">{status}</Text> : null}
           </Card>
         </View>
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Ukázková data</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Sample data</Text>
           <Card className="gap-3">
             <Text className="text-xs text-muted">
-              Načti 2 ukázkové tréninky (Push + Pull) s vyplněnými sériemi — pro rychlé otestování.
+              Load a couple of filled-in sessions so you can look around before logging your own.
             </Text>
             {!hasSampleData ? (
-              <Button title="Načíst ukázková data" variant="secondary" size="sm" onPress={loadSampleData} />
+              <Button title="Load sample data" variant="secondary" size="sm" onPress={loadSampleData} />
             ) : (
               <Button
-                title="Smazat ukázková data"
+                title="Delete sample data"
                 variant="danger"
                 size="sm"
                 onPress={() =>
-                  Alert.alert('Smazat ukázková data?', 'Vlastní tréninky zůstanou.', [
-                    { text: 'Zrušit', style: 'cancel' },
+                  Alert.alert('Delete sample data?', 'Your own sessions stay.', [
+                    { text: 'Cancel', style: 'cancel' },
                     { text: 'Smazat', style: 'destructive', onPress: deleteSampleData },
                   ])
                 }
@@ -272,14 +272,14 @@ export default function Settings() {
         <View className="gap-2">
           <Text className="text-xs font-semibold uppercase tracking-wide text-muted">O aplikaci</Text>
           <Card>
-            <Text className="text-xs text-muted">Workout Tracker · 100 % offline · data v telefonu · žádné účty, žádné reklamy.</Text>
+            <Text className="text-xs text-muted">Workout · 100% offline · data stays on your phone · no accounts, no ads.</Text>
             <Text className="mt-1 text-xs text-muted">Verze dat: {data.version}</Text>
           </Card>
         </View>
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-danger">Nebezpečná zóna</Text>
-          <Button title="Smazat všechna data" variant="danger" onPress={handleReset} />
+          <Text className="text-xs font-semibold uppercase tracking-wide text-danger">Danger zone</Text>
+          <Button title="Delete all data" variant="danger" onPress={handleReset} />
         </View>
       </ScrollView>
     </SafeAreaView>

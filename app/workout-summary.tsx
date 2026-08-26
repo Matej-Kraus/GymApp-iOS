@@ -14,7 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { sessionVolume, countScoringSets, epley1RM } from '@/core'
 import { useAppState } from '@/state/AppStateContext'
 import { Button, cn } from '@/components/ui'
-import { formatLongCZ } from '@/lib/format'
+import { formatLong } from '@/lib/format'
 import { celebrate } from '@/lib/haptics'
 
 function StatCard({ value, unit, label, accent, delay = 0 }: { value: string; unit?: string; label: string; accent?: boolean; delay?: number }) {
@@ -54,8 +54,8 @@ export default function WorkoutSummary() {
   if (!found) {
     return (
       <SafeAreaView className="flex-1 bg-bg items-center justify-center px-6">
-        <Text className="text-muted mb-3">Trénink nenalezen.</Text>
-        <Button title="Domů" onPress={() => router.replace('/')} />
+        <Text className="text-muted mb-3">Session not found.</Text>
+        <Button title="Done" onPress={() => router.replace('/')} />
       </SafeAreaView>
     )
   }
@@ -75,9 +75,9 @@ export default function WorkoutSummary() {
 
   async function handleShare() {
     const lines = [
-      `${session.splitName} — ${formatLongCZ(session.date)}`,
-      `Objem: ${volume.toLocaleString('cs-CZ')} kg · ${sets} sérií · ${exerciseCount} cviků`,
-      hasPR ? '🏆 Nový osobní rekord!' : '',
+      `${session.splitName} — ${formatLong(session.date)}`,
+      `Volume ${volume.toLocaleString('en-GB')} kg · ${sets} sets · ${exerciseCount} exercises`,
+      hasPR ? 'New personal record' : '',
       '— Workout Tracker',
     ].filter(Boolean)
     await Share.share({ message: lines.join('\n') })
@@ -87,20 +87,20 @@ export default function WorkoutSummary() {
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <Animated.View entering={FadeIn.duration(400)} className="px-5 pt-8 pb-6 items-center gap-2">
         <Text className="text-5xl">{hasPR ? '🏆' : '💪'}</Text>
-        <Text className="font-display text-2xl text-accent">Trénink dokončen!</Text>
+        <Text className="font-display text-2xl text-accent">Session complete</Text>
         <Text className="text-sm text-muted text-center">
-          {session.splitName} · {formatLongCZ(session.date)}
+          {session.splitName} · {formatLong(session.date)}
           {session.durationMinutes ? ` · ${session.durationMinutes} min` : ''}
         </Text>
       </Animated.View>
 
       <View className="px-4 gap-4 flex-1">
         <View className="flex-row gap-3">
-          <StatCard value={volume.toLocaleString('cs-CZ')} unit="kg" label="Objem" accent delay={60} />
-          <StatCard value={String(sets)} label="Sérií" delay={120} />
+          <StatCard value={volume.toLocaleString('cs-CZ')} unit="kg" label="Volume" accent delay={60} />
+          <StatCard value={String(sets)} label="Sets" delay={120} />
         </View>
         <View className="flex-row gap-3">
-          <StatCard value={String(exerciseCount)} label="Cviků" delay={180} />
+          <StatCard value={String(exerciseCount)} label="Exercises" delay={180} />
           {volumeDelta !== null ? (
             <StatCard
               value={(volumeDelta >= 0 ? '+' : '') + volumeDelta.toLocaleString('cs-CZ')}
@@ -122,7 +122,7 @@ export default function WorkoutSummary() {
           >
             <Text className="text-2xl">🏆</Text>
             <View className="flex-1">
-              <Text className="text-sm font-bold text-accent">Nový osobní rekord!</Text>
+              <Text className="text-sm font-bold text-accent">New personal record</Text>
               <Text className="text-xs text-muted">
                 {prEntries
                   .map((e) => {
@@ -137,7 +137,7 @@ export default function WorkoutSummary() {
 
         <View className="flex-row gap-3 mt-auto mb-2">
           <Button title="Hotovo" size="lg" className="flex-1" onPress={() => router.replace('/')} />
-          <Button title="Sdílet" variant="secondary" size="lg" className="px-5" onPress={handleShare} />
+          <Button title="Share" variant="secondary" size="lg" className="px-5" onPress={handleShare} />
         </View>
       </View>
     </SafeAreaView>

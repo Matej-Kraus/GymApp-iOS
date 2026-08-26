@@ -30,7 +30,7 @@ export function bestE1RM(sessions: WorkoutSession[], exerciseId: string): number
  * @param history  všechny PŘEDCHOZÍ tréninky (bez tohoto)
  */
 export function markPRs(session: WorkoutSession, history: WorkoutSession[]): WorkoutSession {
-  // Výchozí "laťka" pro každý cvik = nejlepší 1RM z historie.
+  // Výchozí "bar" pro každý cvik = nejlepší 1RM z historie.
   const best = new Map<string, number>()
 
   const entries = session.entries.map((entry) => {

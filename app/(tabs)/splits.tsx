@@ -28,9 +28,9 @@ export default function Splits() {
   }
 
   function confirmDelete(id: string) {
-    Alert.alert('Smazat split?', 'Tuto akci nelze vrátit.', [
-      { text: 'Zrušit', style: 'cancel' },
-      { text: 'Smazat', style: 'destructive', onPress: () => deleteSplit(id) },
+    Alert.alert('Delete split?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteSplit(id) },
     ])
   }
 
@@ -39,17 +39,17 @@ export default function Splits() {
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-6 pb-8">
         <View className="mt-2">
           <PageHeader
-            title="Splity"
-            subtitle="Tréninkové plány"
-            action={<Button title="+ Nový" size="sm" onPress={() => router.push('/split-form')} />}
+            title="Splits"
+            subtitle="Training plans"
+            action={<Button title="+ New" size="sm" onPress={() => router.push('/split-form')} />}
           />
         </View>
 
         {splits.length === 0 ? (
           <EmptyState
-            title="Zatím žádné splity"
-            description="Vyber si šablonu PPL / Upper-Lower / Full Body níže — vytvoří se ti splity na jeden ťuk."
-            action={<Button title="Zobrazit šablony" onPress={() => setTemplatesOpen(true)} />}
+            title="No splits yet"
+            description="Pick a PPL, Upper/Lower or Full Body template below and your splits are set up in one tap."
+            action={<Button title="Show templates" onPress={() => setTemplatesOpen(true)} />}
           />
         ) : (
           <View className="gap-2">
@@ -65,7 +65,7 @@ export default function Splits() {
                     <View className="flex-1">
                       <Text className="font-display text-lg text-white">{split.name}</Text>
                       <Text className="text-xs text-muted" numberOfLines={1}>
-                        {count} cviků · {preview}{count > 3 ? '…' : ''}
+                        {count} exercises · {preview}{count > 3 ? '…' : ''}
                       </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color={colors.muted} />
@@ -75,19 +75,19 @@ export default function Splits() {
                       onPress={() => router.push({ pathname: '/split-form', params: { id: split.id } })}
                       className="rounded-md border border-white/15 px-3 py-1.5"
                     >
-                      <Text className="text-xs text-muted">Upravit</Text>
+                      <Text className="text-xs text-muted">Edit</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => duplicateSplit(split.id)}
                       className="rounded-md border border-white/15 px-3 py-1.5"
                     >
-                      <Text className="text-xs text-muted">Duplikovat</Text>
+                      <Text className="text-xs text-muted">Duplicate</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => confirmDelete(split.id)}
                       className="rounded-md border border-danger/30 px-3 py-1.5"
                     >
-                      <Text className="text-xs text-danger/80">Smazat</Text>
+                      <Text className="text-xs text-danger/80">Delete</Text>
                     </Pressable>
                   </View>
                 </Card>
@@ -102,7 +102,7 @@ export default function Splits() {
             onPress={() => setTemplatesOpen((o) => !o)}
             className="flex-row items-center justify-between rounded-2xl border border-white/10 bg-panel px-4 py-3"
           >
-            <Text className="text-sm font-semibold text-white">Šablony (PPL, Upper-Lower, Full Body)</Text>
+            <Text className="text-sm font-semibold text-white">Templates (PPL, Upper/Lower, Full Body)</Text>
             <Text className={cn('text-muted', templatesOpen && 'rotate-180')}>▾</Text>
           </Pressable>
           {templatesOpen &&
@@ -112,23 +112,23 @@ export default function Splits() {
                 <Text className="text-xs text-muted">
                   {tpl.splits.map((s) => `${s.name} (${s.exerciseIds.length})`).join(' · ')}
                 </Text>
-                <Button title="Přidat šablonu" variant="secondary" size="sm" onPress={() => applyTemplate(tpl)} />
+                <Button title="Add template" variant="secondary" size="sm" onPress={() => applyTemplate(tpl)} />
               </Card>
             ))}
         </View>
 
-        {/* Vlastní cviky (zatím jen vstupní bod) */}
+        {/* Custom exercises (zatím jen vstupní bod) */}
         <Pressable
           onPress={() => router.push('/custom-exercise')}
           className="flex-row items-center gap-3 rounded-2xl border border-dashed border-white/15 px-4 py-3"
         >
           <Ionicons name="add" size={18} color={colors.muted} />
-          <Text className="text-sm text-muted">Přidat vlastní cvik</Text>
+          <Text className="text-sm text-muted">Add custom exercise</Text>
         </Pressable>
 
         {data.customExercises.length > 0 && (
           <View className="gap-1">
-            <Text className="text-xs font-semibold text-muted uppercase tracking-wide">Vlastní cviky</Text>
+            <Text className="text-xs font-semibold text-muted uppercase tracking-wide">Custom exercises</Text>
             {data.customExercises.map((e) => (
               <View
                 key={e.id}

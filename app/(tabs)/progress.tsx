@@ -6,7 +6,7 @@ import { useAppState } from '@/state/AppStateContext'
 import { epley1RM, countsTowardProgress, findExercise, allExercises, createId } from '@/core'
 import type { WorkoutSession } from '@/core'
 import { PageHeader, Card, Button, Stat, cn } from '@/components/ui'
-import { formatDateCZ } from '@/lib/format'
+import { formatDate } from '@/lib/format'
 import {
   isHealthAvailable,
   requestHealthAccess,
@@ -20,7 +20,7 @@ import { colors } from '@/theme/colors'
 
 type Metric = 'maxWeight' | 'e1rm' | 'volume'
 type HealthWeightPoint = { date: string; kg: number }
-const METRIC_LABELS: Record<Metric, string> = { maxWeight: 'Max váha (kg)', e1rm: 'Odh. 1RM (kg)', volume: 'Objem (kg)' }
+const METRIC_LABELS: Record<Metric, string> = { maxWeight: 'Top weight (kg)', e1rm: 'Odh. 1RM (kg)', volume: 'Volume (kg)' }
 const CHART_WIDTH = Dimensions.get('window').width - 80
 
 function getDataPoints(sessions: WorkoutSession[], exerciseId: string, metric: Metric) {
@@ -34,7 +34,7 @@ function getDataPoints(sessions: WorkoutSession[], exerciseId: string, metric: M
       if (metric === 'maxWeight') value = Math.max(0, ...scoringSets.map((s) => s.weight))
       else if (metric === 'e1rm') value = Math.max(0, ...scoringSets.map((s) => epley1RM(s.weight, s.reps)))
       else value = scoringSets.reduce((sum, s) => sum + s.weight * s.reps, 0)
-      return { value: Math.round(value * 10) / 10, label: formatDateCZ(session.date).slice(0, 5) }
+      return { value: Math.round(value * 10) / 10, label: formatDate(session.date).slice(0, 5) }
     })
 }
 
@@ -75,9 +75,9 @@ function formatMinutes(min: number): string {
 }
 
 function formatWeightImport(count: number): string {
-  if (count === 1) return 'Importován 1 záznam váhy.'
-  if (count > 1 && count < 5) return `Importovány ${count} záznamy váhy.`
-  return `Importováno ${count} záznamů váhy.`
+  if (count === 1) return 'Imported 1 weight entry.'
+  if (count > 1 && count < 5) return `Imported ${count} weight entries.`
+  return `Imported ${count} weight entries.`
 }
 
 function PRList({ sessions }: { sessions: WorkoutSession[] }) {
@@ -98,7 +98,7 @@ function PRList({ sessions }: { sessions: WorkoutSession[] }) {
     return [...map.values()].sort((a, b) => b.e1rm - a.e1rm)
   }, [sessions])
 
-  if (!prs.length) return <Text className="text-sm text-muted text-center py-4">Zatím žádné PR. Odtrénuj první trénink!</Text>
+  if (!prs.length) return <Text className="text-sm text-muted text-center py-4">No records yet. Log your first session.</Text>
   return (
     <View className="gap-1.5">
       {prs.map((pr, i) => (
@@ -106,7 +106,7 @@ function PRList({ sessions }: { sessions: WorkoutSession[] }) {
           <Text className="font-display text-lg text-accent w-7 text-center">{i + 1}</Text>
           <View className="flex-1">
             <Text className="text-sm font-semibold text-white" numberOfLines={1}>{pr.name}</Text>
-            <Text className="text-xs text-muted">{formatDateCZ(pr.date)}</Text>
+            <Text className="text-xs text-muted">{formatDate(pr.date)}</Text>
           </View>
           <View className="items-end">
             <Text className="font-display text-white">{pr.reps}×{pr.weight} kg</Text>
@@ -119,13 +119,13 @@ function PRList({ sessions }: { sessions: WorkoutSession[] }) {
 }
 
 const MEASURE_FIELDS: { key: 'waist' | 'chest' | 'arms' | 'thighs'; label: string }[] = [
-  { key: 'waist', label: 'Pas' },
-  { key: 'chest', label: 'Hrudník' },
-  { key: 'arms', label: 'Paže' },
-  { key: 'thighs', label: 'Stehno' },
+  { key: 'waist', label: 'Waist' },
+  { key: 'chest', label: 'Chest' },
+  { key: 'arms', label: 'Arms' },
+  { key: 'thighs', label: 'Thigh' },
 ]
 
-export default function Progress() {
+export default function Progresss() {
   const { data, logBodyWeight, deleteBodyWeightEntry, addGoal, deleteGoal, logMeasurement } = useAppState()
   const exercises = allExercises(data.customExercises)
 
@@ -176,7 +176,7 @@ export default function Progress() {
   const lastWeightEntry = data.bodyWeightLog.length > 0 ? [...data.bodyWeightLog].sort((a, b) => b.date.localeCompare(a.date))[0] : null
   const [weightInput, setWeightInput] = useState(todayEntry ? String(todayEntry.kg) : '')
   const weightChartData = useMemo(
-    () => [...data.bodyWeightLog].sort((a, b) => a.date.localeCompare(b.date)).map((e) => ({ value: e.kg, label: formatDateCZ(e.date + 'T12:00:00').slice(0, 5) })),
+    () => [...data.bodyWeightLog].sort((a, b) => a.date.localeCompare(b.date)).map((e) => ({ value: e.kg, label: formatDate(e.date + 'T12:00:00').slice(0, 5) })),
     [data.bodyWeightLog],
   )
   function handleSaveWeight() {
@@ -206,7 +206,7 @@ export default function Progress() {
     return [...data.measurements]
       .filter((m) => typeof m[key] === 'number')
       .sort((a, b) => a.date.localeCompare(b.date))
-      .map((m) => ({ value: m[key] as number, label: formatDateCZ(m.date + 'T12:00:00').slice(0, 5) }))
+      .map((m) => ({ value: m[key] as number, label: formatDate(m.date + 'T12:00:00').slice(0, 5) }))
   }
 
   const [healthAvailable, setHealthAvailable] = useState<boolean | null>(null)
@@ -225,8 +225,8 @@ export default function Progress() {
       if (!available) {
         setHealthNotice(
           Platform.OS === 'ios'
-            ? 'Apple Health není v tomhle buildu dostupný.'
-            : 'Apple Health je dostupný jen na iPhonu.',
+            ? 'Apple Health is not available in this build.'
+            : 'Apple Health is only available on iPhone.',
         )
       }
     })
@@ -251,7 +251,7 @@ export default function Progress() {
       metrics.leanMassKg != null ||
       weightHistory.length > 0 ||
       workouts.length > 0
-    setHealthNotice(hasAnyData ? 'Data z Apple Health načtena.' : 'Přístup je aktivní, ale Health zatím nevrátil žádná data.')
+    setHealthNotice(hasAnyData ? 'Apple Health data loaded.' : 'Access is on, but Health has no data to show yet.')
   }
 
   async function handleConnectHealth() {
@@ -262,13 +262,13 @@ export default function Progress() {
       const ok = await requestHealthAccess()
       if (!ok) {
         setHealthConnected(false)
-        setHealthNotice('Přístup k Apple Health se nepodařilo potvrdit.')
+        setHealthNotice('Could not confirm Apple Health access.')
         return
       }
       setHealthConnected(true)
       await readHealthSnapshot()
     } catch {
-      setHealthNotice('Apple Health data se nepodařilo načíst.')
+      setHealthNotice('Could not load Apple Health data.')
     } finally {
       setHealthBusy(false)
     }
@@ -281,7 +281,7 @@ export default function Progress() {
     try {
       await readHealthSnapshot()
     } catch {
-      setHealthNotice('Apple Health data se nepodařilo načíst.')
+      setHealthNotice('Could not load Apple Health data.')
     } finally {
       setHealthBusy(false)
     }
@@ -295,7 +295,7 @@ export default function Progress() {
           ? [{ date: today, kg: healthMetrics.weightKg }]
           : []
     if (importable.length === 0) {
-      setHealthNotice('Health nevrátil žádnou váhu k importu.')
+      setHealthNotice('Health returned no weight entries to import.')
       return
     }
 
@@ -305,7 +305,7 @@ export default function Progress() {
       if (existing.get(entry.date) !== entry.kg) changed += 1
       logBodyWeight(entry)
     }
-    setHealthNotice(changed > 0 ? formatWeightImport(changed) : 'Váha už je aktuální.')
+    setHealthNotice(changed > 0 ? formatWeightImport(changed) : 'Weight is already up to date.')
   }
 
   const healthWorkoutSummary = useMemo(() => {
@@ -324,12 +324,12 @@ export default function Progress() {
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-5 pb-8">
-        <View className="mt-2"><PageHeader title="Progres" subtitle="Grafy a rekordy" /></View>
+        <View className="mt-2"><PageHeader title="Progress" subtitle="Charts and records" /></View>
 
-        {/* Tělesná váha — quick input */}
+        {/* Body weight — quick input */}
         <Card className="gap-3">
           <View className="flex-row items-center justify-between">
-            <Text className="text-sm font-semibold text-white">Dnešní váha</Text>
+            <Text className="text-sm font-semibold text-white">Weight today</Text>
             {lastWeightEntry && lastWeightEntry.date !== today ? (
               <Text className="text-xs text-muted">Naposledy: {lastWeightEntry.kg} kg</Text>
             ) : null}
@@ -344,7 +344,7 @@ export default function Progress() {
               className="h-11 flex-1 rounded-2xl bg-panel2 px-4 text-sm text-white"
             />
             <Text className="text-sm text-muted">kg</Text>
-            <Button title={todayEntry ? 'Aktualizovat' : 'Uložit'} size="sm" disabled={!weightInput} onPress={handleSaveWeight} />
+            <Button title={todayEntry ? 'Aktualizovat' : 'Save'} size="sm" disabled={!weightInput} onPress={handleSaveWeight} />
           </View>
         </Card>
 
@@ -357,28 +357,28 @@ export default function Progress() {
                   ? 'Kontrola dostupnosti'
                   : healthAvailable
                     ? healthConnected
-                      ? 'Připojeno'
-                      : 'Připraveno'
-                    : 'Nedostupné'}
+                      ? 'Connected'
+                      : 'Ready'
+                    : 'Unavailable'}
               </Text>
             </View>
             {healthBusy ? <ActivityIndicator color={colors.accent} /> : null}
           </View>
 
           <View className="flex-row flex-wrap gap-3">
-            <Stat label="Váha" value={formatHealthValue(healthMetrics?.weightKg)} unit={healthMetrics?.weightKg != null ? 'kg' : undefined} />
+            <Stat label="Weight" value={formatHealthValue(healthMetrics?.weightKg)} unit={healthMetrics?.weightKg != null ? 'kg' : undefined} />
             <Stat label="Tuk" value={formatHealthValue(healthMetrics?.bodyFatPct)} unit={healthMetrics?.bodyFatPct != null ? '%' : undefined} />
-            <Stat label="Svalová hmota" value={formatHealthValue(healthMetrics?.leanMassKg)} unit={healthMetrics?.leanMassKg != null ? 'kg' : undefined} />
+            <Stat label="Lean mass" value={formatHealthValue(healthMetrics?.leanMassKg)} unit={healthMetrics?.leanMassKg != null ? 'kg' : undefined} />
           </View>
 
           <View className="border-t border-white/10 pt-3">
             <View className="flex-row items-center justify-between">
               <View>
-                <Text className="text-sm font-semibold text-white">Apple Watch tréninky</Text>
+                <Text className="text-sm font-semibold text-white">Apple Watch workouts</Text>
                 <Text className="text-xs text-muted">
                   {healthWorkoutSummary.count > 0
-                    ? `${healthWorkoutSummary.count} záznamů, ${formatMinutes(healthWorkoutSummary.totalMinutes)}`
-                    : 'Žádné načtené záznamy'}
+                    ? `${healthWorkoutSummary.count} entries, ${formatMinutes(healthWorkoutSummary.totalMinutes)}`
+                    : 'Nothing loaded yet'}
                 </Text>
               </View>
               {healthWorkoutSummary.totalKcal != null ? (
@@ -391,7 +391,7 @@ export default function Progress() {
                   <View key={`${workout.date}-${i}`} className="flex-row items-center justify-between gap-3">
                     <View className="flex-1">
                       <Text className="text-xs font-semibold text-white" numberOfLines={1}>{workout.activity}</Text>
-                      <Text className="text-[11px] text-muted">{formatDateCZ(workout.date + 'T12:00:00')}</Text>
+                      <Text className="text-[11px] text-muted">{formatDate(workout.date + 'T12:00:00')}</Text>
                     </View>
                     <Text className="text-xs text-muted">
                       {formatMinutes(workout.durationMin)}
@@ -405,14 +405,14 @@ export default function Progress() {
 
           <View className="flex-row gap-2">
             <Button
-              title={healthConnected ? 'Načíst znovu' : 'Připojit'}
+              title={healthConnected ? 'Reload' : 'Connect'}
               size="sm"
               className="flex-1"
               disabled={healthAvailable !== true || healthBusy}
               onPress={healthConnected ? handleReloadHealth : handleConnectHealth}
             />
             <Button
-              title="Importovat váhu"
+              title="Import weight"
               variant="secondary"
               size="sm"
               className="flex-1"
@@ -425,7 +425,7 @@ export default function Progress() {
         </Card>
 
         {loggedIds.length === 0 ? (
-          <Text className="text-center text-sm text-muted py-8">Zatím žádná data. Odtrénuj první trénink!</Text>
+          <Text className="text-center text-sm text-muted py-8">No data yet. Log your first session.</Text>
         ) : (
           <>
             {/* Výběr cviku */}
@@ -445,7 +445,7 @@ export default function Progress() {
               {(Object.keys(METRIC_LABELS) as Metric[]).map((m) => (
                 <Pressable key={m} onPress={() => setMetric(m)} className={cn('flex-1 rounded-xl py-2 items-center', metric === m && 'bg-accent')}>
                   <Text className={cn('text-xs font-semibold', metric === m ? 'text-black' : 'text-muted')}>
-                    {m === 'maxWeight' ? 'Váha' : m === 'e1rm' ? '1RM' : 'Objem'}
+                    {m === 'maxWeight' ? 'Weight' : m === 'e1rm' ? '1RM' : 'Volume'}
                   </Text>
                 </Pressable>
               ))}
@@ -456,21 +456,21 @@ export default function Progress() {
               <Text className="font-display text-sm text-white">{exercise?.name ?? selId}</Text>
               <Text className="text-xs text-muted mb-2">{METRIC_LABELS[metric]}</Text>
               {chartData.length < 2 ? (
-                <Text className="text-center text-xs text-muted py-8">Potřebuješ aspoň 2 tréninky pro zobrazení trendu.</Text>
+                <Text className="text-center text-xs text-muted py-8">Two sessions are needed to draw a trend.</Text>
               ) : (
                 <Chart data={chartData} />
               )}
             </Card>
 
-            {/* Cíl pro cvik */}
+            {/* Exercise goal */}
             <View className="gap-2">
-              <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Cíl pro cvik</Text>
+              <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Exercise goal</Text>
               <Card className="gap-3">
                 {currentGoal ? (
                   <>
                     <View className="flex-row items-center justify-between">
                       <Text className="text-sm font-semibold text-white">
-                        {currentE1RM >= currentGoal.targetE1RM ? '🏆 Dosaženo!' : `${currentE1RM} / ${currentGoal.targetE1RM} kg 1RM`}
+                        {currentE1RM >= currentGoal.targetE1RM ? 'Reached' : `${currentE1RM} / ${currentGoal.targetE1RM} kg 1RM`}
                       </Text>
                       <Text className="text-xs text-muted">{goalPct} %</Text>
                     </View>
@@ -478,7 +478,7 @@ export default function Progress() {
                       <View className="h-full rounded-full bg-accent" style={{ width: `${goalPct}%` }} />
                     </View>
                     {currentGoal.deadline ? <Text className="text-xs text-muted">Deadline: {currentGoal.deadline}</Text> : null}
-                    <Button title="Smazat cíl" variant="danger" size="sm" onPress={() => deleteGoal(currentGoal.id)} />
+                    <Button title="Remove goal" variant="danger" size="sm" onPress={() => deleteGoal(currentGoal.id)} />
                   </>
                 ) : (
                   <>
@@ -495,13 +495,13 @@ export default function Progress() {
                       <Text className="text-sm text-muted">kg 1RM</Text>
                     </View>
                     <TextInput
-                      placeholder="Deadline YYYY-MM-DD (volitelné)"
+                      placeholder="Target date YYYY-MM-DD (optional)"
                       placeholderTextColor={colors.muted}
                       value={deadlineInput}
                       onChangeText={setDeadlineInput}
                       className="h-10 rounded-2xl bg-panel2 px-3 text-sm text-white"
                     />
-                    <Button title="Nastavit cíl" size="sm" disabled={!goalInput} onPress={handleAddGoal} />
+                    <Button title="Set goal" size="sm" disabled={!goalInput} onPress={handleAddGoal} />
                   </>
                 )}
               </Card>
@@ -511,23 +511,23 @@ export default function Progress() {
 
         {/* PR seznam */}
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Osobní rekordy</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Personal records</Text>
           <PRList sessions={data.sessions} />
         </View>
 
-        {/* Tělesná váha — graf */}
+        {/* Body weight — graf */}
         {data.bodyWeightLog.length >= 2 && (
           <View className="gap-2">
-            <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Tělesná váha</Text>
+            <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Body weight</Text>
             <Card>
               <View className="flex-row items-center justify-between mb-2">
                 <View>
                   <Text className="font-display text-sm text-white">{lastWeightEntry?.kg} kg</Text>
-                  <Text className="text-xs text-muted">Aktuální váha</Text>
+                  <Text className="text-xs text-muted">Current weight</Text>
                 </View>
                 {lastWeightEntry ? (
                   <Pressable onPress={() => deleteBodyWeightEntry(lastWeightEntry.date)} hitSlop={6}>
-                    <Text className="text-xs text-muted">Smazat poslední</Text>
+                    <Text className="text-xs text-muted">Delete latest</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -538,7 +538,7 @@ export default function Progress() {
 
         {/* Tělesné míry */}
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Tělesné míry (cm)</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Body measurements (cm)</Text>
           <Card className="gap-3">
             <View className="flex-row flex-wrap gap-2">
               {MEASURE_FIELDS.map(({ key, label }) => (
@@ -555,7 +555,7 @@ export default function Progress() {
                 </View>
               ))}
             </View>
-            <Button title={todayMeasure ? 'Aktualizovat míry' : 'Uložit míry'} size="sm" onPress={handleSaveMeasure} />
+            <Button title={todayMeasure ? 'Update measurements' : 'Save measurements'} size="sm" onPress={handleSaveMeasure} />
           </Card>
 
           {MEASURE_FIELDS.map(({ key, label }) => {

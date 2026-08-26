@@ -13,7 +13,7 @@ const CATEGORIES: Category[] = ['Push', 'Pull', 'Legs', 'Core']
 const EQUIPMENTS: Equipment[] = ['Barbell', 'Dumbbell', 'Machine', 'Bodyweight', 'Cable', 'Other']
 
 const CZ: Record<MuscleGroup, string> = {
-  Chest: 'Hrudník', Back: 'Záda', Legs: 'Nohy', Shoulders: 'Ramena', Arms: 'Paže', Core: 'Střed',
+  Chest: 'Chest', Back: 'Back', Legs: 'Legs', Shoulders: 'Shoulders', Arms: 'Arms', Core: 'Core',
 }
 
 /** Mini „chip" tlačítko pro výběr z možností. */
@@ -39,7 +39,7 @@ export default function CustomExerciseScreen() {
   const [error, setError] = useState('')
 
   function handleSave() {
-    if (!name.trim()) { setError('Zadej název cviku.'); return }
+    if (!name.trim()) { setError('Give the exercise a name.'); return }
     const exercise: Exercise = {
       id: createId(),
       name: name.trim(),
@@ -59,21 +59,21 @@ export default function CustomExerciseScreen() {
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-6 pb-8">
-        <Text className="text-3xl font-display text-white mt-2">Vlastní cvik</Text>
+        <Text className="text-3xl font-display text-white mt-2">Custom exercise</Text>
         <Card className="gap-4">
           <View>
-            <Text className="text-xs font-semibold text-muted">Název</Text>
+            <Text className="text-xs font-semibold text-muted">Name</Text>
             <TextInput
               value={name}
               onChangeText={(t) => { setName(t); setError('') }}
-              placeholder="např. Paused Bench Press"
+              placeholder="e.g. Paused Bench Press"
               placeholderTextColor={colors.muted}
               className="mt-1 h-12 rounded-2xl bg-panel2 px-4 text-base text-white"
             />
           </View>
 
           <View>
-            <Text className="text-xs font-semibold text-muted mb-1">Svalová skupina</Text>
+            <Text className="text-xs font-semibold text-muted mb-1">Muscle group</Text>
             <View className="flex-row flex-wrap gap-1.5">
               {MUSCLES.map((m) => (
                 <Chip key={m} label={CZ[m]} active={muscle === m} onPress={() => setMuscle(m)} />
@@ -91,7 +91,7 @@ export default function CustomExerciseScreen() {
           </View>
 
           <View>
-            <Text className="text-xs font-semibold text-muted mb-1">Vybavení</Text>
+            <Text className="text-xs font-semibold text-muted mb-1">Equipment</Text>
             <View className="flex-row flex-wrap gap-1.5">
               {EQUIPMENTS.map((eq) => (
                 <Chip key={eq} label={eq} active={equipment === eq} onPress={() => setEquipment(eq)} />
@@ -103,14 +103,14 @@ export default function CustomExerciseScreen() {
             <View className={cn('h-6 w-11 rounded-full justify-center', isBodyweight ? 'bg-accent' : 'bg-panel2')}>
               <View className={cn('h-5 w-5 rounded-full bg-white', isBodyweight ? 'ml-5' : 'ml-0.5')} />
             </View>
-            <Text className="text-sm text-white flex-1">Cvik s vlastní váhou (váha = přidané závaží)</Text>
+            <Text className="text-sm text-white flex-1">Bodyweight exercise (weight = added load)</Text>
           </Pressable>
 
           {error ? <Text className="text-sm text-danger">{error}</Text> : null}
 
           <View className="flex-row gap-3 pt-1">
-            <Button title="Zrušit" variant="secondary" className="flex-1" onPress={() => router.back()} />
-            <Button title="Přidat cvik" className="flex-1" onPress={handleSave} />
+            <Button title="Cancel" variant="secondary" className="flex-1" onPress={() => router.back()} />
+            <Button title="Add exercise" className="flex-1" onPress={handleSave} />
           </View>
         </Card>
       </ScrollView>

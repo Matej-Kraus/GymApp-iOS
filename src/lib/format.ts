@@ -1,38 +1,61 @@
 /**
- * Pomocníci na formátování a porovnávání dat (datum/čas).
- * Všechno bere ISO řetězec (tak datum ukládáme ve WorkoutSession).
+ * Date formatting and comparison helpers.
+ * Everything takes an ISO string — that's how WorkoutSession stores dates.
  */
 
 const MS_PER_DAY = 86_400_000
 
-/** "1. 6. 2026" */
-export function formatDateCZ(iso: string): string {
-  return new Date(iso).toLocaleDateString('cs-CZ', {
+/** "Jun 1, 2026" */
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
     day: 'numeric',
-    month: 'numeric',
+    month: 'short',
     year: 'numeric',
   })
 }
 
-/** "pondělí 1. června" */
-export function formatLongCZ(iso: string): string {
-  return new Date(iso).toLocaleDateString('cs-CZ', {
+/** "Mon 1 Jun" — compact, fits a row. */
+export function formatShort(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
+}
+
+/** "Monday 1 June" */
+export function formatLong(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   })
 }
 
-/** Začátek týdne (pondělí 00:00) pro dané datum. */
+/** Local YYYY-MM-DD. NOT toISOString() — that's UTC and shifts the day. */
+export function todayISO(date: Date = new Date()): string {
+  return localDateISO(date)
+}
+
+/** Local calendar date of a Date/ISO string, as YYYY-MM-DD. */
+export function localDateISO(input: Date | string = new Date()): string {
+  const d = typeof input === 'string' ? new Date(input) : input
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** Start of week (Monday 00:00) for a given date. */
 function startOfWeek(date: Date): Date {
   const d = new Date(date)
-  const dayMondayFirst = (d.getDay() + 6) % 7 // Po = 0 … Ne = 6
+  const dayMondayFirst = (d.getDay() + 6) % 7 // Mon = 0 … Sun = 6
   d.setHours(0, 0, 0, 0)
   d.setDate(d.getDate() - dayMondayFirst)
   return d
 }
 
-/** Spadá datum do aktuálního (kalendářního) týdne? */
+/** Does the date fall in the current calendar week? */
 export function isThisWeek(iso: string): boolean {
   const start = startOfWeek(new Date())
   const end = new Date(start.getTime() + 7 * MS_PER_DAY)
@@ -40,7 +63,7 @@ export function isThisWeek(iso: string): boolean {
   return d >= start && d < end
 }
 
-/** Spadá datum do aktuálního měsíce? */
+/** Does the date fall in the current month? */
 export function isThisMonth(iso: string): boolean {
   const now = new Date()
   const d = new Date(iso)

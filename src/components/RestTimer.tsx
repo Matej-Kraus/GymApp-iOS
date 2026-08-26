@@ -13,7 +13,7 @@ function mmss(sec: number): string {
 }
 
 /**
- * Odpočinek mezi sériemi — sticky lišta s odpočtem, ±15 s a přeskočením.
+ * Rest mezi sériemi — sticky lišta s odpočtem, ±15 s a přeskočením.
  * Běží v appce (interval + haptika na konci). `endsAt` = epoch ms konce.
  */
 export function RestTimer({
@@ -64,7 +64,7 @@ export function RestTimer({
         <View className="flex-row items-center gap-3 px-3 py-2.5">
           <Text className="text-base">⏱️</Text>
           <View className="flex-1">
-            <Text className="text-[10px] font-semibold uppercase tracking-wide text-accent/80">Odpočinek</Text>
+            <Text className="text-[10px] font-semibold uppercase tracking-wide text-accent/80">Rest</Text>
             <Text className="font-display text-xl text-white" style={{ fontVariant: ['tabular-nums'] }}>
               {mmss(remaining)}
             </Text>
@@ -80,7 +80,7 @@ export function RestTimer({
           <Pressable
             onPress={() => { tapLight(); onAdjust(15) }}
             hitSlop={8}
-            accessibilityLabel="Přidat 15 sekund"
+            accessibilityLabel="Add 15 seconds"
             className="h-9 w-12 items-center justify-center rounded-xl bg-panel"
           >
             <Text className="text-xs font-bold text-white">+15</Text>
@@ -88,7 +88,7 @@ export function RestTimer({
           <Pressable
             onPress={() => { tapLight(); onSkip() }}
             hitSlop={8}
-            accessibilityLabel="Přeskočit odpočinek"
+            accessibilityLabel="Skip rest"
             className="h-9 px-3 items-center justify-center rounded-xl bg-accent"
           >
             <Text className="text-xs font-bold text-black">Skip</Text>

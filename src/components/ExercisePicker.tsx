@@ -7,7 +7,7 @@ import { ExerciseImage } from '@/components/ExerciseImage'
 import { colors } from '@/theme/colors'
 
 const CATEGORIES: Array<{ value: Category | 'All'; label: string }> = [
-  { value: 'All', label: 'Vše' },
+  { value: 'All', label: 'All' },
   { value: 'Push', label: 'Push' },
   { value: 'Pull', label: 'Pull' },
   { value: 'Legs', label: 'Legs' },
@@ -15,7 +15,7 @@ const CATEGORIES: Array<{ value: Category | 'All'; label: string }> = [
 ]
 
 const MUSCLE_CZ: Record<MuscleGroup, string> = {
-  Chest: 'Hrudník', Back: 'Záda', Legs: 'Nohy', Shoulders: 'Ramena', Arms: 'Paže', Core: 'Střed',
+  Chest: 'Chest', Back: 'Back', Legs: 'Legs', Shoulders: 'Shoulders', Arms: 'Arms', Core: 'Core',
 }
 
 interface Props {
@@ -45,16 +45,16 @@ export function ExercisePicker({ visible, exercises, selectedIds, onToggle, onCl
         {/* Záhlaví */}
         <View className="flex-row items-center gap-3 border-b border-white/10 px-4 py-3">
           <Pressable onPress={onClose} hitSlop={8}>
-            <Text className="text-muted text-sm font-medium">← Zpět</Text>
+            <Text className="text-muted text-sm font-medium">Back</Text>
           </Pressable>
-          <Text className="flex-1 text-base font-semibold text-white">Přidat cviky</Text>
+          <Text className="flex-1 text-base font-semibold text-white">Add exercises</Text>
           <Text className="text-xs text-muted">{selectedIds.length} vybráno</Text>
         </View>
 
         {/* Vyhledávání + filtr */}
         <View className="px-4 py-3 gap-2">
           <TextInput
-            placeholder="Hledat cvik…"
+            placeholder="Search exercises…"
             placeholderTextColor={colors.muted}
             value={search}
             onChangeText={setSearch}
@@ -83,7 +83,7 @@ export function ExercisePicker({ visible, exercises, selectedIds, onToggle, onCl
           data={filtered}
           keyExtractor={(e) => e.id}
           contentContainerClassName="px-4 gap-1.5 pb-6"
-          ListEmptyComponent={<Text className="text-center text-sm text-muted py-8">Žádný cvik nenalezen.</Text>}
+          ListEmptyComponent={<Text className="text-center text-sm text-muted py-8">No exercises match.</Text>}
           renderItem={({ item }) => {
             const selected = selectedIds.includes(item.id)
             return (
@@ -98,7 +98,7 @@ export function ExercisePicker({ visible, exercises, selectedIds, onToggle, onCl
                 <View className="flex-1">
                   <Text className="font-semibold text-sm text-white" numberOfLines={1}>{item.name}</Text>
                   <Text className="text-xs text-muted mt-0.5">
-                    {MUSCLE_CZ[item.muscleGroup]} · {item.equipment}{item.isCustom ? ' · vlastní' : ''}
+                    {MUSCLE_CZ[item.muscleGroup]} · {item.equipment}{item.isCustom ? ' · custom' : ''}
                   </Text>
                 </View>
                 {selected ? <Text className="text-accent text-lg">✓</Text> : null}

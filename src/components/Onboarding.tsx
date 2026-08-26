@@ -6,9 +6,9 @@ import { Button } from '@/components/ui'
 import { tapLight, success } from '@/lib/haptics'
 
 const POINTS = [
-  { icon: '🎯', title: 'Progresivní přetížení', text: 'Appka ti u každé série navrhne váhu a opakování tak, abys vždy překonal minulý objem.' },
-  { icon: '📊', title: 'Tvůj progres', text: 'Grafy 1RM, osobní rekordy, objem, streak i rovnováha partií — vše přehledně.' },
-  { icon: '🔒', title: '100 % offline', text: 'Žádné účty, žádné reklamy. Data zůstávají v telefonu, zálohu si vyexportuješ kdykoliv.' },
+  { icon: '🎯', title: 'Progressive overload', text: 'Every set comes with a target weight and rep count that beats what you did last time.' },
+  { icon: '📊', title: 'Your progress', text: 'Estimated 1RM charts, personal records, volume, streak and how balanced your week is.' },
+  { icon: '🔒', title: '100% offline', text: 'No accounts, no ads. Data stays on your phone and you can export a backup any time.' },
 ]
 
 /** Úvodní obrazovka pro první spuštění. Po volbě nastaví `onboarded`. */
@@ -25,9 +25,9 @@ export function Onboarding({ visible }: { visible: boolean }) {
     <Modal visible={visible} animationType="fade" onRequestClose={() => finish()}>
       <SafeAreaView className="flex-1 bg-bg">
         <View className="flex-1 px-6 pt-10">
-          <Text className="text-[11px] font-semibold uppercase tracking-[2px] text-accent">Vítej</Text>
+          <Text className="text-[11px] font-semibold uppercase tracking-[2px] text-accent">Welcome</Text>
           <Text className="mt-1 font-display text-4xl text-white">Workout</Text>
-          <Text className="mt-2 text-sm text-muted">Tvůj osobní tréninkový deník s chytrými návrhy.</Text>
+          <Text className="mt-2 text-sm text-muted">Your training log, with a suggestion for every set.</Text>
 
           <View className="mt-10 gap-6">
             {POINTS.map((p) => (
@@ -43,18 +43,18 @@ export function Onboarding({ visible }: { visible: boolean }) {
 
           <View className="mt-auto mb-2 gap-2">
             <Button
-              title="Vyzkoušet s ukázkovými daty"
+              title="Explore with sample data"
               size="lg"
               onPress={() => { success(); finish(() => loadSampleData()) }}
             />
             <Button
-              title="Vytvořit první split"
+              title="Create first split"
               variant="secondary"
               size="lg"
               onPress={() => { tapLight(); finish(() => router.push('/splits')) }}
             />
             <Button
-              title="Začít od nuly"
+              title="Start from scratch"
               variant="ghost"
               size="md"
               onPress={() => { tapLight(); finish() }}

@@ -20,21 +20,21 @@ const READ_TYPES = [
 type HealthKitModule = typeof import('@kingstinct/react-native-healthkit')
 
 const WORKOUT_LABELS: Record<number, string> = {
-  50: 'Silový trénink',
-  20: 'Funkční síla',
+  50: 'Strength training',
+  20: 'Functional strength',
   63: 'HIIT',
   11: 'Cross training',
   59: 'Core',
-  37: 'Běh',
-  52: 'Chůze',
-  13: 'Kolo',
-  46: 'Plavání',
-  35: 'Veslování',
-  57: 'Jóga',
+  37: 'Running',
+  52: 'Walking',
+  13: 'Cycling',
+  46: 'Swimming',
+  35: 'Rowing',
+  57: 'Yoga',
 }
 
 function workoutLabel(type: number): string {
-  return WORKOUT_LABELS[type] ?? 'Trénink'
+  return WORKOUT_LABELS[type] ?? 'Workout'
 }
 
 async function getHealthKit(): Promise<HealthKitModule | null> {

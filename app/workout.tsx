@@ -82,7 +82,7 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
         value={set.weight}
         editable={!set.skipped}
         onChangeText={(t) => onChange({ weight: t })}
-        accessibilityLabel="Váha v kg"
+        accessibilityLabel="Weight in kg"
         className="flex-1 h-9 rounded-lg bg-panel px-1 text-center font-display text-sm text-white"
         style={{ fontVariant: ['tabular-nums'] }}
       />
@@ -93,7 +93,7 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
         value={set.reps}
         editable={!set.skipped}
         onChangeText={(t) => onChange({ reps: t })}
-        accessibilityLabel="Počet opakování"
+        accessibilityLabel="Reps"
         className="flex-1 h-9 rounded-lg bg-panel px-1 text-center font-display text-sm text-white"
         style={{ fontVariant: ['tabular-nums'] }}
       />
@@ -102,7 +102,7 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
       </Pressable>
       <Pressable
         onPress={onToggleSkip}
-        accessibilityLabel={set.skipped ? 'Zrušit přeskočení série' : 'Přeskočit sérii'}
+        accessibilityLabel={set.skipped ? 'Un-skip set' : 'Skip set'}
         className={cn('w-7 h-8 rounded-lg bg-panel2 items-center justify-center')}
       >
         <Text className={cn('text-xs font-bold', set.skipped ? 'text-accent' : 'text-muted/40')}>—</Text>
@@ -110,12 +110,12 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
       <Pressable
         onPress={onToggleComplete}
         disabled={set.skipped}
-        accessibilityLabel={accepted ? 'Zrušit dokončení série' : 'Označit sérii za dokončenou'}
+        accessibilityLabel={accepted ? 'Mark set as not done' : 'Mark set as done'}
         className={cn('w-8 h-8 rounded-xl items-center justify-center', accepted ? 'bg-accent' : 'bg-panel')}
       >
         <Text className={cn('text-sm font-bold', accepted ? 'text-black' : 'text-muted')}>{accepted ? '✓' : '○'}</Text>
       </Pressable>
-      <Pressable onPress={onDelete} hitSlop={6} accessibilityLabel="Smazat sérii" className="w-5 items-center">
+      <Pressable onPress={onDelete} hitSlop={6} accessibilityLabel="Delete set" className="w-5 items-center">
         <Text className="text-muted/30 text-xs">✕</Text>
       </Pressable>
     </View>
@@ -134,7 +134,7 @@ export default function Workout() {
 
   const isFree = splitId === 'free'
   const freshSplit = isFree
-    ? ({ id: 'free', name: 'Volný trénink', exerciseIds: [] } as Split)
+    ? ({ id: 'free', name: 'Free session', exerciseIds: [] } as Split)
     : data.splits.find((s) => s.id === splitId)
   const startTime = useRef(Date.now())
 
@@ -158,7 +158,7 @@ export default function Workout() {
   const [ready, setReady] = useState(!isResume)
   const [meta, setMeta] = useState(() => ({
     splitId: freshSplit?.id ?? 'free',
-    splitName: freshSplit?.name ?? 'Trénink',
+    splitName: freshSplit?.name ?? 'Session',
   }))
   const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null)
   const [plateCalc, setPlateCalc] = useState<{ open: boolean; weight: number | null }>({ open: false, weight: null })
@@ -296,8 +296,8 @@ export default function Workout() {
   }
 
   function leave() {
-    Alert.alert('Opustit trénink?', 'Rozdělaný trénink zůstane uložený — můžeš v něm pokračovat z plochy.', [
-      { text: 'Zůstat', style: 'cancel' },
+    Alert.alert('Leave this session?', 'It stays saved. You can pick it up again from Today.', [
+      { text: 'Stay', style: 'cancel' },
       { text: 'Opustit', onPress: () => router.back() },
       { text: 'Zahodit', style: 'destructive', onPress: () => { void clearDraft(); router.back() } },
     ])
@@ -314,7 +314,7 @@ export default function Workout() {
       id: createId(),
       date: new Date().toISOString(),
       splitId: meta.splitId === 'free' ? null : meta.splitId,
-      splitName: meta.splitName === 'Trénink' ? '' : meta.splitName,
+      splitName: meta.splitName === 'Session' ? '' : meta.splitName,
       entries: rawEntries,
       durationMinutes,
       notes,
@@ -330,7 +330,7 @@ export default function Workout() {
     return (
       <SafeAreaView className="flex-1 bg-bg items-center justify-center px-6">
         <Text className="text-muted mb-3">Split nenalezen.</Text>
-        <Button title="Zpět domů" onPress={() => router.replace('/')} />
+        <Button title="Leave and keep" onPress={() => router.replace('/')} />
       </SafeAreaView>
     )
   }
@@ -338,7 +338,7 @@ export default function Workout() {
   if (!ready) {
     return (
       <SafeAreaView className="flex-1 bg-bg items-center justify-center">
-        <Text className="text-muted">Obnovuji trénink…</Text>
+        <Text className="text-muted">Restoring session</Text>
       </SafeAreaView>
     )
   }
@@ -348,11 +348,11 @@ export default function Workout() {
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <View className="flex-row items-center gap-3 border-b border-white/10 px-4 py-3">
-        <Pressable onPress={leave} hitSlop={8} accessibilityLabel="Opustit trénink">
+        <Pressable onPress={leave} hitSlop={8} accessibilityLabel="Discard session">
           <Text className="text-muted text-lg">✕</Text>
         </Pressable>
         <Text className="flex-1 font-display text-lg text-white">{meta.splitName}</Text>
-        <Text className="text-xs text-muted" style={{ fontVariant: ['tabular-nums'] }}>{totalDone} sérií</Text>
+        <Text className="text-xs text-muted" style={{ fontVariant: ['tabular-nums'] }}>{totalDone} sets</Text>
       </View>
 
       <ScrollView
@@ -386,7 +386,7 @@ export default function Workout() {
                 <Pressable
                   onPress={() => openPlates(entry)}
                   hitSlop={6}
-                  accessibilityLabel="Kalkulačka kotoučů"
+                  accessibilityLabel="Plate calculator"
                   className="h-8 w-8 items-center justify-center rounded-lg bg-panel2"
                 >
                   <Text className="text-sm">🏋️</Text>
@@ -397,7 +397,7 @@ export default function Workout() {
                   </View>
                 ) : null}
                 <Pressable
-                  onPress={() => Alert.alert('Odebrat cvik?', exercise.name, [{ text: 'Zrušit', style: 'cancel' }, { text: 'Odebrat', style: 'destructive', onPress: () => removeEntry(ei) }])}
+                  onPress={() => Alert.alert('Odebrat cvik?', exercise.name, [{ text: 'Cancel', style: 'cancel' }, { text: 'Odebrat', style: 'destructive', onPress: () => removeEntry(ei) }])}
                   hitSlop={6}
                   accessibilityLabel="Odebrat cvik"
                 >
@@ -422,7 +422,7 @@ export default function Workout() {
 
               <View className="flex-row items-center justify-between px-3 py-1 bg-accent/5 border-t border-white/10">
                 <Text className="text-[9px] font-bold text-accent/60 uppercase tracking-widest">Working</Text>
-                <Pressable onPress={() => autoWarmup(ei)} hitSlop={6} accessibilityLabel="Automatická rozcvička">
+                <Pressable onPress={() => autoWarmup(ei)} hitSlop={6} accessibilityLabel="Auto warm-up">
                   <Text className="text-[10px] text-accent/60">🔥 Auto warmup</Text>
                 </Pressable>
               </View>
@@ -442,13 +442,13 @@ export default function Workout() {
               )}
 
               <View className="flex-row gap-2 px-3 py-2.5 border-t border-white/10">
-                <Pressable onPress={() => addSet(ei, 'warmup')} accessibilityLabel="Přidat rozcvičkovou sérii" className="flex-1 border border-dashed border-white/15 rounded-md py-1.5 items-center">
+                <Pressable onPress={() => addSet(ei, 'warmup')} accessibilityLabel="Add warm-up set" className="flex-1 border border-dashed border-white/15 rounded-md py-1.5 items-center">
                   <Text className="text-xs text-muted/50">+ W</Text>
                 </Pressable>
-                <Pressable onPress={() => addSet(ei, 'working')} accessibilityLabel="Přidat pracovní sérii" className="flex-[2] border border-dashed border-white/15 rounded-md py-1.5 items-center">
+                <Pressable onPress={() => addSet(ei, 'working')} accessibilityLabel="Add working set" className="flex-[2] border border-dashed border-white/15 rounded-md py-1.5 items-center">
                   <Text className="text-xs text-muted">+ Working</Text>
                 </Pressable>
-                <Pressable onPress={() => addSet(ei, 'backoff')} accessibilityLabel="Přidat back-off sérii" className="flex-1 border border-dashed border-accent/20 rounded-md py-1.5 items-center">
+                <Pressable onPress={() => addSet(ei, 'backoff')} accessibilityLabel="Add back-off set" className="flex-1 border border-dashed border-accent/20 rounded-md py-1.5 items-center">
                   <Text className="text-xs text-accent/50">+ B</Text>
                 </Pressable>
               </View>
@@ -458,19 +458,19 @@ export default function Workout() {
 
         <Pressable
           onPress={() => setPickerOpen(true)}
-          accessibilityLabel="Přidat cvik"
+          accessibilityLabel="Add exercise"
           className="flex-row items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/15 py-4"
         >
           <Text className="text-lg text-muted">+</Text>
-          <Text className="text-sm text-muted">Přidat cvik</Text>
+          <Text className="text-sm text-muted">Add exercise</Text>
         </Pressable>
 
         <View>
-          <Text className="text-xs font-semibold text-muted">Poznámka k tréninku</Text>
+          <Text className="text-xs font-semibold text-muted">Session note</Text>
           <TextInput
             value={notes}
             onChangeText={setNotes}
-            placeholder="Volitelná poznámka…"
+            placeholder="Optional note"
             placeholderTextColor={colors.muted}
             multiline
             className="mt-1 rounded-2xl bg-panel2 px-4 py-3 text-sm text-white min-h-16"
@@ -490,7 +490,7 @@ export default function Workout() {
           />
         ) : null}
         <View className="px-4">
-          <Button title="Dokončit trénink" size="lg" onPress={handleFinish} />
+          <Button title="Finish session" size="lg" onPress={handleFinish} />
         </View>
       </View>
 

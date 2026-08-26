@@ -50,19 +50,19 @@ export function PlateCalculator({
       <SafeAreaView className="flex-1 bg-bg/95">
         <View className="flex-1 px-4 pt-4">
           <View className="flex-row items-center justify-between mb-5">
-            <Text className="font-display text-xl text-white">Kalkulačka kotoučů</Text>
-            <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Zavřít">
+            <Text className="font-display text-xl text-white">Plate calculator</Text>
+            <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Close">
               <Text className="text-muted text-xl">✕</Text>
             </Pressable>
           </View>
 
           <View className="gap-2">
-            <Text className="text-[11px] font-semibold uppercase tracking-wide text-muted">Cílová váha (kg)</Text>
+            <Text className="text-[11px] font-semibold uppercase tracking-wide text-muted">Target weight (kg)</Text>
             <TextInput
               keyboardType="decimal-pad"
               value={weight}
               onChangeText={setWeight}
-              placeholder="např. 100"
+              placeholder="e.g. 100"
               placeholderTextColor={colors.muted}
               className="h-14 rounded-2xl bg-panel2 px-4 font-display text-2xl text-white"
               style={{ fontVariant: ['tabular-nums'] }}
@@ -87,7 +87,7 @@ export function PlateCalculator({
           {/* Vizualizace osy */}
           <View className="mt-8 items-center">
             {target <= 0 ? (
-              <Text className="text-sm text-muted py-10">Zadej cílovou váhu.</Text>
+              <Text className="text-sm text-muted py-10">Enter a target weight.</Text>
             ) : result.belowBar ? (
               <Text className="text-sm text-muted py-10">Cíl je menší než samotná osa ({bar} kg).</Text>
             ) : result.perSide.length === 0 ? (
@@ -117,7 +117,7 @@ export function PlateCalculator({
                   <View style={{ width: 8, height: 18, backgroundColor: '#4a4a50', borderRadius: 2, marginLeft: 3 }} />
                 </View>
 
-                <Text className="mt-6 text-center text-sm text-muted">Na každou stranu:</Text>
+                <Text className="mt-6 text-center text-sm text-muted">Per side</Text>
                 <View className="mt-2 flex-row flex-wrap justify-center gap-2">
                   {result.perSide.map((p) => (
                     <View key={p.plate} className="rounded-xl bg-panel2 px-3 py-2">

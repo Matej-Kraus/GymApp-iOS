@@ -46,7 +46,7 @@ export async function applyReminders(cfg: ReminderConfig | undefined): Promise<b
     if (!ok) return false
     for (const day of cfg.days) {
       await Notifications.scheduleNotificationAsync({
-        content: { title: 'Čas na trénink 💪', body: 'Dnes je tréninkový den. Jdeme na to!' },
+        content: { title: 'Time to train', body: 'Today is a training day.' },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
           weekday: toIosWeekday(day),

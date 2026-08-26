@@ -145,6 +145,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
 export function useAppState(): AppStateValue {
   const ctx = useContext(AppStateContext)
-  if (!ctx) throw new Error('useAppState() musí být uvnitř <AppStateProvider>.')
+  if (!ctx) throw new Error('useAppState() must be used inside <AppStateProvider>.')
   return ctx
 }

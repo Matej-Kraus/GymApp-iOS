@@ -9,7 +9,7 @@ import { useAppState } from '@/state/AppStateContext'
 import { colors } from '@/theme/colors'
 
 const MUSCLE_CZ: Record<Exercise['muscleGroup'], string> = {
-  Chest: 'Hrudník', Back: 'Záda', Legs: 'Nohy', Shoulders: 'Ramena', Arms: 'Paže', Core: 'Střed',
+  Chest: 'Chest', Back: 'Back', Legs: 'Legs', Shoulders: 'Shoulders', Arms: 'Arms', Core: 'Core',
 }
 
 interface Props {
@@ -39,8 +39,8 @@ export function SplitForm({ initial, onSave, onCancel }: Props) {
     setIds(next)
   }
   function handleSave() {
-    if (!name.trim()) { setError('Zadej název splitu.'); return }
-    if (ids.length === 0) { setError('Přidej aspoň jeden cvik.'); return }
+    if (!name.trim()) { setError('Give the split a name.'); return }
+    if (ids.length === 0) { setError('Add at least one exercise.'); return }
     onSave({
       id: initial?.id ?? createId(),
       name: name.trim(),
@@ -54,9 +54,9 @@ export function SplitForm({ initial, onSave, onCancel }: Props) {
     <>
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-4 pb-8">
         <View>
-          <Text className="text-xs font-semibold text-muted">Název splitu</Text>
+          <Text className="text-xs font-semibold text-muted">Split name</Text>
           <TextInput
-            placeholder="např. Push, Legs, Upper A…"
+            placeholder="e.g. Push, Legs, Upper A"
             placeholderTextColor={colors.muted}
             value={name}
             onChangeText={(t) => { setName(t); setError('') }}
@@ -68,13 +68,13 @@ export function SplitForm({ initial, onSave, onCancel }: Props) {
           <View className="flex-row items-center justify-between mb-2">
             <Text className="text-xs font-semibold text-muted">Cviky ({ids.length})</Text>
             <Pressable onPress={() => setPickerOpen(true)} hitSlop={8}>
-              <Text className="text-accent text-xs font-semibold">+ Přidat cvik</Text>
+              <Text className="text-accent text-xs font-semibold">+ Add exercise</Text>
             </Pressable>
           </View>
 
           {ids.length === 0 ? (
             <Card className="border-dashed">
-              <Text className="text-center text-sm text-muted py-2">Zatím žádné cviky. Ťukni „+ Přidat cvik".</Text>
+              <Text className="text-center text-sm text-muted py-2">No exercises yet. Tap “+ Add exercise”.</Text>
             </Card>
           ) : (
             <View className="gap-1.5">
@@ -107,8 +107,8 @@ export function SplitForm({ initial, onSave, onCancel }: Props) {
         {error ? <Text className="text-sm text-danger">{error}</Text> : null}
 
         <View className="flex-row gap-3 pt-2">
-          <Button title="Zrušit" variant="secondary" className="flex-1" onPress={onCancel} />
-          <Button title="Uložit split" className="flex-1" onPress={handleSave} />
+          <Button title="Cancel" variant="secondary" className="flex-1" onPress={onCancel} />
+          <Button title="Save split" className="flex-1" onPress={handleSave} />
         </View>
       </ScrollView>
 

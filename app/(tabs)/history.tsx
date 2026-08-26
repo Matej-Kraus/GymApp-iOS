@@ -6,10 +6,10 @@ import { useAppState } from '@/state/AppStateContext'
 import { sessionVolume, countScoringSets, epley1RM, findExercise } from '@/core'
 import type { WorkoutSession, Exercise } from '@/core'
 import { Button, Card, PageHeader, Stat, cn } from '@/components/ui'
-import { formatLongCZ } from '@/lib/format'
+import { formatLong } from '@/lib/format'
 
-const DAYS = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
-const MONTHS_CZ = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec']
+const DAYS = ['Po', 'Tue', 'St', 'Thu', 'Fri', 'So', 'Ne']
+const MONTHS_CZ = ['January', 'February', 'March', 'April', 'May', 'June', 'Juneec', 'August', 'September', 'October', 'November', 'December']
 
 function Calendar({ year, month, trainingDays, selected, onSelect, onPrev, onNext }: {
   year: number; month: number; trainingDays: Set<string>
@@ -75,7 +75,7 @@ function WorkoutDetail({ session, onDelete, onRepeat }: { session: WorkoutSessio
         <View className="flex-1">
           <Text className="font-display text-xl text-white">{session.splitName}</Text>
           <Text className="text-xs text-muted">
-            {formatLongCZ(session.date)}{session.durationMinutes ? ` · ${session.durationMinutes} min` : ''}
+            {formatLong(session.date)}{session.durationMinutes ? ` · ${session.durationMinutes} min` : ''}
           </Text>
         </View>
         {hasPR ? <View className="rounded-full bg-accent/20 px-2 py-0.5"><Text className="text-xs font-bold text-accent">PR</Text></View> : null}
@@ -86,11 +86,11 @@ function WorkoutDetail({ session, onDelete, onRepeat }: { session: WorkoutSessio
             <Text className="font-display text-2xl text-white">{vol.toLocaleString('cs-CZ')}</Text>
             <Text className="ml-1 text-xs text-muted">kg</Text>
           </View>
-          <Text className="text-xs text-muted">Objem</Text>
+          <Text className="text-xs text-muted">Volume</Text>
         </View>
         <View>
           <Text className="font-display text-2xl text-white">{sets}</Text>
-          <Text className="text-xs text-muted">Sérií</Text>
+          <Text className="text-xs text-muted">Sets</Text>
         </View>
       </View>
       {session.entries.map((entry) => (
@@ -110,8 +110,8 @@ function WorkoutDetail({ session, onDelete, onRepeat }: { session: WorkoutSessio
       ))}
       {session.notes ? <Text className="text-xs text-muted italic">„{session.notes}"</Text> : null}
       <View className="flex-row gap-2">
-        <Button title="Zopakovat" variant="secondary" size="sm" className="flex-1" onPress={onRepeat} />
-        <Button title="Smazat" variant="danger" size="sm" onPress={onDelete} />
+        <Button title="Repeat" variant="secondary" size="sm" className="flex-1" onPress={onRepeat} />
+        <Button title="Delete" variant="danger" size="sm" onPress={onDelete} />
       </View>
     </Card>
   )
@@ -157,21 +157,21 @@ export default function History() {
     else router.push({ pathname: '/workout', params: { splitId: 'free' } })
   }
   function confirmDeleteSession(session: WorkoutSession) {
-    Alert.alert('Smazat trénink?', formatLongCZ(session.date), [
-      { text: 'Zrušit', style: 'cancel' },
-      { text: 'Smazat', style: 'destructive', onPress: () => { deleteSession(session.id); if (sessionsOnDay.length === 1) setSelectedDate(null) } },
+    Alert.alert('Delete session?', formatLong(session.date), [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => { deleteSession(session.id); if (sessionsOnDay.length === 1) setSelectedDate(null) } },
     ])
   }
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-4 pb-8">
-        <View className="mt-2"><PageHeader title="Historie" subtitle={`${data.sessions.length} tréninků`} /></View>
+        <View className="mt-2"><PageHeader title="History" subtitle={`${data.sessions.length} sessions`} /></View>
 
         <View className="flex-row gap-1 rounded-2xl bg-panel2 p-1">
           {(['calendar', 'exercise'] as const).map((t) => (
             <Pressable key={t} onPress={() => setTab(t)} className={cn('flex-1 rounded-xl py-2 items-center', tab === t && 'bg-accent')}>
-              <Text className={cn('text-xs font-semibold', tab === t ? 'text-black' : 'text-muted')}>{t === 'calendar' ? 'Kalendář' : 'Cvik'}</Text>
+              <Text className={cn('text-xs font-semibold', tab === t ? 'text-black' : 'text-muted')}>{t === 'calendar' ? 'Calendar' : 'Exercise'}</Text>
             </Pressable>
           ))}
         </View>
@@ -186,11 +186,11 @@ export default function History() {
               <WorkoutDetail key={session.id} session={session} onDelete={() => confirmDeleteSession(session)} onRepeat={() => repeat(session)} />
             ))}
             {data.sessions.length === 0 ? (
-              <Text className="text-center text-sm text-muted py-8">Zatím žádné odtrénované tréninky.</Text>
+              <Text className="text-center text-sm text-muted py-8">No sessions logged yet.</Text>
             ) : null}
           </>
         ) : loggedExercises.length === 0 ? (
-          <Text className="text-center text-sm text-muted py-8">Zatím žádné odtrénované cviky.</Text>
+          <Text className="text-center text-sm text-muted py-8">No exercises logged yet.</Text>
         ) : (
           <>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-1.5">
@@ -214,7 +214,7 @@ export default function History() {
                 <Card key={session.id} className="gap-1.5">
                   <View className="flex-row items-center justify-between">
                     <Text className="font-display text-white">{session.splitName}</Text>
-                    <Text className="text-xs text-muted">{formatLongCZ(session.date)}</Text>
+                    <Text className="text-xs text-muted">{formatLong(session.date)}</Text>
                   </View>
                   {warmups.length > 0 ? (
                     <Text className="text-xs text-muted">W: {warmups.map((s) => `${s.reps}×${s.weight}`).join(', ')} kg</Text>

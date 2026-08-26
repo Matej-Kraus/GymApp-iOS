@@ -25,8 +25,6 @@ export function cn(...classes: Array<string | false | null | undefined>): string
 /** Tabulkové číslice — data musí sedět v zákrytu jako na měřidle. */
 export const tnum = { fontVariant: ['tabular-nums' as const] }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
-
 /** Odpočítá číslo nahoru při změně. Vrací aktuální hodnotu k vykreslení. */
 export function useCountUp(target: number, durationMs = 550): number {
   const [value, setValue] = useState(target)
@@ -110,30 +108,30 @@ export function Button({
   }))
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      disabled={disabled}
-      onPressIn={() => (pressed.value = 1)}
-      onPressOut={() => (pressed.value = 0)}
-      style={style}
-      className={cn(
-        'flex-row items-center justify-center rounded-lg',
-        variantBox[variant],
-        sizeBox[size],
-        disabled && 'opacity-40',
-        className,
-      )}
-    >
-      <Text
+    <Animated.View style={style} className={className}>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        onPressIn={() => (pressed.value = 1)}
+        onPressOut={() => (pressed.value = 0)}
         className={cn(
-          'font-display uppercase tracking-[1.5px]',
-          variantText[variant],
-          sizeText[size],
+          'flex-row items-center justify-center rounded-lg',
+          variantBox[variant],
+          sizeBox[size],
+          disabled && 'opacity-40',
         )}
       >
-        {title}
-      </Text>
-    </AnimatedPressable>
+        <Text
+          className={cn(
+            'font-display uppercase tracking-[1.5px]',
+            variantText[variant],
+            sizeText[size],
+          )}
+        >
+          {title}
+        </Text>
+      </Pressable>
+    </Animated.View>
   )
 }
 
@@ -259,26 +257,27 @@ export function Chip({
   }))
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      onPressIn={() => (pressed.value = 1)}
-      onPressOut={() => (pressed.value = 0)}
-      style={[style, active && color ? { backgroundColor: color, borderColor: color } : null]}
-      className={cn(
-        'h-9 justify-center rounded-md border px-3',
-        active ? 'border-accent bg-accent' : 'border-line bg-panel',
-        className,
-      )}
-    >
-      <Text
+    <Animated.View style={style} className={className}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => (pressed.value = 1)}
+        onPressOut={() => (pressed.value = 0)}
+        style={active && color ? { backgroundColor: color, borderColor: color } : undefined}
         className={cn(
-          'font-mono text-[11px] uppercase tracking-[1px]',
-          active ? 'text-white' : 'text-muted',
+          'h-9 justify-center rounded-md border px-3',
+          active ? 'border-accent bg-accent' : 'border-line bg-panel',
         )}
       >
-        {label}
-      </Text>
-    </AnimatedPressable>
+        <Text
+          className={cn(
+            'font-mono text-[11px] uppercase tracking-[1px]',
+            active ? 'text-white' : 'text-muted',
+          )}
+        >
+          {label}
+        </Text>
+      </Pressable>
+    </Animated.View>
   )
 }
 

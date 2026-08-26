@@ -43,8 +43,8 @@ export function TrainingHeatmap({ sessions }: Props) {
   return (
     <View className="gap-1.5">
       <View className="flex-row items-center justify-between">
-        <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Aktivita</Text>
-        <Text className="text-xs text-muted">{sessions.length} tréninků</Text>
+        <Text className="font-mono text-[10px] uppercase tracking-[2px] text-faint">Activity</Text>
+        <Text className="font-mono text-[10px] text-faint">{sessions.length} sessions</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View className="flex-row gap-0.5">
