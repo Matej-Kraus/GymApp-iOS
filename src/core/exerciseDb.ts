@@ -70,17 +70,45 @@ const DESCRIPTIONS: Record<string, string> = {
   'hanging-leg-raise': 'Hanging leg raise. Control the swing, lift with the abs, not momentum.',
 }
 
+/**
+ * Vedlejší svaly. Drženo zvlášť (jako `DESCRIPTIONS`), aby `ex()` nemusela
+ * mít další poziční argument. Každý vedlejší sval se počítá jako půl série —
+ * bench dělá i tricepsy, jen ne tolik jako prsa.
+ */
+const SECONDARY: Record<string, Exercise['secondaryMuscles']> = {
+  'bench-barbell': ['Triceps', 'ShouldersFront'],
+  'bench-incline-db': ['ShouldersFront', 'Triceps'],
+  'overhead-press': ['Triceps', 'ShouldersSide'],
+  'db-shoulder-press': ['Triceps', 'ShouldersSide'],
+  'dips': ['Triceps', 'ShouldersFront'],
+  'chest-dip': ['Triceps'],
+  'deadlift': ['Hamstrings', 'Glutes', 'Traps'],
+  'pullup': ['Biceps'],
+  'chinup': ['Biceps'],
+  'row-barbell': ['Biceps', 'ShouldersRear'],
+  'row-cable': ['Biceps', 'ShouldersRear'],
+  'lat-pulldown': ['Biceps'],
+  'face-pull': ['Traps'],
+  'squat': ['Glutes', 'Hamstrings'],
+  'front-squat': ['Glutes', 'Abs'],
+  'leg-press': ['Glutes'],
+  'rdl': ['Glutes', 'Back'],
+  'lunge': ['Glutes', 'Hamstrings'],
+  'goblet-squat': ['Glutes'],
+  'hip-thrust': ['Hamstrings'],
+}
+
 export const BUILTIN_EXERCISES: Exercise[] = [
   // ── PUSH ────────────────────────────────────────────────────────
   ex('bench-barbell', 'Bench Press', 'Chest', 'Push', 'Barbell', false, 'Barbell_Bench_Press_-_Medium_Grip'),
   ex('bench-incline-db', 'Incline Dumbbell Press', 'Chest', 'Push', 'Dumbbell', false, 'Dumbbell_Incline_Bench_Press'),
-  ex('overhead-press', 'Overhead Press', 'Shoulders', 'Push', 'Barbell', false, 'Barbell_Shoulder_Press'),
-  ex('db-shoulder-press', 'Dumbbell Shoulder Press', 'Shoulders', 'Push', 'Dumbbell', false, 'Dumbbell_Shoulder_Press'),
+  ex('overhead-press', 'Overhead Press', 'ShouldersFront', 'Push', 'Barbell', false, 'Barbell_Shoulder_Press'),
+  ex('db-shoulder-press', 'Dumbbell Shoulder Press', 'ShouldersFront', 'Push', 'Dumbbell', false, 'Dumbbell_Shoulder_Press'),
   ex('dips', 'Dips', 'Chest', 'Push', 'Bodyweight', true, 'Dips_-_Chest_Version', [5, 9]),
-  ex('tricep-pushdown', 'Tricep Pushdown', 'Arms', 'Push', 'Cable', false, 'Triceps_Pushdown'),
+  ex('tricep-pushdown', 'Tricep Pushdown', 'Triceps', 'Push', 'Cable', false, 'Triceps_Pushdown'),
   ex('cable-fly', 'Cable Fly', 'Chest', 'Push', 'Cable', false, 'Cable_Fly', [10, 15]),
-  ex('lateral-raise', 'Lateral Raise', 'Shoulders', 'Push', 'Dumbbell', false, 'Side_Lateral_Raise', [10, 15]),
-  ex('skull-crusher', 'Skull Crusher', 'Arms', 'Push', 'Barbell', false, 'EZ-Bar_Skullcrusher', [8, 12]),
+  ex('lateral-raise', 'Lateral Raise', 'ShouldersSide', 'Push', 'Dumbbell', false, 'Side_Lateral_Raise', [10, 15]),
+  ex('skull-crusher', 'Skull Crusher', 'Triceps', 'Push', 'Barbell', false, 'EZ-Bar_Skullcrusher', [8, 12]),
   ex('chest-dip', 'Chest Dip', 'Chest', 'Push', 'Bodyweight', true, 'Chest_Dip', [5, 9]),
 
   // ── PULL ────────────────────────────────────────────────────────
@@ -90,30 +118,30 @@ export const BUILTIN_EXERCISES: Exercise[] = [
   ex('row-barbell', 'Barbell Row', 'Back', 'Pull', 'Barbell', false, 'Barbell_Bent_Over_Row'),
   ex('row-cable', 'Seated Cable Row', 'Back', 'Pull', 'Cable', false, 'Seated_Cable_Rows'),
   ex('lat-pulldown', 'Lat Pulldown', 'Back', 'Pull', 'Cable', false, 'Wide-Grip_Lat_Pulldown'),
-  ex('bicep-curl-db', 'Dumbbell Bicep Curl', 'Arms', 'Pull', 'Dumbbell', false, 'Dumbbell_Alternate_Bicep_Curl', [8, 12]),
-  ex('bicep-curl-bb', 'Barbell Bicep Curl', 'Arms', 'Pull', 'Barbell', false, 'Barbell_Curl', [6, 10]),
-  ex('face-pull', 'Face Pull', 'Shoulders', 'Pull', 'Cable', false, 'Face_Pull', [12, 20]),
-  ex('hammer-curl', 'Hammer Curl', 'Arms', 'Pull', 'Dumbbell', false, 'Dumbbell_Hammer_Curl', [8, 12]),
-  ex('shrug', 'Barbell Shrug', 'Back', 'Pull', 'Barbell', false, 'Barbell_Shrug', [8, 12]),
+  ex('bicep-curl-db', 'Dumbbell Bicep Curl', 'Biceps', 'Pull', 'Dumbbell', false, 'Dumbbell_Alternate_Bicep_Curl', [8, 12]),
+  ex('bicep-curl-bb', 'Barbell Bicep Curl', 'Biceps', 'Pull', 'Barbell', false, 'Barbell_Curl', [6, 10]),
+  ex('face-pull', 'Face Pull', 'ShouldersRear', 'Pull', 'Cable', false, 'Face_Pull', [12, 20]),
+  ex('hammer-curl', 'Hammer Curl', 'Biceps', 'Pull', 'Dumbbell', false, 'Dumbbell_Hammer_Curl', [8, 12]),
+  ex('shrug', 'Barbell Shrug', 'Traps', 'Pull', 'Barbell', false, 'Barbell_Shrug', [8, 12]),
 
   // ── LEGS ────────────────────────────────────────────────────────
-  ex('squat', 'Back Squat', 'Legs', 'Legs', 'Barbell', false, 'Barbell_Full_Squat'),
-  ex('front-squat', 'Front Squat', 'Legs', 'Legs', 'Barbell', false, 'Barbell_Front_Squat'),
-  ex('leg-press', 'Leg Press', 'Legs', 'Legs', 'Machine', false, 'Leg_Press', [8, 15]),
-  ex('rdl', 'Romanian Deadlift', 'Legs', 'Legs', 'Barbell', false, 'Romanian_Deadlift'),
-  ex('leg-curl', 'Leg Curl', 'Legs', 'Legs', 'Machine', false, 'Lying_Leg_Curls', [8, 15]),
-  ex('leg-extension', 'Leg Extension', 'Legs', 'Legs', 'Machine', false, 'Leg_Extensions', [10, 15]),
-  ex('calf-raise', 'Calf Raise', 'Legs', 'Legs', 'Machine', false, 'Standing_Calf_Raises', [12, 20]),
-  ex('lunge', 'Barbell Lunge', 'Legs', 'Legs', 'Barbell', false, 'Barbell_Lunge', [8, 12]),
-  ex('goblet-squat', 'Goblet Squat', 'Legs', 'Legs', 'Dumbbell', false, 'Dumbbell_Goblet_Squat', [8, 15]),
-  ex('hip-thrust', 'Hip Thrust', 'Legs', 'Legs', 'Barbell', false, 'Barbell_Hip_Thrust', [8, 15]),
+  ex('squat', 'Back Squat', 'Quads', 'Legs', 'Barbell', false, 'Barbell_Full_Squat'),
+  ex('front-squat', 'Front Squat', 'Quads', 'Legs', 'Barbell', false, 'Barbell_Front_Squat'),
+  ex('leg-press', 'Leg Press', 'Quads', 'Legs', 'Machine', false, 'Leg_Press', [8, 15]),
+  ex('rdl', 'Romanian Deadlift', 'Hamstrings', 'Legs', 'Barbell', false, 'Romanian_Deadlift'),
+  ex('leg-curl', 'Leg Curl', 'Hamstrings', 'Legs', 'Machine', false, 'Lying_Leg_Curls', [8, 15]),
+  ex('leg-extension', 'Leg Extension', 'Quads', 'Legs', 'Machine', false, 'Leg_Extensions', [10, 15]),
+  ex('calf-raise', 'Calf Raise', 'Calves', 'Legs', 'Machine', false, 'Standing_Calf_Raises', [12, 20]),
+  ex('lunge', 'Barbell Lunge', 'Quads', 'Legs', 'Barbell', false, 'Barbell_Lunge', [8, 12]),
+  ex('goblet-squat', 'Goblet Squat', 'Quads', 'Legs', 'Dumbbell', false, 'Dumbbell_Goblet_Squat', [8, 15]),
+  ex('hip-thrust', 'Hip Thrust', 'Glutes', 'Legs', 'Barbell', false, 'Barbell_Hip_Thrust', [8, 15]),
 
   // ── CORE ────────────────────────────────────────────────────────
-  ex('plank', 'Plank', 'Core', 'Core', 'Bodyweight', true, null, [1, 1]),
-  ex('cable-crunch', 'Cable Crunch', 'Core', 'Core', 'Cable', false, 'Cable_Crunch', [12, 20]),
-  ex('ab-wheel', 'Ab Wheel Rollout', 'Core', 'Core', 'Bodyweight', true, 'Ab_Roller', [8, 15]),
-  ex('hanging-leg-raise', 'Hanging Leg Raise', 'Core', 'Core', 'Bodyweight', true, 'Hanging_Leg_Raise', [10, 15]),
-].map((e) => ({ ...e, description: DESCRIPTIONS[e.id] }))
+  ex('plank', 'Plank', 'Abs', 'Core', 'Bodyweight', true, null, [1, 1]),
+  ex('cable-crunch', 'Cable Crunch', 'Abs', 'Core', 'Cable', false, 'Cable_Crunch', [12, 20]),
+  ex('ab-wheel', 'Ab Wheel Rollout', 'Abs', 'Core', 'Bodyweight', true, 'Ab_Roller', [8, 15]),
+  ex('hanging-leg-raise', 'Hanging Leg Raise', 'Abs', 'Core', 'Bodyweight', true, 'Hanging_Leg_Raise', [10, 15]),
+].map((e) => ({ ...e, description: DESCRIPTIONS[e.id], secondaryMuscles: SECONDARY[e.id] }))
 
 /** Šablony splitů — každá obsahuje pole exercise ID. */
 export const SPLIT_TEMPLATES: Array<{

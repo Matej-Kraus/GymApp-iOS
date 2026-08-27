@@ -136,6 +136,11 @@ export function weeklySetsByMuscle(
       const scoring = entry.sets.filter(countsTowardProgress).length
       if (scoring === 0) continue
       counts.set(ex.muscleGroup, (counts.get(ex.muscleGroup) ?? 0) + scoring)
+      // Vedlejší sval dostane půl série: bench dělá i tricepsy, jen ne tolik
+      // jako prsa. Bez toho by objem seděl celý na jedné partii.
+      for (const secondary of ex.secondaryMuscles ?? []) {
+        counts.set(secondary, (counts.get(secondary) ?? 0) + scoring * 0.5)
+      }
     }
   }
   return [...counts.entries()]

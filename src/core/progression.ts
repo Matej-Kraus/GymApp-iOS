@@ -8,6 +8,7 @@ import type {
 } from './types'
 import { roundToIncrement } from './units'
 import { nextWorkingTarget, rirFromRpe, type PerformedSet, type ProgressionAction } from './rir'
+import { isLargeMuscleGroup } from './muscles'
 
 /**
  * ENGINE PROGRESIVNÍHO PŘETÍŽENÍ — srdce aplikace. Čistě deterministické,
@@ -48,7 +49,7 @@ export interface Suggestion {
 
 /** Velikost přírůstku váhy pro cvik (kg): velké/dolní partie větší krok. */
 export function weightIncrementKg(exercise: Exercise): number {
-  const isBig = exercise.category === 'Legs' || exercise.muscleGroup === 'Legs' || exercise.muscleGroup === 'Back'
+  const isBig = exercise.category === 'Legs' || isLargeMuscleGroup(exercise.muscleGroup)
   return isBig ? 5 : 2.5
 }
 
