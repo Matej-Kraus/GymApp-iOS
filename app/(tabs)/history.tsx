@@ -7,7 +7,7 @@ import { useAppState } from '@/state/AppStateContext'
 import { sessionVolume, countScoringSets, epley1RM, findExercise } from '@/core'
 import type { WorkoutSession, Exercise } from '@/core'
 import { Button, Card, PageHeader, Stat, cn } from '@/components/ui'
-import { formatLong } from '@/lib/format'
+import { formatLong, todayISO } from '@/lib/format'
 
 const DAYS = ['Po', 'Tue', 'St', 'Thu', 'Fri', 'So', 'Ne']
 const MONTHS_CZ = ['January', 'February', 'March', 'April', 'May', 'June', 'Juneec', 'August', 'September', 'October', 'November', 'December']
@@ -23,7 +23,7 @@ function Calendar({ year, month, trainingDays, selected, onSelect, onPrev, onNex
     ...Array(startOffset).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ]
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayISO()
 
   return (
     <Card>
@@ -39,13 +39,13 @@ function Calendar({ year, month, trainingDays, selected, onSelect, onPrev, onNex
           </View>
         ))}
         {cells.map((day, i) => {
-          if (!day) return <View key={i} style={{ width: `${100 / 7}%`, height: 40 }} />
+          if (!day) return <View key={i} style={{ width: `${100 / 7}%`, height: 44 }} />
           const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
           const hasWorkout = trainingDays.has(key)
           const isSelected = selected === key
           const isToday = key === today
           return (
-            <View key={key} style={{ width: `${100 / 7}%`, height: 40 }} className="p-0.5">
+            <View key={key} style={{ width: `${100 / 7}%`, height: 44 }} className="p-0.5">
               <Pressable
                 disabled={!hasWorkout}
                 onPress={() => onSelect(key)}

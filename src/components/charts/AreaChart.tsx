@@ -87,7 +87,7 @@ function monotonePath(pts: { x: number; y: number }[]): string {
 }
 
 export function AreaChart({
-  data,
+  data: rawData,
   height = 190,
   color = colors.accent,
   unit,
@@ -111,6 +111,10 @@ export function AreaChart({
   const PAD_B = 22
   const plotW = Math.max(0, width - PAD_L - PAD_R)
   const plotH = Math.max(0, height - PAD_T - PAD_B)
+
+  // Rok denních vážení je 365 bodů na ~350 px — popisky se slepí a z křivky
+  // je šum. Zředění drží špičky, takže rekord ani propad nezmizí.
+  const data = useMemo(() => decimate(rawData), [rawData])
 
   const { pts, min, max, ticks } = useMemo(() => {
     if (data.length === 0 || plotW === 0) {
@@ -359,6 +363,7 @@ function SvgLabel({
 
 // react-native-svg exportuje Text pod jmenem Text; prejmenovano kvuli kolizi s RN Text.
 import { Text as SvgTextRaw } from 'react-native-svg'
+import { decimate } from './decimate'
 function SvgText({ x, y, fill, children }: { x: number; y: number; fill: string; children: string }) {
   return (
     <SvgTextRaw x={x} y={y} fill={fill} fontSize={9} fontFamily="JakartaMedium">

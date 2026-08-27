@@ -5,7 +5,7 @@ import { useAppState } from '@/state/AppStateContext'
 import { epley1RM, countsTowardProgress, findExercise, allExercises, createId } from '@/core'
 import type { WorkoutSession } from '@/core'
 import { PageHeader, Card, Button, Stat, cn } from '@/components/ui'
-import { formatDate } from '@/lib/format'
+import { formatDate, todayISO } from '@/lib/format'
 import {
   isHealthAvailable,
   requestHealthAccess,
@@ -149,7 +149,7 @@ export default function Progresss() {
     setDeadlineInput('')
   }
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayISO()
   const todayEntry = data.bodyWeightLog.find((e) => e.date === today)
   const lastWeightEntry = data.bodyWeightLog.length > 0 ? [...data.bodyWeightLog].sort((a, b) => b.date.localeCompare(a.date))[0] : null
   const [weightInput, setWeightInput] = useState(todayEntry ? String(todayEntry.kg) : '')
@@ -301,7 +301,13 @@ export default function Progresss() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
-      <ScrollView className="flex-1 px-4" contentContainerClassName="gap-5 pb-8">
+      <ScrollView
+        className="flex-1 px-4"
+        contentContainerClassName="gap-5 pb-8"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+      >
         <View className="mt-2"><PageHeader title="Progress" subtitle="Charts and records" /></View>
 
         {/* Body weight — quick input */}

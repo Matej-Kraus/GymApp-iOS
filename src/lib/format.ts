@@ -32,19 +32,9 @@ export function formatLong(iso: string): string {
   })
 }
 
-/** Local YYYY-MM-DD. NOT toISOString() — that's UTC and shifts the day. */
-export function todayISO(date: Date = new Date()): string {
-  return localDateISO(date)
-}
-
-/** Local calendar date of a Date/ISO string, as YYYY-MM-DD. */
-export function localDateISO(input: Date | string = new Date()): string {
-  const d = typeof input === 'string' ? new Date(input) : input
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
+// Kalendářní dny žijí v jádru (`core/dates.ts`) — tady jen průchod, aby
+// nebyly dvě kopie téhle logiky, každá s jinou chybou.
+export { localDateISO, mondayOf, todayISO } from '@/core'
 
 /** Start of week (Monday 00:00) for a given date. */
 function startOfWeek(date: Date): Date {

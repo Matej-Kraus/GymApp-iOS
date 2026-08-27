@@ -3,6 +3,7 @@
  * Žádné React / DOM závislosti — připraveno i pro React Native.
  */
 export * from './types'
+export * from './dates'
 export * from './ids'
 export * from './units'
 export * from './stats'
