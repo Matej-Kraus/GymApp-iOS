@@ -64,7 +64,6 @@ Odloženo, protože nic neblokuje. Až bude Apple Developer účet.
 - `@expo/vector-icons` je v SDK 56 deprecated → `@react-native-vector-icons/ionicons`. Už v **sedmi** souborech (emoji se nahradily ikonami), ne ve dvou.
 - `expo-file-system/legacy` → nové API. Import se při F3 přesunul do `src/lib/platform.ts:2`, takže je to jedno místo.
 - Vytvořit `eas.json`, doplnit `ios.bundleIdentifier` (v `app.json` chybí, bez něj nejde build)
-- `scheme` je `workouttracker`, zatímco appka se jmenuje Workout. Funkční, ale nesourodé — měnit jen dokud nikde neexistují odkazy.
 
 ---
 
