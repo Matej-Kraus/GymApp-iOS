@@ -6,14 +6,25 @@
  * v nativní mobilní verzi (React Native + Expo). Měnit se budou jen obrazovky.
  */
 
-/** Svalová skupina cviku. */
+/**
+ * Svalová skupina cviku. Třináct skupin, ne šest — „Arms 18 sérií" neřekne,
+ * jestli je to 14 na bicepsy a 4 na tricepsy, a bez toho nejde měřit objem
+ * proti landmarkům. Popisky a pomocníci jsou v `muscles.ts`.
+ */
 export type MuscleGroup =
   | 'Chest'
   | 'Back'
-  | 'Legs'
-  | 'Shoulders'
-  | 'Arms'
-  | 'Core'
+  | 'Traps'
+  | 'ShouldersFront'
+  | 'ShouldersSide'
+  | 'ShouldersRear'
+  | 'Biceps'
+  | 'Triceps'
+  | 'Quads'
+  | 'Hamstrings'
+  | 'Glutes'
+  | 'Calves'
+  | 'Abs'
 
 /** Kategorie cviku pro splity (Push / Pull / Legs / Core). */
 export type Category = 'Push' | 'Pull' | 'Legs' | 'Core'
@@ -42,7 +53,10 @@ export type SetRole = 'warmup' | 'working' | 'backoff'
 export interface Exercise {
   id: string
   name: string // např. "Bench Press"
+  /** Hlavní zatěžovaný sval — počítá se jako celá série. */
   muscleGroup: MuscleGroup
+  /** Vedlejší svaly — každý se počítá jako půl série. */
+  secondaryMuscles?: MuscleGroup[]
   category: Category // pro zařazení do splitů
   equipment: Equipment
   /** Cvik s vlastní vahou (shyby, dipy): váha = PŘIDANÁ (0 = jen tělo). */

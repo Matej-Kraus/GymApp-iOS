@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Image, Text, View } from 'react-native'
-import type { Exercise } from '@/core'
+import type { Exercise, MuscleRegion } from '@/core'
+import { MUSCLE_REGION } from '@/core'
 import { cn } from '@/components/ui'
 
-const FALLBACK_ICONS: Record<Exercise['muscleGroup'], string> = {
+// Klíčováno OBLASTÍ, ne skupinou — třináct různých ikon by nikomu nepomohlo.
+const FALLBACK_ICONS: Record<MuscleRegion, string> = {
   Chest: '🫁', Back: '🦴', Legs: '🦵', Shoulders: '💪', Arms: '💪', Core: '⚡',
 }
 
@@ -14,7 +16,7 @@ export function ExerciseImage({ exercise, size = 48 }: { exercise: Exercise; siz
   if (!exercise.imageUrl || error) {
     return (
       <View className="rounded-2xl bg-panel2 items-center justify-center" style={{ width: size, height: size }}>
-        <Text style={{ fontSize: size * 0.45 }}>{FALLBACK_ICONS[exercise.muscleGroup]}</Text>
+        <Text style={{ fontSize: size * 0.45 }}>{FALLBACK_ICONS[MUSCLE_REGION[exercise.muscleGroup]]}</Text>
       </View>
     )
   }

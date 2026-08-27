@@ -20,8 +20,15 @@ import {
   weeklySetsByMuscle,
   recommendNextSplit,
   countsTowardProgress,
+  MUSCLE_LABEL,
+  type MuscleGroup,
   type WorkoutSession,
 } from '@/core'
+
+/** Vedlejší svaly dávají půlky — „7.5" ano, „7.0" ne. */
+function formatSets(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1)
+}
 
 /** Heaviest working set of a session — what the loaded bar renders. */
 function topSet(session: WorkoutSession): { name: string; weight: number; reps: number } | null {
@@ -213,7 +220,7 @@ export default function Dashboard() {
                     return (
                       <View key={muscle} className="flex-row items-center gap-3">
                         <Text className="w-20 font-mono text-[11px] uppercase tracking-[0.5px] text-muted">
-                          {muscle}
+                          {MUSCLE_LABEL[muscle as MuscleGroup] ?? muscle}
                         </Text>
                         <View className="h-1.5 flex-1 overflow-hidden rounded-full bg-panel2">
                           <View
@@ -222,10 +229,10 @@ export default function Dashboard() {
                           />
                         </View>
                         <Text
-                          className="w-6 text-right font-mono-semibold text-sm text-white"
+                          className="w-9 text-right font-mono-semibold text-sm text-white"
                           style={tnum}
                         >
-                          {sets}
+                          {formatSets(sets)}
                         </Text>
                       </View>
                     )

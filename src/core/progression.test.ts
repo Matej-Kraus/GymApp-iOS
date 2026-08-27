@@ -47,7 +47,7 @@ describe('přírůstek váhy', () => {
     expect(weightIncrementKg(bench)).toBe(2.5)
   })
   it('nohy / velké tahy = +5 kg', () => {
-    expect(weightIncrementKg({ ...bench, muscleGroup: 'Legs', category: 'Legs' })).toBe(5)
+    expect(weightIncrementKg({ ...bench, muscleGroup: 'Quads', category: 'Legs' })).toBe(5)
   })
 })
 

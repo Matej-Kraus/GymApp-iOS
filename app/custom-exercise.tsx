@@ -3,18 +3,13 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import type { Category, Equipment, Exercise, MuscleGroup } from '@/core'
-import { createId } from '@/core'
+import { createId, MUSCLE_GROUPS, MUSCLE_LABEL } from '@/core'
 import { useAppState } from '@/state/AppStateContext'
 import { Button, Card, cn } from '@/components/ui'
 import { colors } from '@/theme/colors'
 
-const MUSCLES: MuscleGroup[] = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core']
 const CATEGORIES: Category[] = ['Push', 'Pull', 'Legs', 'Core']
 const EQUIPMENTS: Equipment[] = ['Barbell', 'Dumbbell', 'Machine', 'Bodyweight', 'Cable', 'Other']
-
-const CZ: Record<MuscleGroup, string> = {
-  Chest: 'Chest', Back: 'Back', Legs: 'Legs', Shoulders: 'Shoulders', Arms: 'Arms', Core: 'Core',
-}
 
 /** Mini „chip" tlačítko pro výběr z možností. */
 function Chip({ label, active, onPress, flex }: { label: string; active: boolean; onPress: () => void; flex?: boolean }) {
@@ -33,6 +28,7 @@ export default function CustomExerciseScreen() {
   const { addCustomExercise } = useAppState()
   const [name, setName] = useState('')
   const [muscle, setMuscle] = useState<MuscleGroup>('Chest')
+  const [secondary, setSecondary] = useState<MuscleGroup[]>([])
   const [category, setCategory] = useState<Category>('Push')
   const [equipment, setEquipment] = useState<Equipment>('Barbell')
   const [isBodyweight, setIsBodyweight] = useState(false)
@@ -44,6 +40,8 @@ export default function CustomExerciseScreen() {
       id: createId(),
       name: name.trim(),
       muscleGroup: muscle,
+      // Primární sval nesmí být zároveň vedlejší — počítal by se 1,5×.
+      secondaryMuscles: secondary.filter((m) => m !== muscle),
       category,
       equipment,
       isBodyweight: isBodyweight || equipment === 'Bodyweight',
@@ -75,14 +73,40 @@ export default function CustomExerciseScreen() {
           <View>
             <Text className="text-xs font-semibold text-muted mb-1">Muscle group</Text>
             <View className="flex-row flex-wrap gap-1.5">
-              {MUSCLES.map((m) => (
-                <Chip key={m} label={CZ[m]} active={muscle === m} onPress={() => setMuscle(m)} />
+              {MUSCLE_GROUPS.map((m) => (
+                <Chip
+                  key={m}
+                  label={MUSCLE_LABEL[m]}
+                  active={muscle === m}
+                  onPress={() => setMuscle(m)}
+                />
               ))}
             </View>
           </View>
 
           <View>
-            <Text className="text-xs font-semibold text-muted mb-1">Kategorie</Text>
+            <Text className="text-xs font-semibold text-muted mb-1">Also works (optional)</Text>
+            <Text className="text-[11px] text-faint mb-1.5">
+              Each one counts as half a set toward weekly volume.
+            </Text>
+            <View className="flex-row flex-wrap gap-1.5">
+              {MUSCLE_GROUPS.filter((m) => m !== muscle).map((m) => (
+                <Chip
+                  key={m}
+                  label={MUSCLE_LABEL[m]}
+                  active={secondary.includes(m)}
+                  onPress={() =>
+                    setSecondary((prev) =>
+                      prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m],
+                    )
+                  }
+                />
+              ))}
+            </View>
+          </View>
+
+          <View>
+            <Text className="text-xs font-semibold text-muted mb-1">Category</Text>
             <View className="flex-row gap-1.5">
               {CATEGORIES.map((c) => (
                 <Chip key={c} label={c} active={category === c} onPress={() => setCategory(c)} flex />

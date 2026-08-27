@@ -1,4 +1,5 @@
 import type { AppData, Settings } from './types'
+import { migrateLegacyMuscle, type LegacyMuscleGroup } from './muscles'
 
 /**
  * UKLÁDÁNÍ — přenositelná vrstva.
@@ -9,7 +10,7 @@ import type { AppData, Settings } from './types'
  */
 
 /** Aktuální verze datového formátu (pro budoucí migrace). */
-export const DATA_VERSION = 1
+export const DATA_VERSION = 2
 
 /** Klíč, pod kterým držíme všechna data. */
 export const STORAGE_KEY = 'workout-tracker:data'
@@ -37,10 +38,30 @@ export function emptyData(): AppData {
 /**
  * Stepwise migrace formátu dat. Klíč = výchozí verze, funkce ji povýší o 1.
  * Přidaná (volitelná) pole řeší samo `deserialize` (doplní default), sem patří
- * jen BREAKING změny tvaru (přejmenování/rozdělení polí). Zatím prázdné.
+ * jen BREAKING změny tvaru (přejmenování/rozdělení polí).
  */
 const MIGRATIONS: Record<number, (d: Record<string, unknown>) => Record<string, unknown>> = {
-  // 1: (d) => ({ ...d, version: 2, /* …transformace… */ }),
+  // 1 → 2: šest svalových skupin se rozpadlo na třináct.
+  //
+  // Migrují se JEN vlastní cviky. Uložené tréninky drží `exerciseId` +
+  // `exerciseName` + série a splity jen `exerciseIds`, takže svalovou
+  // skupinu v sobě vůbec nenesou — vestavěné cviky ji mají v kódu.
+  1: (d) => ({
+    ...d,
+    version: 2,
+    customExercises: Array.isArray(d.customExercises)
+      ? d.customExercises.map((raw) => {
+          const e = raw as Record<string, unknown>
+          return {
+            ...e,
+            muscleGroup: migrateLegacyMuscle(
+              e.muscleGroup as LegacyMuscleGroup,
+              String(e.name ?? ''),
+            ),
+          }
+        })
+      : [],
+  }),
 }
 
 function runMigrations(parsed: Record<string, unknown>): Record<string, unknown> {

@@ -1,5 +1,6 @@
 import type { Exercise, Settings } from './types'
 import { floorToIncrement } from './units'
+import { isLargeMuscleGroup } from './muscles'
 
 /**
  * RIR (reps in reserve) = kolik opakování zbývalo do selhání.
@@ -155,13 +156,10 @@ export function nextWorkingTarget(
 }
 
 /**
- * Krok váhy pro cvik. Duplikuje `weightIncrementKg` z progression.ts záměrně —
- * rir.ts nesmí na progression.ts záviset, aby nevznikl kruhový import.
+ * Krok váhy pro cvik. Pravidlo o velkých partiích je v `muscles.ts`, aby ho
+ * nemusely mít opsané rir.ts i progression.ts (ty na sebe nesmí importovat).
  */
 function weightIncrementForRange(exercise: Exercise): number {
-  const isBig =
-    exercise.category === 'Legs' ||
-    exercise.muscleGroup === 'Legs' ||
-    exercise.muscleGroup === 'Back'
+  const isBig = exercise.category === 'Legs' || isLargeMuscleGroup(exercise.muscleGroup)
   return isBig ? 5 : 2.5
 }

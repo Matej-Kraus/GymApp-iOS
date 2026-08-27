@@ -2,7 +2,7 @@
 
 Co je hotové, co se dělá dál a na co si dát pozor. Aktualizuj po každé větší dávce práce.
 
-**Stav k 27. 8. 2026:** hotové F6 (motor progrese na RIR), F3 (web-safe vrstva) a F4 (rozpad obrazovky tréninku). Terén je uklizený, další na řadě je **F5** — svalové skupiny 6 → 13, bez kterých nedávají smysl landmarky (F7).
+**Stav k 27. 8. 2026:** hotové F6, F3, F4 a F5. Další na řadě je **F7** — objem proti MEV/MAV/MRV, na což už jsou svaly rozdělené.
 
 ---
 
@@ -35,39 +35,19 @@ Testovací smyčka je **web**. Nativní věci (HealthKit, haptika, notifikace) n
       všech 9 `Alert.alert` pryč, export/import zálohy jede i na webu (87 testů)
 - [x] **F4 · Rozpad `app/workout.tsx`** — 581 → 127 řádků, `src/features/workout/*`,
       `src/core/warmup.ts`, dotykové cíle na 44pt, safe area místo natvrdo `pb-6` (93 testů)
+- [x] **F5 · Svalové skupiny 6 → 13** — `src/core/muscles.ts` nahradil pět duplicitních map,
+      `secondaryMuscles` za půl série, `DATA_VERSION = 2` s migrací vlastních cviků (116 testů)
 
 ---
 
 ## Co dál — v tomhle pořadí
 
-> F6, F3 a F4 jsou hotové. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
+> F6, F3, F4 a F5 jsou hotové. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
 > Na cokoli, co se ptá uživatele nebo sahá na soubory, používej `@/lib/platform`
 > (`confirm`, `choose`, `notify`, `saveJson`, `pickJson`, `shareText`) — nikdy
 > `Alert.alert` ani `window.confirm`. Obrazovka tréninku je rozdělená:
 > stav v `useWorkoutSession`, vzhled v `features/workout/*` — nová funkce
 > (supersety, náhrada cviku) patří tam, ne do `app/workout.tsx`.
-
-### F5 · Svalové skupiny 6 → 13 + sekundární
-
-Bez toho nejdou landmarky. Dnes „Arms 18 sérií" neřekne, že máš 14 na bicepsy a 4 na tricepsy.
-
-```ts
-type MuscleGroup =
-  | 'Chest' | 'Back' | 'Traps'
-  | 'ShouldersFront' | 'ShouldersSide' | 'ShouldersRear'
-  | 'Biceps' | 'Triceps'
-  | 'Quads' | 'Hamstrings' | 'Glutes' | 'Calves' | 'Abs'
-```
-
-`Exercise.muscleGroup` (primární, jméno zachovat) + `secondaryMuscles?: MuscleGroup[]` (0,5 setu).
-
-**Ověřeno:** `WorkoutEntry` drží jen `exerciseId` + `exerciseName` + `sets`, `Split` jen `exerciseIds` → **uložené tréninky ani splity migraci nepotřebují**. Migruje se pouze `customExercises[].muscleGroup`.
-
-`storage.ts` → `DATA_VERSION = 2` + `MIGRATIONS[1]` (runner už existuje, je prázdný). `Arms` → heuristika podle názvu, `Legs` → podle názvu, neznámé → fallback, nikdy crash.
-
-Nový `src/core/muscles.ts` nahradí **pět** duplicitních map: `SplitForm.tsx:11` · `ExercisePicker.tsx:17` · `custom-exercise.tsx:11,15` · `index.tsx:22` · `ExerciseImage.tsx:6`.
-
----
 
 ### F7 · Objem vs. MEV / MAV / MRV
 

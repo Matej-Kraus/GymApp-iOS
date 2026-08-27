@@ -7,10 +7,7 @@ import { ExercisePicker } from '@/components/ExercisePicker'
 import { ExerciseImage } from '@/components/ExerciseImage'
 import { useAppState } from '@/state/AppStateContext'
 import { colors } from '@/theme/colors'
-
-const MUSCLE_CZ: Record<Exercise['muscleGroup'], string> = {
-  Chest: 'Chest', Back: 'Back', Legs: 'Legs', Shoulders: 'Shoulders', Arms: 'Arms', Core: 'Core',
-}
+import { MUSCLE_LABEL } from '@/core'
 
 interface Props {
   initial?: Split
@@ -86,7 +83,7 @@ export function SplitForm({ initial, onSave, onCancel }: Props) {
                     <ExerciseImage exercise={ex} size={40} />
                     <View className="flex-1">
                       <Text className="text-sm font-semibold text-white" numberOfLines={1}>{ex.name}</Text>
-                      <Text className="text-xs text-muted">{MUSCLE_CZ[ex.muscleGroup]}</Text>
+                      <Text className="text-xs text-muted">{MUSCLE_LABEL[ex.muscleGroup]}</Text>
                     </View>
                     <Pressable onPress={() => move(i, -1)} disabled={i === 0} className="w-8 h-8 items-center justify-center" hitSlop={4}>
                       <Text className={cn('text-base', i === 0 ? 'text-muted/30' : 'text-muted')}>↑</Text>

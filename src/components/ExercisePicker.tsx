@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import type { Category, Exercise, MuscleGroup } from '@/core'
+import type { Category, Exercise } from '@/core'
+import { MUSCLE_LABEL } from '@/core'
 import { cn } from '@/components/ui'
 import { ExerciseImage } from '@/components/ExerciseImage'
 import { colors } from '@/theme/colors'
@@ -13,10 +14,6 @@ const CATEGORIES: Array<{ value: Category | 'All'; label: string }> = [
   { value: 'Legs', label: 'Legs' },
   { value: 'Core', label: 'Core' },
 ]
-
-const MUSCLE_CZ: Record<MuscleGroup, string> = {
-  Chest: 'Chest', Back: 'Back', Legs: 'Legs', Shoulders: 'Shoulders', Arms: 'Arms', Core: 'Core',
-}
 
 interface Props {
   visible: boolean
@@ -98,7 +95,7 @@ export function ExercisePicker({ visible, exercises, selectedIds, onToggle, onCl
                 <View className="flex-1">
                   <Text className="font-semibold text-sm text-white" numberOfLines={1}>{item.name}</Text>
                   <Text className="text-xs text-muted mt-0.5">
-                    {MUSCLE_CZ[item.muscleGroup]} · {item.equipment}{item.isCustom ? ' · custom' : ''}
+                    {MUSCLE_LABEL[item.muscleGroup]} · {item.equipment}{item.isCustom ? ' · custom' : ''}
                   </Text>
                 </View>
                 {selected ? <Text className="text-accent text-lg">✓</Text> : null}
