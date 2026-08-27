@@ -61,9 +61,11 @@ Odloženo, protože nic neblokuje. Až bude Apple Developer účet.
 
 - Skill `expo-upgrade`, postupně 54 → 55 → 56
 - **NativeWind zůstává na 4.2.6** — v5 je pořád jen preview a SDK 56 ji nevynucuje. Největší riziko upgradu tím odpadá.
-- `@expo/vector-icons` je v SDK 56 deprecated → `@react-native-vector-icons/ionicons` ve dvou souborech: `app/(tabs)/_layout.tsx:2`, `app/(tabs)/splits.tsx:5`
-- `settings.tsx:4` importuje `expo-file-system/legacy` → nová API
-- Vytvořit `eas.json`, doplnit `ios.bundleIdentifier`
+- `@expo/vector-icons` je v SDK 56 deprecated → `@react-native-vector-icons/ionicons`. Už v **sedmi** souborech (emoji se nahradily ikonami), ne ve dvou.
+- `expo-file-system/legacy` → nové API. Import se při F3 přesunul do `src/lib/platform.ts:2`, takže je to jedno místo.
+- Vytvořit `eas.json`, doplnit `ios.bundleIdentifier` (v `app.json` chybí, bez něj nejde build)
+- Rozhodnout jazyk hlášek o oprávnění HealthKitu v `app.json` — jsou česky, zatímco
+  zbytek UI je anglicky. Vidí je uživatel jako první při instalaci.
 
 ---
 
