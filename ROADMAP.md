@@ -2,7 +2,7 @@
 
 Co je hotové, co se dělá dál a na co si dát pozor. Aktualizuj po každé větší dávce práce.
 
-**Stav k 27. 8. 2026:** hotové F6, F3, F4 a F5. Další na řadě je **F7** — objem proti MEV/MAV/MRV, na což už jsou svaly rozdělené.
+**Stav k 27. 8. 2026:** hotové F6, F3, F4, F5 a F7. Další na řadě je **F8** — mezocyklus a deload.
 
 ---
 
@@ -37,27 +37,19 @@ Testovací smyčka je **web**. Nativní věci (HealthKit, haptika, notifikace) n
       `src/core/warmup.ts`, dotykové cíle na 44pt, safe area místo natvrdo `pb-6` (93 testů)
 - [x] **F5 · Svalové skupiny 6 → 13** — `src/core/muscles.ts` nahradil pět duplicitních map,
       `secondaryMuscles` za půl série, `DATA_VERSION = 2` s migrací vlastních cviků (116 testů)
+- [x] **F7 · Objem vs. MEV/MAV/MRV** — `src/core/landmarks.ts`, `VolumeBar` s pásmy
+      under/optimal/warn/over místo jednolitě zelených pruhů (130 testů)
 
 ---
 
 ## Co dál — v tomhle pořadí
 
-> F6, F3, F4 a F5 jsou hotové. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
+> F6, F3, F4, F5 a F7 jsou hotové. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
 > Na cokoli, co se ptá uživatele nebo sahá na soubory, používej `@/lib/platform`
 > (`confirm`, `choose`, `notify`, `saveJson`, `pickJson`, `shareText`) — nikdy
 > `Alert.alert` ani `window.confirm`. Obrazovka tréninku je rozdělená:
 > stav v `useWorkoutSession`, vzhled v `features/workout/*` — nová funkce
 > (supersety, náhrada cviku) patří tam, ne do `app/workout.tsx`.
-
-### F7 · Objem vs. MEV / MAV / MRV
-
-Nový `src/core/landmarks.ts`. Výchozí týdenní série (MEV / MAV / MRV):
-
-Chest 8/12–20/22 · Back 10/14–22/25 · Traps 4/12–20/26 · ShouldersSide 8/16–22/26 · ShouldersRear 6/12–20/26 · ShouldersFront 0/6–12/16 · Biceps 8/14–20/26 · Triceps 6/10–14/18 · Quads 8/12–18/20 · Hamstrings 6/10–16/20 · Glutes 0/4–12/16 · Calves 8/12–16/20 · Abs 0/16–20/25
-
-Dashboard: blok „Weekly sets by muscle" (dnes jednolitě zelené pruhy) přepsat na pásma s barvami `under` / `optimal` / `warn` / `over` — tokeny už v paletě jsou.
-
----
 
 ### F8 · Mezocyklus + deload
 
@@ -133,6 +125,9 @@ Než něco přidáš do UI, přečti si tohle — jinak se to rozpadne:
    a `Text` ano). Barvy a rozvržení dej na obyčejný `View`, animaci nech uvnitř. A `flex-1`
    tam nedostane výšku, takže na plochu přes celou obrazovku použij `StyleSheet.absoluteFill`.
    Stálo to hodinu při F3, viz `ConfirmProvider.tsx`.
+8. **Když prvek zmizí nebo nemá barvu, podezřívej NativeWind třídu, ne logiku.**
+   Nepropsaly se `h-2.5`, `w-0.5` ani `bg-white/[0.13]` — bez chyby, prostě nic.
+   Na malé rozměry a průhlednosti používej `style`, viz `VolumeBar.tsx`.
 
 ## Odkud vzešel návrh
 
