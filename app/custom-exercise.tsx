@@ -56,7 +56,13 @@ export default function CustomExerciseScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
-      <ScrollView className="flex-1 px-4" contentContainerClassName="gap-6 pb-8">
+      <ScrollView
+        className="flex-1 px-4"
+        contentContainerClassName="gap-6 pb-8"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+      >
         <Text className="text-3xl font-display text-white mt-2">Custom exercise</Text>
         <Card className="gap-4">
           <View>

@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { createId, SPLIT_TEMPLATES, findExercise } from '@/core'
+import { MUSCLE_LABEL, createId, SPLIT_TEMPLATES, findExercise } from '@/core'
 import { confirm } from '@/lib/platform'
 import { useAppState } from '@/state/AppStateContext'
 import { Button, Card, EmptyState, PageHeader, cn } from '@/components/ui'
@@ -65,7 +65,13 @@ export default function Splits() {
                 .join(', ')
               return (
                 <Card key={split.id} className="gap-2">
-                  <View className="flex-row items-center gap-3">
+                  {/* Šipka slibovala klik, který nikde nebyl. Ťuknutí na
+                      kartu teď spustí trénink — na úpravu je tlačítko Edit. */}
+                  <Pressable
+                    onPress={() => router.push({ pathname: '/workout', params: { splitId: split.id } })}
+                    accessibilityLabel={`Start ${split.name}`}
+                    className="flex-row items-center gap-3 py-1"
+                  >
                     <View className="flex-1">
                       <Text className="font-display text-lg text-white">{split.name}</Text>
                       <Text className="text-xs text-muted" numberOfLines={1}>
@@ -73,7 +79,7 @@ export default function Splits() {
                       </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color={colors.muted} />
-                  </View>
+                  </Pressable>
                   <View className="flex-row gap-1.5">
                     <Pressable
                       onPress={() => router.push({ pathname: '/split-form', params: { id: split.id } })}
@@ -139,7 +145,7 @@ export default function Splits() {
                 className="flex-row items-center gap-2 rounded-2xl border border-white/10 bg-panel px-3 py-2"
               >
                 <Text className="text-sm font-semibold text-white flex-1">{e.name}</Text>
-                <Text className="text-xs text-muted">{e.muscleGroup}</Text>
+                <Text className="text-xs text-muted">{MUSCLE_LABEL[e.muscleGroup]}</Text>
               </View>
             ))}
           </View>

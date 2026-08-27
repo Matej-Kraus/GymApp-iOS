@@ -39,13 +39,13 @@ function Calendar({ year, month, trainingDays, selected, onSelect, onPrev, onNex
           </View>
         ))}
         {cells.map((day, i) => {
-          if (!day) return <View key={i} style={{ width: `${100 / 7}%`, height: 40 }} />
+          if (!day) return <View key={i} style={{ width: `${100 / 7}%`, height: 44 }} />
           const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
           const hasWorkout = trainingDays.has(key)
           const isSelected = selected === key
           const isToday = key === today
           return (
-            <View key={key} style={{ width: `${100 / 7}%`, height: 40 }} className="p-0.5">
+            <View key={key} style={{ width: `${100 / 7}%`, height: 44 }} className="p-0.5">
               <Pressable
                 disabled={!hasWorkout}
                 onPress={() => onSelect(key)}

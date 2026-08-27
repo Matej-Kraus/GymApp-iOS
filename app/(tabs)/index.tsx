@@ -94,7 +94,12 @@ export default function Dashboard() {
   const groups = [...groupMap.entries()]
 
   const activeProgramId = data.settings.activeProgramId
-  const programSplits = activeProgramId ? splits.filter((s) => s.groupId === activeProgramId) : []
+  // Bez nastaveného programu se dřív nedoporučilo nic a dashboard hlásil
+  // „Pick a session", i když uživatel splity měl. Doporučení jde spočítat
+  // ze všech splitů — aktivní program je jen zúžení, ne podmínka.
+  const programSplits = activeProgramId
+    ? splits.filter((s) => s.groupId === activeProgramId)
+    : splits
   const recommendedId = recommendNextSplit(programSplits, sessions)
   const recommendedSplit = programSplits.find((s) => s.id === recommendedId) ?? null
 

@@ -48,10 +48,17 @@ export default function Settings() {
   const hasSampleData = data.sessions.some((s) => s.isSample) || data.splits.some((s) => s.isSample)
 
   const reminder: ReminderConfig = data.settings.reminder ?? { enabled: false, hour: 18, days: [] }
-  function updateReminder(patch: Partial<ReminderConfig>) {
+  async function updateReminder(patch: Partial<ReminderConfig>) {
     const next = { ...reminder, ...patch }
     updateSettings({ reminder: next })
-    applyReminders(next)
+    // applyReminders vrátí false, když chybí povolení nebo platforma
+    // notifikace neumí (web). Bez tohohle zůstal přepínač zapnutý a
+    // uživatel si myslel, že mu připomínka běží.
+    const ok = await applyReminders(next)
+    if (!ok && next.enabled) {
+      updateSettings({ reminder: { ...next, enabled: false } })
+      setStatus('Reminders need notification permission. Enable it in system settings.')
+    }
   }
   function toggleDay(d: number) {
     const days = reminder.days.includes(d)

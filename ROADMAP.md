@@ -2,7 +2,7 @@
 
 Co je hotové, co se dělá dál a na co si dát pozor. Aktualizuj po každé větší dávce práce.
 
-**Stav k 27. 8. 2026:** hotové F3–F9. Zbývá jediná věc: **F2** (Expo SDK 56 + dev-client), a ta čeká na Apple Developer účet a iPhone — nic z ní teď nejde ověřit.
+**Stav k 27. 8. 2026:** hotové F3–F9 i všechny známé chyby, které šlo opravit bez zařízení. Zbývá jediná věc: **F2** (Expo SDK 56 + dev-client), a ta čeká na Apple Developer účet a iPhone.
 
 ---
 
@@ -69,26 +69,31 @@ Odloženo, protože nic neblokuje. Až bude Apple Developer účet.
 
 ## Známé chyby
 
-### Rozbijí zážitek na iPhonu (na webu je neuvidíš)
+Zbylo jen to, co nejde ověřit bez iPhonu, nebo co čeká na F2.
 
-- **`KeyboardAvoidingView` není v projektu ani jednou.** Nejhorší `PlateCalculator` — modal s inputem nahoře, klávesnice překryje celou vizualizaci. Dál `progress.tsx`, `custom-exercise.tsx`, `SplitForm.tsx`.
-- **Safe area:** ostatní obrazovky pořád spoléhají na `SafeAreaView` bez kontroly spodní hrany; `WorkoutFooter` už používá `useSafeAreaInsets()`.
-- **Dotykové cíle pod 44 pt:** buňky kalendáře v `history.tsx` mají 40 px. `SetRow` už je vyřešený přes `hitSlop`.
-- **UTC posun dat:** `toISOString().slice(0,10)` v `stats.ts:61,73` · `history.tsx:25` · `progress.tsx` · `TrainingHeatmap.tsx:41,55` · `settings.tsx:71` · `health.ts:75,98`. V ČR po půlnoci ukáže „dnešek" o den zpět. **Náhrady už existují** — `todayISO()` a `localDateISO()` v `src/lib/format.ts`, jen se ještě nepoužívají.
-- **Notifikace:** `applyReminders()` tiše vrátí `false`, ale přepínač v UI zůstane zapnutý → uživatel si myslí, že připomínka běží.
-- **UTC posun** je pořád všude kromě `settings.tsx` (export už používá `todayISO()`).
-- `src/components/Screen.tsx` je **mrtvý kód** (0 importů) — každá obrazovka si `SafeAreaView` píše sama. Buď oživit jako jediné místo pro safe area, nebo smazat.
+- **Nativní chování celkově.** HealthKit, haptika a notifikace mají na webu
+  fallbacky, takže testovací smyčka o nich neřekne nic. Klávesnice, safe area
+  a dotykové cíle jsou ošetřené, ale ověřené jen v prohlížeči.
+- **`@expo/vector-icons` je v SDK 56 deprecated** → `@react-native-vector-icons/ionicons`.
+  Teď se používá na sedmi místech (dřív dvou), viz F2.
+- Ikony ve `ExerciseImage` jsou symbolické, ne anatomické — Ionicons nic
+  lepšího nemá. Vlastní sada by chtěla PNG/SVG art.
 
-### Drobnosti
+### Opraveno 27. 8. 2026
 
-- `README.md` tvrdí, že je hotová jen „Fáze 1", a zmiňuje neexistující limetkový akcent `#C6FF00`
-- `AGENTS.md` posílá na docs SDK 56, projekt běží na 54
-- Šipka `›` na kartě splitu není klikatelná (`splits.tsx` — řádek nemá `onPress`)
-- `AreaChart` nemá decimaci bodů — 365 záznamů váhy slepí osu X
-- Dashboard ukáže „Pick a session" místo doporučení, když `activeProgramId` není nastavené
-- Emoji jako ikony (porušuje pravidlo 5 níž): `Onboarding.tsx` 🎯 📊 🔒, `ExerciseCard.tsx` 🏋️ 🎯 🔥. Nahradit Ionicons — schválně mimo F4, aby refaktor nemíchal chování se vzhledem.
-
----
+- UTC posun dat (osm výskytů) → `src/core/dates.ts`, jest běží v `Europe/Prague`
+- Chybějící `KeyboardAvoidingView` → `PlateCalculator` + tři obrazovky
+- Dotykové cíle pod 44 pt v `SetRow` i v kalendáři `history.tsx`
+- Natvrdo `pb-6` místo safe area ve spodní liště tréninku
+- Tichý přepínač notifikací — teď se vypne a řekne proč
+- Neklikatelná šipka na kartě splitu (teď spouští trénink)
+- `AreaChart` bez decimace — rok denních vážení slepil osu X
+- Dashboard hlásil „Pick a session", i když splity byly (jen chyběl aktivní program)
+- Emoji jako ikony (porušovalo pravidlo 5) → Ionicons
+- Syrové klíče skupin v UI („ShouldersFront" místo „Front delts")
+- Mrtvý `src/components/Screen.tsx` smazán
+- Rozbitý `Toggle` v design systému
+- `README.md` a `AGENTS.md` tvrdily neplatné věci (SDK 56, „Fáze 1", 46 testů)
 
 ## Pravidla, která drží vzhled pohromadě
 

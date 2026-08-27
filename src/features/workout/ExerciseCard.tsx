@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react'
 import { Pressable, Text, TextInput, View } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import type { Exercise, SetLog, SetRole } from '@/core'
+import { MUSCLE_LABEL } from '@/core'
 import type { DraftEntry, DraftSet } from '@/lib/workoutDraft'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { ExerciseImage } from '@/components/ExerciseImage'
 import { choose, confirm } from '@/lib/platform'
 import { colors } from '@/theme/colors'
@@ -106,7 +108,7 @@ export function ExerciseCard({
             </Text>
           </View>
           <Text className="text-xs text-muted" numberOfLines={1}>
-            {exercise.muscleGroup}
+            {MUSCLE_LABEL[exercise.muscleGroup]}
             {lastWorking
               ? ` · last: ${lastWorking.reps}×${lastWorking.weight} kg${
                   lastWorking.rpe ? ` · RIR ${rirLabel(String(lastWorking.rpe))}` : ''
@@ -120,15 +122,16 @@ export function ExerciseCard({
           accessibilityLabel="Plate calculator"
           className="h-9 w-9 items-center justify-center rounded-2xl bg-panel2"
         >
-          <Text className="text-sm">🏋️</Text>
+          <Ionicons name="barbell-outline" size={16} color={colors.muted} />
         </Pressable>
         {suggestion ? (
-          <View className="rounded-full bg-accent/15 px-2 py-0.5">
+          <View className="flex-row items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5">
+            <Ionicons name="locate-outline" size={10} color={colors.accent} />
             <Text
               className="text-[10px] font-bold text-accent"
               style={{ fontVariant: ['tabular-nums'] }}
             >
-              🎯 {suggestion.weight}×{suggestion.reps}
+              {suggestion.weight}×{suggestion.reps}
             </Text>
           </View>
         ) : null}
@@ -217,7 +220,10 @@ export function ExerciseCard({
           Working
         </Text>
         <Pressable onPress={onAutoWarmup} hitSlop={10} accessibilityLabel="Auto warm-up">
-          <Text className="text-[10px] text-accent/60">🔥 Auto warmup</Text>
+          <View className="flex-row items-center gap-1">
+            <Ionicons name="flame-outline" size={11} color={colors.accent} />
+            <Text className="text-[10px] text-accent/60">Auto warmup</Text>
+          </View>
         </Pressable>
       </View>
       {grouped.working.map(({ set, index: si }) => (

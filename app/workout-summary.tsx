@@ -89,7 +89,11 @@ export default function WorkoutSummary() {
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <Animated.View entering={FadeIn.duration(400)} className="px-5 pt-8 pb-6 items-center gap-2">
-        <Text className="text-5xl">{hasPR ? '🏆' : '💪'}</Text>
+        <Ionicons
+          name={hasPR ? 'trophy' : 'checkmark-circle'}
+          size={52}
+          color={hasPR ? colors.pr : colors.accent}
+        />
         <Text className="font-display text-2xl text-accent">Session complete</Text>
         <Text className="text-sm text-muted text-center">
           {session.splitName} · {formatLong(session.date)}

@@ -2,13 +2,15 @@ import { Modal, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useAppState } from '@/state/AppStateContext'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { Button } from '@/components/ui'
+import { colors } from '@/theme/colors'
 import { tapLight, success } from '@/lib/haptics'
 
-const POINTS = [
-  { icon: '🎯', title: 'Progressive overload', text: 'Every set gets a target based on how hard the last one felt — push when you have reps in reserve, hold when you don’t.' },
-  { icon: '📊', title: 'Your progress', text: 'Estimated 1RM charts, personal records, volume, streak and how balanced your week is.' },
-  { icon: '🔒', title: '100% offline', text: 'No accounts, no ads. Data stays on your phone and you can export a backup any time.' },
+const POINTS: { icon: keyof typeof Ionicons.glyphMap; title: string; text: string }[] = [
+  { icon: 'trending-up', title: 'Progressive overload', text: 'Every set gets a target based on how hard the last one felt — push when you have reps in reserve, hold when you don’t.' },
+  { icon: 'stats-chart', title: 'Your progress', text: 'Estimated 1RM charts, personal records, volume, streak and how balanced your week is.' },
+  { icon: 'lock-closed', title: '100% offline', text: 'No accounts, no ads. Data stays on your phone and you can export a backup any time.' },
 ]
 
 /** Úvodní obrazovka pro první spuštění. Po volbě nastaví `onboarded`. */
@@ -32,7 +34,9 @@ export function Onboarding({ visible }: { visible: boolean }) {
           <View className="mt-10 gap-6">
             {POINTS.map((p) => (
               <View key={p.title} className="flex-row gap-4">
-                <Text className="text-2xl">{p.icon}</Text>
+                <View className="h-10 w-10 items-center justify-center rounded-2xl bg-panel2">
+                  <Ionicons name={p.icon} size={20} color={colors.accent} />
+                </View>
                 <View className="flex-1">
                   <Text className="font-display text-base text-white">{p.title}</Text>
                   <Text className="mt-0.5 text-sm text-muted leading-5">{p.text}</Text>

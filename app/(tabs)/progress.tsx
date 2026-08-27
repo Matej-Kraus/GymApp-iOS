@@ -301,7 +301,13 @@ export default function Progresss() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
-      <ScrollView className="flex-1 px-4" contentContainerClassName="gap-5 pb-8">
+      <ScrollView
+        className="flex-1 px-4"
+        contentContainerClassName="gap-5 pb-8"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+      >
         <View className="mt-2"><PageHeader title="Progress" subtitle="Charts and records" /></View>
 
         {/* Body weight — quick input */}

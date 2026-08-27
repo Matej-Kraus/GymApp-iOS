@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Modal, Pressable, Text, TextInput, View } from 'react-native'
+import { KeyboardAvoidingView, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { platesForBarbell, DEFAULT_BAR_KG } from '@/core'
 import { colors } from '@/theme/colors'
@@ -47,6 +47,12 @@ export function PlateCalculator({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      {/* Bez tohohle klávesnice překryje celou vizualizaci osy — input je
+          nahoře, ale to podstatné je pod ním. */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1"
+      >
       <SafeAreaView className="flex-1 bg-bg/95">
         <View className="flex-1 px-4 pt-4">
           <View className="flex-row items-center justify-between mb-5">
@@ -142,6 +148,7 @@ export function PlateCalculator({
           </View>
         </View>
       </SafeAreaView>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }

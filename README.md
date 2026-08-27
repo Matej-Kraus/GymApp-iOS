@@ -9,7 +9,7 @@ Tréninkový deník s progresivním přetížením. UI je anglicky, kód a komen
 ```bash
 npm install
 npx expo start --web      # hlavní testovací smyčka
-npm test                  # 46 testů jádra
+npm test                  # 180 testů jádra
 npx tsc --noEmit          # typecheck
 ```
 
@@ -19,11 +19,12 @@ Na iPhonu: potřeba dev build (`app.json` obsahuje nativní config plugin Health
 
 ## Architektura
 
-- `src/core/` — sdílená logika bez RN/DOM závislostí: typy, progrese, statistiky, PR detekce, kotouče, program. **Tady jsou testy.**
+- `src/core/` — sdílená logika bez RN/DOM závislostí: typy, progrese (`rir.ts`), svaly a landmarky, mezocyklus, supersety, náhrady cviků, statistiky, PR, kotouče. **Tady jsou testy.**
 - `src/state/asyncStore.ts` — adaptér AsyncStorage se synchronní in-memory cache
 - `src/state/AppStateContext.tsx` — globální stav, hydratace při startu, debounce 300 ms na ukládání
 - `src/theme/colors.ts` — barevné tokeny (zdroj pravdy; `tailwind.config.js` je jeho ruční zrcadlo)
-- `src/components/` — design systém (`ui.tsx`), `LoadedBar`, `charts/AreaChart`, `Shimmer`
+- `src/components/` — design systém (`ui.tsx`), `LoadedBar`, `charts/AreaChart`, `Shimmer`, `VolumeBar`, `ConfirmProvider`
+- `src/features/workout/` — obrazovka tréninku rozdělená na stav (`useWorkoutSession`) a části UI
 - `src/lib/` — platformní věci: health, notifikace, haptika, autosave draftu, formátování
 - `app/` — obrazovky (expo-router), `app/(tabs)/` je tab bar s 5 záložkami
 

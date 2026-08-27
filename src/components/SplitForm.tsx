@@ -49,7 +49,13 @@ export function SplitForm({ initial, onSave, onCancel }: Props) {
 
   return (
     <>
-      <ScrollView className="flex-1 px-4" contentContainerClassName="gap-4 pb-8">
+      <ScrollView
+        className="flex-1 px-4"
+        contentContainerClassName="gap-4 pb-8"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+      >
         <View>
           <Text className="text-xs font-semibold text-muted">Split name</Text>
           <TextInput
