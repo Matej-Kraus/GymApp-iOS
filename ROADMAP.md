@@ -2,7 +2,7 @@
 
 Co je hotové, co se dělá dál a na co si dát pozor. Aktualizuj po každé větší dávce práce.
 
-**Stav k 27. 8. 2026:** hotové F6 (motor progrese na RIR) a F3 (web-safe vrstva). Dialogy i záloha teď fungují i na webu, takže testovací smyčka konečně ukazuje pravdu. Další na řadě je **F4** — rozpad `app/workout.tsx`, ať je kam psát RIR/supersety.
+**Stav k 27. 8. 2026:** hotové F6 (motor progrese na RIR), F3 (web-safe vrstva) a F4 (rozpad obrazovky tréninku). Terén je uklizený, další na řadě je **F5** — svalové skupiny 6 → 13, bez kterých nedávají smysl landmarky (F7).
 
 ---
 
@@ -33,33 +33,19 @@ Testovací smyčka je **web**. Nativní věci (HealthKit, haptika, notifikace) n
       mikro-deload, RIR chipy v UI (79 testů)
 - [x] **F3 · Web-safe vrstva** — `src/lib/dialogHost.ts` + `ConfirmProvider` + `src/lib/platform.ts`;
       všech 9 `Alert.alert` pryč, export/import zálohy jede i na webu (87 testů)
+- [x] **F4 · Rozpad `app/workout.tsx`** — 581 → 127 řádků, `src/features/workout/*`,
+      `src/core/warmup.ts`, dotykové cíle na 44pt, safe area místo natvrdo `pb-6` (93 testů)
 
 ---
 
 ## Co dál — v tomhle pořadí
 
-> F6 a F3 jsou hotové. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
+> F6, F3 a F4 jsou hotové. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
 > Na cokoli, co se ptá uživatele nebo sahá na soubory, používej `@/lib/platform`
 > (`confirm`, `choose`, `notify`, `saveJson`, `pickJson`, `shareText`) — nikdy
-> `Alert.alert` ani `window.confirm`.
-
-### F4 · Rozpad `app/workout.tsx` (513 ř.)
-
-Dělat **před** dalšími funkcemi — RIR chipy, supersety i náhrada cviku přistanou právě sem.
-
-```
-src/features/workout/draftFactories.ts    ~60 ř.  (dnes ř. 28–52)
-src/features/workout/useWorkoutSession.ts ~200 ř. (stav, autosave, dokončení)
-src/features/workout/SetRow.tsx           ~90 ř.  (+ 44pt dotykové cíle)
-src/features/workout/ExerciseCard.tsx     ~140 ř.
-src/features/workout/WorkoutFooter.tsx    ~40 ř.
-src/core/warmup.ts                        (přesun autoWarmup z ř. 214–227)
-app/workout.tsx                           ~150 ř. orchestrace
-```
-
-Opravit i to, že se sety renderují **3× přes `entry.sets.map()`** s `null` filtrem místo jednoho průchodu.
-
----
+> `Alert.alert` ani `window.confirm`. Obrazovka tréninku je rozdělená:
+> stav v `useWorkoutSession`, vzhled v `features/workout/*` — nová funkce
+> (supersety, náhrada cviku) patří tam, ne do `app/workout.tsx`.
 
 ### F5 · Svalové skupiny 6 → 13 + sekundární
 
@@ -135,8 +121,8 @@ Odloženo, protože nic neblokuje. Až bude Apple Developer účet.
 ### Rozbijí zážitek na iPhonu (na webu je neuvidíš)
 
 - **`KeyboardAvoidingView` není v projektu ani jednou.** Nejhorší `PlateCalculator` — modal s inputem nahoře, klávesnice překryje celou vizualizaci. Dál `progress.tsx`, `custom-exercise.tsx`, `SplitForm.tsx`.
-- **Safe area:** `workout.tsx:482` má natvrdo `pb-6` (24 px) jako odhad home indikátoru. Na Dynamic Islandu je 34, na SE 0. Použít `useSafeAreaInsets().bottom`.
-- **Dotykové cíle pod 44 pt:** v `SetRow` má mazání série **20 px**, skip 28×32, ✓ 32×32. Buňky kalendáře v `history.tsx` 40 px.
+- **Safe area:** ostatní obrazovky pořád spoléhají na `SafeAreaView` bez kontroly spodní hrany; `WorkoutFooter` už používá `useSafeAreaInsets()`.
+- **Dotykové cíle pod 44 pt:** buňky kalendáře v `history.tsx` mají 40 px. `SetRow` už je vyřešený přes `hitSlop`.
 - **UTC posun dat:** `toISOString().slice(0,10)` v `stats.ts:61,73` · `history.tsx:25` · `progress.tsx` · `TrainingHeatmap.tsx:41,55` · `settings.tsx:71` · `health.ts:75,98`. V ČR po půlnoci ukáže „dnešek" o den zpět. **Náhrady už existují** — `todayISO()` a `localDateISO()` v `src/lib/format.ts`, jen se ještě nepoužívají.
 - **Notifikace:** `applyReminders()` tiše vrátí `false`, ale přepínač v UI zůstane zapnutý → uživatel si myslí, že připomínka běží.
 - **UTC posun** je pořád všude kromě `settings.tsx` (export už používá `todayISO()`).
@@ -149,7 +135,7 @@ Odloženo, protože nic neblokuje. Až bude Apple Developer účet.
 - Šipka `›` na kartě splitu není klikatelná (`splits.tsx` — řádek nemá `onPress`)
 - `AreaChart` nemá decimaci bodů — 365 záznamů váhy slepí osu X
 - Dashboard ukáže „Pick a session" místo doporučení, když `activeProgramId` není nastavené
-- `Onboarding.tsx` používá emoji 🎯 📊 🔒 jako ikony — porušuje pravidlo 5 níž
+- Emoji jako ikony (porušuje pravidlo 5 níž): `Onboarding.tsx` 🎯 📊 🔒, `ExerciseCard.tsx` 🏋️ 🎯 🔥. Nahradit Ionicons — schválně mimo F4, aby refaktor nemíchal chování se vzhledem.
 
 ---
 
