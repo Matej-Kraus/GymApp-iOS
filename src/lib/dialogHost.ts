@@ -13,7 +13,15 @@
  * Bez RN importů schválně — díky tomu je to testovatelné pod nodem.
  */
 
-export type DialogStyle = 'default' | 'cancel' | 'destructive'
+/**
+ * `default` = zvýrazněná hlavní akce (zelená), `neutral` = rovnocenná volba
+ * ze seznamu, `cancel` = zavření (bere ho i ťuknutí mimo okno),
+ * `destructive` = mazání.
+ *
+ * `neutral` existuje kvůli pravidlu „zelená jen pro postup a hlavní akce":
+ * seznam šesti náhrad cviku jsou rovnocenné možnosti, ne šest hlavních akcí.
+ */
+export type DialogStyle = 'default' | 'neutral' | 'cancel' | 'destructive'
 
 export interface DialogOption<T> {
   label: string

@@ -1,7 +1,7 @@
 import { ScrollView, Text, TextInput, View, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { allExercises, findExercise, lastPerformance } from '@/core'
+import { allExercises, findExercise, lastPerformance, supersetLabel } from '@/core'
 import { Button } from '@/components/ui'
 import { ExercisePicker } from '@/components/ExercisePicker'
 import { PlateCalculator } from '@/components/PlateCalculator'
@@ -75,6 +75,12 @@ export default function Workout() {
               onAutoWarmup={() => s.autoWarmup(ei)}
               onOpenPlates={() => s.openPlates(entry)}
               onRemove={() => s.removeEntry(ei)}
+              supersetLabel={supersetLabel(s.entries, ei)}
+              onToggleSuperset={() => s.toggleSuperset(ei)}
+              substitutes={s.substitutesFor(exercise)}
+              onReplace={(replacement) => s.replaceEntry(ei, replacement)}
+              note={s.noteFor(entry.exerciseId)}
+              onChangeNote={(note) => s.setNoteFor(entry.exerciseId, note)}
             />
           )
         })}

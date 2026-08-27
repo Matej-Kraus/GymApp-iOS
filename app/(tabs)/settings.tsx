@@ -197,6 +197,24 @@ export default function Settings() {
         </View>
 
         <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Warm-up</Text>
+          <Card>
+            <Segmented
+              options={[
+                { value: 'short', label: 'Short' },
+                { value: 'standard', label: 'Standard' },
+                { value: 'thorough', label: 'Thorough' },
+              ]}
+              value={data.settings.warmupScheme ?? 'standard'}
+              onChange={(v) => updateSettings({ warmupScheme: v as 'short' | 'standard' | 'thorough' })}
+            />
+            <Text className="mt-2 text-xs text-muted">
+              How many warm-up sets Auto warm-up suggests: 2, 3 or 4 ramping up to your working weight.
+            </Text>
+          </Card>
+        </View>
+
+        <View className="gap-2">
           <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Mesocycle</Text>
           <Card className="gap-3">
             <Pressable

@@ -26,6 +26,8 @@ export interface DraftSet {
 export interface DraftEntry {
   exerciseId: string
   sets: DraftSet[]
+  /** Klíč supersetu — viz `core/supersets.ts`. */
+  supersetGroup?: string | null
 }
 
 export interface WorkoutDraft {

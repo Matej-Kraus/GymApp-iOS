@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'expo-router'
 import {
+  allExercises,
   backoffWeight,
   createId,
   findExercise,
+  findSubstitutes,
+  isLastInSuperset,
   markPRs,
+  nextSupersetGroup,
   warmupSets,
 } from '@/core'
 import type { Exercise, SetRole, Split, WorkoutEntry } from '@/core'
@@ -30,7 +34,7 @@ export interface WorkoutSessionOptions {
 
 export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) {
   const router = useRouter()
-  const { data, addSession } = useAppState()
+  const { data, addSession, updateSettings } = useAppState()
   const settings = data.settings
   const plate = settings.smallestPlateKg
   const restSec = settings.restSeconds ?? 120
@@ -138,7 +142,7 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
       setEntries((prev) =>
         prev.map((e, i) => {
           if (i !== ei) return e
-          const sets = warmupSets(workingWeightOf(e) ?? 0, plate)
+          const sets = warmupSets(workingWeightOf(e) ?? 0, plate, settings.warmupScheme ?? 'standard')
           if (sets.length === 0) return e
           const warmups = sets.map((s) => ({
             ...blankWarmup(),
@@ -150,7 +154,7 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
       )
       tapLight()
     },
-    [plate, workingWeightOf],
+    [plate, settings.warmupScheme, workingWeightOf],
   )
 
   const addEntry = useCallback(
@@ -213,7 +217,8 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
     )
     if (willComplete) {
       tapMedium()
-      if (current && current.role !== 'warmup') startRest()
+      // Uprostřed supersetu se nepauzuje — jinak by to žádný superset nebyl.
+      if (current && current.role !== 'warmup' && isLastInSuperset(entries, ei)) startRest()
     }
   }
 
@@ -257,6 +262,60 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
   )
   const closePlates = useCallback(() => setPlateCalc({ open: false, weight: null }), [])
 
+  /** Spojí cvik s tím následujícím do supersetu, nebo skupinu zruší. */
+  const toggleSuperset = useCallback((ei: number) => {
+    setEntries((prev) => {
+      const current = prev[ei]
+      if (!current) return prev
+      if (current.supersetGroup) {
+        // Rozpojit celou skupinu, ne jen tenhle cvik — zbylý osamocený
+        // člen supersetu nedává smysl.
+        const group = current.supersetGroup
+        return prev.map((e) => (e.supersetGroup === group ? { ...e, supersetGroup: null } : e))
+      }
+      if (ei >= prev.length - 1) return prev // není s čím spojit
+      const group = nextSupersetGroup(prev)
+      return prev.map((e, i) => (i === ei || i === ei + 1 ? { ...e, supersetGroup: group } : e))
+    })
+    tapLight()
+  }, [])
+
+  /** Návrhy náhrady za cvik na dané pozici. */
+  const substitutesFor = useCallback(
+    (exercise: Exercise) => findSubstitutes(exercise, allExercises(data.customExercises)),
+    [data.customExercises],
+  )
+
+  /** Vymění cvik za jiný a přepočítá návrhy podle jeho vlastní historie. */
+  const replaceEntry = useCallback(
+    (ei: number, replacement: Exercise) => {
+      setEntries((prev) => {
+        if (prev.some((e, i) => i !== ei && e.exerciseId === replacement.id)) return prev
+        return prev.map((e, i) =>
+          i === ei
+            ? { ...buildEntry(replacement, data.sessions, plate), supersetGroup: e.supersetGroup }
+            : e,
+        )
+      })
+    },
+    [data.sessions, plate],
+  )
+
+  /** Trvalá poznámka ke cviku (výška sedačky, úchop) — přežije trénink. */
+  const noteFor = useCallback(
+    (exerciseId: string) => data.settings.exerciseNotes?.[exerciseId] ?? '',
+    [data.settings.exerciseNotes],
+  )
+  const setNoteFor = useCallback(
+    (exerciseId: string, note: string) => {
+      const next = { ...(data.settings.exerciseNotes ?? {}) }
+      if (note.trim()) next[exerciseId] = note
+      else delete next[exerciseId]
+      updateSettings({ exerciseNotes: next })
+    },
+    [data.settings.exerciseNotes, updateSettings],
+  )
+
   async function leave() {
     // Tři možnosti — přesně proto nestačí window.confirm.
     const answer = await choose<'stay' | 'keep' | 'discard'>({
@@ -279,6 +338,7 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
       exerciseId: e.exerciseId,
       exerciseName: findExercise(e.exerciseId, data.customExercises)?.name ?? e.exerciseId,
       sets: e.sets.filter((s) => !s.skipped).map(setToLog),
+      supersetGroup: e.supersetGroup ?? null,
     }))
     const marked = markPRs(
       {
@@ -332,6 +392,11 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
     stopRest,
     openPlates,
     closePlates,
+    toggleSuperset,
+    substitutesFor,
+    replaceEntry,
+    noteFor,
+    setNoteFor,
     leave,
     finish,
   }
