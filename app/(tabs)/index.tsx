@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useAppState } from '@/state/AppStateContext'
-import { Button, Card, EmptyState, PageHeader, SectionTitle, cn, tnum } from '@/components/ui'
+import { Banner, Button, Card, EmptyState, PageHeader, SectionTitle, cn, tnum } from '@/components/ui'
 import { LoadedBar } from '@/components/LoadedBar'
 import { TrainingHeatmap } from '@/components/TrainingHeatmap'
 import { Onboarding } from '@/components/Onboarding'
@@ -18,6 +18,9 @@ import {
   workoutStreakWeeks,
   volumeLast30Days,
   weeklyVolumeReport,
+  deloadSignals,
+  currentWeek,
+  isDeloadWeek,
   recommendNextSplit,
   countsTowardProgress,
   type WorkoutSession,
@@ -60,6 +63,11 @@ export default function Dashboard() {
   )
 
   const volumeRows = weeklyVolumeReport(sessions, data.customExercises)
+  const meso = data.settings.mesocycle ?? null
+  const deload = useMemo(
+    () => deloadSignals(sessions, data.customExercises, meso),
+    [sessions, data.customExercises, meso],
+  )
   const hasSplits = splits.length > 0
   const lastSession = useMemo(
     () => (sessions.length > 0 ? [...sessions].sort((a, b) => b.date.localeCompare(a.date))[0] : null),
@@ -205,9 +213,23 @@ export default function Dashboard() {
               </View>
             </Animated.View>
 
+            {deload.shouldDeload && (
+              <Animated.View entering={stage(3)}>
+                <Banner
+                  tone={deload.scheduled ? 'warn' : 'over'}
+                  title={deload.scheduled ? 'Deload week' : 'Time to deload'}
+                  description={deload.reasons[0]}
+                />
+              </Animated.View>
+            )}
+
             {sessions.length > 0 && (
               <Animated.View entering={stage(4)}>
-                <SectionTitle>Weekly sets by muscle</SectionTitle>
+                <SectionTitle>
+                  {`Weekly sets by muscle${
+                    meso ? ` · week ${currentWeek(meso)} of ${meso.lengthWeeks}` : ''
+                  }${meso && isDeloadWeek(meso) ? ' · deload' : ''}`}
+                </SectionTitle>
                 <Card className="gap-2.5">
                   <Text className="text-xs text-muted">{volumeHeadline(volumeRows)}</Text>
                   {volumeRows.map((row) => (
