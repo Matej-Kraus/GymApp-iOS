@@ -4,6 +4,7 @@ import {
   backoffWeight,
   weightIncrementKg,
   lastPerformance,
+  recentWorkingSets,
 } from './progression'
 import { roundToIncrement, kgToLb } from './units'
 import { epley1RM, sessionVolume } from './stats'
@@ -55,26 +56,74 @@ describe('working série (pracovní/těžká)', () => {
     expect(suggestWorkingSet(null, bench, settings)).toBeNull()
   })
 
-  it('objemová progrese: 10×15 (150) → 9×17,5 (157,5)', () => {
-    const s = suggestWorkingSet({ weight: 15, reps: 10 }, bench, settings)
-    expect(s?.weight).toBe(17.5)
-    expect(s?.reps).toBe(9)
-    // objem návrhu musí být ostře větší než minule
-    expect(s!.weight * s!.reps).toBeGreaterThan(15 * 10)
-  })
-
-  it('6×40 (240) → vyšší váha 42,5 a dopočet opakování na vyšší objem', () => {
+  it('bez RPE → krok váhy a opakování na dolní mez rozsahu', () => {
     const s = suggestWorkingSet({ weight: 40, reps: 6 }, bench, settings)
     expect(s?.weight).toBe(42.5)
-    expect(s?.reps).toBe(6)
-    expect(s!.weight * s!.reps).toBeGreaterThan(40 * 6)
+    expect(s?.reps).toBe(5) // dolní mez z defaultRepRange [5, 9]
   })
 
-  it('9×40 (360) → 9×42,5 (382,5), objem zase vyšší', () => {
-    const s = suggestWorkingSet({ weight: 40, reps: 9 }, bench, settings)
-    expect(s?.weight).toBe(42.5)
-    expect(s?.reps).toBe(9)
-    expect(s!.weight * s!.reps).toBeGreaterThan(40 * 9)
+  it('respektuje defaultRepRange místo dopočtu podle objemu', () => {
+    // Dřív se opakování dopočítala tak, aby objem vyšel vyšší (9×17,5).
+    // Teď rozhoduje rozsah cviku.
+    const s = suggestWorkingSet({ weight: 15, reps: 10 }, bench, settings)
+    expect(s?.weight).toBe(17.5)
+    expect(s?.reps).toBe(5)
+  })
+
+  it('RPE 10 (RIR 0) → nepřidá nic, jen zopakovat', () => {
+    const s = suggestWorkingSet({ weight: 40, reps: 6, rpe: 10 }, bench, settings)
+    expect(s?.weight).toBe(40)
+    expect(s?.reps).toBe(6)
+  })
+
+  it('RPE 9 (RIR 1) → stejná váha, o opakování víc', () => {
+    const s = suggestWorkingSet({ weight: 40, reps: 6, rpe: 9 }, bench, settings)
+    expect(s?.weight).toBe(40)
+    expect(s?.reps).toBe(7)
+  })
+
+  it('RPE 6 (RIR 4) → dvojitý krok, pokud to strop dovolí', () => {
+    const s = suggestWorkingSet({ weight: 100, reps: 6, rpe: 6 }, bench, settings)
+    expect(s?.weight).toBe(105)
+  })
+
+  it('nezvedá váhu donekonečna — při RPE 10 stojí i po deseti tréninkách', () => {
+    // Regrese na hlavní chybu starého motoru: fixní krok každý trénink.
+    let current = { weight: 40, reps: 6, rpe: 10 }
+    for (let i = 0; i < 10; i++) {
+      const s = suggestWorkingSet(current, bench, settings)!
+      current = { weight: s.weight, reps: s.reps, rpe: 10 }
+    }
+    expect(current.weight).toBe(40)
+  })
+
+  it('návrh nese akci, aby ji UI mohlo vysvětlit', () => {
+    expect(suggestWorkingSet({ weight: 40, reps: 6, rpe: 9 }, bench, settings)?.action).toBe('addRep')
+    expect(suggestWorkingSet({ weight: 40, reps: 6, rpe: 10 }, bench, settings)?.action).toBe('hold')
+  })
+
+  it('stagnace v historii → deload', () => {
+    const s = suggestWorkingSet({ weight: 40, reps: 6, rpe: 9 }, bench, settings, [
+      { weight: 40, reps: 6 },
+      { weight: 40, reps: 6 },
+    ])
+    expect(s?.action).toBe('deload')
+    expect(s?.weight).toBe(35)
+  })
+})
+
+describe('recentWorkingSets — historie pro detekci stagnace', () => {
+  it('vrátí nejtěžší working sérii z každého tréninku, od nejnovějšího', () => {
+    const history = [
+      session('s1', '2026-05-01', [set(40, 6, 'working'), set(45, 3, 'working')]),
+      session('s2', '2026-05-08', [set(50, 5, 'working')]),
+    ]
+    const recent = recentWorkingSets(history, 'bench')
+    expect(recent.map((s) => s.weight)).toEqual([50, 45])
+  })
+
+  it('cvik bez historie → prázdné pole', () => {
+    expect(recentWorkingSets([], 'bench')).toEqual([])
   })
 })
 

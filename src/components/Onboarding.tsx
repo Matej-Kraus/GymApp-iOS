@@ -6,7 +6,7 @@ import { Button } from '@/components/ui'
 import { tapLight, success } from '@/lib/haptics'
 
 const POINTS = [
-  { icon: '🎯', title: 'Progressive overload', text: 'Every set comes with a target weight and rep count that beats what you did last time.' },
+  { icon: '🎯', title: 'Progressive overload', text: 'Every set gets a target based on how hard the last one felt — push when you have reps in reserve, hold when you don’t.' },
   { icon: '📊', title: 'Your progress', text: 'Estimated 1RM charts, personal records, volume, streak and how balanced your week is.' },
   { icon: '🔒', title: '100% offline', text: 'No accounts, no ads. Data stays on your phone and you can export a backup any time.' },
 ]

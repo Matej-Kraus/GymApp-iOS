@@ -2,7 +2,7 @@
 
 Co je hotové, co se dělá dál a na co si dát pozor. Aktualizuj po každé větší dávce práce.
 
-**Stav k 27. 8. 2026:** appka běží, vypadá hotově, ale **motor progrese je dlouhodobě nepoužitelný** (viz F6). To je první věc k opravě.
+**Stav k 27. 8. 2026:** motor progrese přepsaný na RIR (F6 hotovo) — appka je poprvé dlouhodobě použitelná. Další na řadě je **F3**, protože na webu (jediná testovací smyčka) tiše nefungují dialogy.
 
 ---
 
@@ -29,37 +29,15 @@ Testovací smyčka je **web**. Nativní věci (HealthKit, haptika, notifikace) n
 - [x] `LoadedBar` — naložená osa v barvách kotoučů IWF
 - [x] Moti + `ShimmerText` / `SkeletonBlock` / `GlowCard`
 - [x] Design systém: `Button`, `Card`, `Chip`, `Segmented`, `Toggle`, `ProgressBar`, `Banner`, `Stat`, `HeroStat`, `Row`, `SectionTitle`
+- [x] **F6 · Motor progrese na RIR** — `src/core/rir.ts`, tvrdé stropy, rep-range clamp,
+      mikro-deload, RIR chipy v UI (79 testů)
 
 ---
 
 ## Co dál — v tomhle pořadí
 
-### F6 · Motor progrese + RIR — NEJVYŠŠÍ PRIORITA
-
-**Problém:** `src/core/progression.ts` zvedá váhu o fixní krok **každý trénink donekonečna** a opakování dopočítá tak, aby tonáž byla vyšší. Za měsíc navrhne nesmysl. `Exercise.defaultRepRange` a `defaultSets` se přitom **úplně ignorují**.
-
-**Řešení:** RIR jako brzda. `SetLog.rpe` zůstává kanonické pole, `RIR = 10 − RPE` — žádná migrace, historická data fungují hned.
-
-| Poslední top working set | Akce |
-|---|---|
-| RIR ≥ 3 (RPE ≤ 7) | váha +2× krok, opakování na dolní hranici rozsahu |
-| RIR 2 (RPE 8) | váha +1× krok (dnešní chování) |
-| RIR 1 (RPE 9) | **váha stejná**, opakování +1 |
-| RIR 0 (RPE 10) | **stejná váha i opakování** — konsolidace |
-| nezadané | jako RIR 2, ale s tvrdými stropy |
-
-**Tvrdé brzdy (tohle je jádro):**
-- Strop skoku: nová váha ≤ `last.weight + 2×inc` **a zároveň** ≤ `last.weight × 1,10`
-- **Rep-range clamp** na `exercise.defaultRepRange` — přetečení horní meze → přidej krok váhy a spadni na dolní mez
-- Stagnace: 2× po sobě nepřekonaný cíl → mikro-deload `× 0,9`
-
-Nový `src/core/rir.ts`. V UI nahradit cyklické RPE tlačítko (6 hodnot ťukáním) RIR chipy.
-
-**Uklidit při tom:** hlavičkový komentář v `progression.ts` (ř. 11–24) popisuje starý double-progression algoritmus, který tam už není; `ProgressionConfig.workingRepMin/workingRepCeiling` a parametr `_config` se nikde nepoužívají.
-
-**Pozor:** čekej úpravu 3–6 stávajících assertů v `progression.test.ts` — rep-range clamp mění čísla.
-
----
+> F6 je hotová. Jak motor rozhoduje, je popsané v hlavičce `src/core/rir.ts`;
+> `progression.ts` už jen skládá text návrhu.
 
 ### F3 · Web-safe vrstva
 
@@ -176,6 +154,7 @@ Odloženo, protože nic neblokuje. Až bude Apple Developer účet.
 - Šipka `›` na kartě splitu není klikatelná (`splits.tsx` — řádek nemá `onPress`)
 - `AreaChart` nemá decimaci bodů — 365 záznamů váhy slepí osu X
 - Dashboard ukáže „Pick a session" místo doporučení, když `activeProgramId` není nastavené
+- `Onboarding.tsx` používá emoji 🎯 📊 🔒 jako ikony — porušuje pravidlo 5 níž
 
 ---
 

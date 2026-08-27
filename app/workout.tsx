@@ -11,6 +11,7 @@ import {
   findExercise,
   lastPerformance,
   markPRs,
+  recentWorkingSets,
   roundToIncrement,
   suggestWorkingSet,
 } from '@/core'
@@ -51,7 +52,24 @@ function setToLog(s: DraftSet) {
   }
 }
 
-const RPE_CYCLE = ['', '6', '7', '8', '9', '10']
+/**
+ * RIR = kolik opakování zbývalo do selhání. Ukládá se pořád jako RPE
+ * (RIR = 10 − RPE), takže historie i export zůstávají beze změny.
+ * Tohle je vstup, na kterém stojí celý motor progrese — proto chipy
+ * s popiskem místo tlačítka, které cyklovalo šesti čísly bez vysvětlení.
+ */
+const RIR_OPTIONS: { rir: string; rpe: string; hint: string }[] = [
+  { rir: '3+', rpe: '7', hint: 'Easy' },
+  { rir: '2', rpe: '8', hint: 'On track' },
+  { rir: '1', rpe: '9', hint: 'Hard' },
+  { rir: '0', rpe: '10', hint: 'Failure' },
+]
+
+function rirLabel(rpe: string): string {
+  if (!rpe) return '—'
+  const value = 10 - parseFloat(rpe)
+  return value >= 3 ? '3+' : String(value)
+}
 const ROLE_LABEL: Record<SetRole, string> = { warmup: 'W', working: '·', backoff: 'B' }
 
 function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWorking }: {
@@ -63,15 +81,19 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
   isWorking?: boolean
 }) {
   const accepted = set.completed && !set.skipped
-  function cycleRpe() {
-    const i = RPE_CYCLE.indexOf(set.rpe)
-    onChange({ rpe: RPE_CYCLE[(i + 1) % RPE_CYCLE.length] })
+  const [rirOpen, setRirOpen] = useState(false)
+  function pickRir(rpe: string) {
+    // Ťuknutí na už zvolený chip volbu zruší (zpět na nezadáno).
+    onChange({ rpe: set.rpe === rpe ? '' : rpe })
+    setRirOpen(false)
+    tapLight()
   }
   return (
+    <View className={cn('border-t border-white/10', set.skipped ? 'opacity-40' : '')}>
     <View
       className={cn(
-        'flex-row items-center gap-1.5 px-3 py-1.5 border-t border-white/10',
-        set.skipped ? 'opacity-40' : isWorking && accepted ? 'bg-accent/10' : isWorking ? 'bg-accent/5' : '',
+        'flex-row items-center gap-1.5 px-3 py-1.5',
+        set.skipped ? '' : isWorking && accepted ? 'bg-accent/10' : isWorking ? 'bg-accent/5' : '',
       )}
     >
       <Text className="w-4 text-center text-[10px] font-bold text-muted">{ROLE_LABEL[set.role]}</Text>
@@ -83,7 +105,7 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
         editable={!set.skipped}
         onChangeText={(t) => onChange({ weight: t })}
         accessibilityLabel="Weight in kg"
-        className="flex-1 h-9 rounded-2xl bg-panel px-1 text-center font-display text-sm text-white"
+        className="flex-1 min-w-0 h-9 rounded-2xl bg-panel px-1 text-center font-display text-sm text-white"
         style={{ fontVariant: ['tabular-nums'] }}
       />
       <TextInput
@@ -94,11 +116,16 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
         editable={!set.skipped}
         onChangeText={(t) => onChange({ reps: t })}
         accessibilityLabel="Reps"
-        className="flex-1 h-9 rounded-2xl bg-panel px-1 text-center font-display text-sm text-white"
+        className="flex-1 min-w-0 h-9 rounded-2xl bg-panel px-1 text-center font-display text-sm text-white"
         style={{ fontVariant: ['tabular-nums'] }}
       />
-      <Pressable onPress={cycleRpe} disabled={set.skipped} accessibilityLabel="RPE" className="w-11 h-9 rounded-2xl bg-panel items-center justify-center">
-        <Text className="text-xs text-muted">{set.rpe ? `@${set.rpe}` : '—'}</Text>
+      <Pressable
+        onPress={() => setRirOpen((v) => !v)}
+        disabled={set.skipped}
+        accessibilityLabel={set.rpe ? `Reps in reserve: ${rirLabel(set.rpe)}` : 'Set reps in reserve'}
+        className={cn('w-11 h-9 rounded-2xl items-center justify-center', rirOpen ? 'bg-panel2' : 'bg-panel')}
+      >
+        <Text className={cn('text-xs', set.rpe ? 'text-white' : 'text-muted')}>{rirLabel(set.rpe)}</Text>
       </Pressable>
       <Pressable
         onPress={onToggleSkip}
@@ -115,9 +142,30 @@ function SetRow({ set, onChange, onToggleComplete, onToggleSkip, onDelete, isWor
       >
         <Text className={cn('text-sm font-bold', accepted ? 'text-black' : 'text-muted')}>{accepted ? '✓' : '○'}</Text>
       </Pressable>
-      <Pressable onPress={onDelete} hitSlop={6} accessibilityLabel="Delete set" className="w-5 items-center">
+      <Pressable onPress={onDelete} hitSlop={12} accessibilityLabel="Delete set" className="w-5 h-8 items-center justify-center">
         <Text className="text-muted/30 text-xs">✕</Text>
       </Pressable>
+    </View>
+    {rirOpen && !set.skipped ? (
+      <View className="flex-row items-center gap-1.5 px-3 pb-2">
+        <Text className="text-[10px] uppercase tracking-wider text-faint">Reps left</Text>
+        {RIR_OPTIONS.map((o) => {
+          const active = set.rpe === o.rpe
+          return (
+            <Pressable
+              key={o.rpe}
+              onPress={() => pickRir(o.rpe)}
+              accessibilityLabel={`${o.hint} — ${o.rir} reps in reserve`}
+              accessibilityState={{ selected: active }}
+              className={cn('flex-1 h-11 rounded-2xl items-center justify-center', active ? 'bg-accent' : 'bg-panel')}
+            >
+              <Text className={cn('font-display text-sm', active ? 'text-black' : 'text-white')}>{o.rir}</Text>
+              <Text className={cn('text-[9px]', active ? 'text-black/70' : 'text-faint')}>{o.hint}</Text>
+            </Pressable>
+          )
+        })}
+      </View>
+    ) : null}
     </View>
   )
 }
@@ -144,7 +192,9 @@ export default function Workout() {
       const exercise = findExercise(exId, data.customExercises)
       const { working: lastWorking, backoff: lastBackoff } = lastPerformance(data.sessions, exId)
       const lastW = lastWorking[0] ?? null
-      const sug = exercise ? suggestWorkingSet(lastW, exercise, { unit: 'kg', smallestPlateKg: plate }) : null
+      // Starší tréninky (bez toho posledního) — motor z nich pozná stagnaci.
+      const previous = recentWorkingSets(data.sessions, exId).slice(1)
+      const sug = exercise ? suggestWorkingSet(lastW, exercise, { unit: 'kg', smallestPlateKg: plate }, previous) : null
       const workingSet = blankWorking(sug, lastW ? { weight: lastW.weight, reps: lastW.reps } : null)
       const lastB = lastBackoff[0] ?? null
       const backoff = blankBackoff(workingSet.suggestion?.weight ?? null, lastB ? { weight: lastB.weight, reps: lastB.reps } : null, plate)
@@ -229,7 +279,8 @@ export default function Workout() {
     if (entries.some((e) => e.exerciseId === exercise.id)) return
     const { working: lastWorking, backoff: lastBackoff } = lastPerformance(data.sessions, exercise.id)
     const lastW = lastWorking[0] ?? null
-    const sug = suggestWorkingSet(lastW, exercise, { unit: 'kg', smallestPlateKg: plate })
+    const previous = recentWorkingSets(data.sessions, exercise.id).slice(1)
+    const sug = suggestWorkingSet(lastW, exercise, { unit: 'kg', smallestPlateKg: plate }, previous)
     const workingSet = blankWorking(sug, lastW ? { weight: lastW.weight, reps: lastW.reps } : null)
     const lastB = lastBackoff[0] ?? null
     const backoff = blankBackoff(workingSet.suggestion?.weight ?? null, lastB ? { weight: lastB.weight, reps: lastB.reps } : null, plate)
@@ -380,7 +431,7 @@ export default function Workout() {
                   <Text className="font-display text-base text-white" numberOfLines={1}>{exercise.name}</Text>
                   <Text className="text-xs text-muted" numberOfLines={1}>
                     {exercise.muscleGroup}
-                    {lastWorking[0] ? ` · minule: ${lastWorking[0].reps}×${lastWorking[0].weight} kg${lastWorking[0].rpe ? ` @${lastWorking[0].rpe}` : ''}` : ''}
+                    {lastWorking[0] ? ` · last: ${lastWorking[0].reps}×${lastWorking[0].weight} kg${lastWorking[0].rpe ? ` · RIR ${rirLabel(String(lastWorking[0].rpe))}` : ''}` : ''}
                   </Text>
                 </View>
                 <Pressable
@@ -410,7 +461,7 @@ export default function Workout() {
                 <Text className="w-4" />
                 <Text className="flex-1 text-center text-[9px] text-muted uppercase font-semibold">kg</Text>
                 <Text className="flex-1 text-center text-[9px] text-muted uppercase font-semibold">rep</Text>
-                <Text className="w-11 text-center text-[9px] text-muted uppercase font-semibold">RPE</Text>
+                <Text className="w-11 text-center text-[9px] text-muted uppercase font-semibold">RIR</Text>
                 <View className="w-7" /><View className="w-8" /><View className="w-5" />
               </View>
 
