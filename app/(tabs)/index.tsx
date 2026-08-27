@@ -17,18 +17,12 @@ import {
   countScoringSets,
   workoutStreakWeeks,
   volumeLast30Days,
-  weeklySetsByMuscle,
+  weeklyVolumeReport,
   recommendNextSplit,
   countsTowardProgress,
-  MUSCLE_LABEL,
-  type MuscleGroup,
   type WorkoutSession,
 } from '@/core'
-
-/** Vedlejší svaly dávají půlky — „7.5" ano, „7.0" ne. */
-function formatSets(n: number): string {
-  return Number.isInteger(n) ? String(n) : n.toFixed(1)
-}
+import { VolumeBar, volumeHeadline } from '@/components/VolumeBar'
 
 /** Heaviest working set of a session — what the loaded bar renders. */
 function topSet(session: WorkoutSession): { name: string; weight: number; reps: number } | null {
@@ -65,7 +59,7 @@ export default function Dashboard() {
     }, []),
   )
 
-  const weeklyMuscles = weeklySetsByMuscle(sessions, data.customExercises)
+  const volumeRows = weeklyVolumeReport(sessions, data.customExercises)
   const hasSplits = splits.length > 0
   const lastSession = useMemo(
     () => (sessions.length > 0 ? [...sessions].sort((a, b) => b.date.localeCompare(a.date))[0] : null),
@@ -211,32 +205,17 @@ export default function Dashboard() {
               </View>
             </Animated.View>
 
-            {sessions.length > 0 && weeklyMuscles.length > 0 && (
+            {sessions.length > 0 && (
               <Animated.View entering={stage(4)}>
                 <SectionTitle>Weekly sets by muscle</SectionTitle>
                 <Card className="gap-2.5">
-                  {weeklyMuscles.map(({ muscle, sets }) => {
-                    const max = weeklyMuscles[0].sets || 1
-                    return (
-                      <View key={muscle} className="flex-row items-center gap-3">
-                        <Text className="w-20 font-mono text-[11px] uppercase tracking-[0.5px] text-muted">
-                          {MUSCLE_LABEL[muscle as MuscleGroup] ?? muscle}
-                        </Text>
-                        <View className="h-1.5 flex-1 overflow-hidden rounded-full bg-panel2">
-                          <View
-                            className="h-full rounded-full bg-accent"
-                            style={{ width: `${Math.max(8, (sets / max) * 100)}%` }}
-                          />
-                        </View>
-                        <Text
-                          className="w-9 text-right font-mono-semibold text-sm text-white"
-                          style={tnum}
-                        >
-                          {formatSets(sets)}
-                        </Text>
-                      </View>
-                    )
-                  })}
+                  <Text className="text-xs text-muted">{volumeHeadline(volumeRows)}</Text>
+                  {volumeRows.map((row) => (
+                    <VolumeBar key={row.muscle} row={row} />
+                  ))}
+                  <Text className="text-[10px] text-faint">
+                    Band = MEV to MAV, line = MRV. Secondary muscles count as half a set.
+                  </Text>
                 </Card>
               </Animated.View>
             )}
