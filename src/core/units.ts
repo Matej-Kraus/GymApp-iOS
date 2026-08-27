@@ -30,3 +30,12 @@ export function toDisplayWeight(kg: number, unit: Unit): number {
   const value = unit === 'lb' ? kgToLb(kg) : kg
   return Math.round(value * 10) / 10
 }
+
+/**
+ * Zaokrouhlí váhu DOLŮ na násobek přírůstku — pro stropy, které se nesmí
+ * překročit. Např. floorToIncrement(44, 2.5) → 42.5 (ne 45).
+ */
+export function floorToIncrement(weight: number, increment: number): number {
+  if (increment <= 0) return weight
+  return Math.round(Math.floor(weight / increment) * increment * 1000) / 1000
+}
