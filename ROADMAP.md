@@ -64,8 +64,7 @@ Odloženo, protože nic neblokuje. Až bude Apple Developer účet.
 - `@expo/vector-icons` je v SDK 56 deprecated → `@react-native-vector-icons/ionicons`. Už v **sedmi** souborech (emoji se nahradily ikonami), ne ve dvou.
 - `expo-file-system/legacy` → nové API. Import se při F3 přesunul do `src/lib/platform.ts:2`, takže je to jedno místo.
 - Vytvořit `eas.json`, doplnit `ios.bundleIdentifier` (v `app.json` chybí, bez něj nejde build)
-- Rozhodnout jazyk hlášek o oprávnění HealthKitu v `app.json` — jsou česky, zatímco
-  zbytek UI je anglicky. Vidí je uživatel jako první při instalaci.
+- `expo.name` je pořád `moje-app-native` — to je text pod ikonou na ploše.
 
 ---
 

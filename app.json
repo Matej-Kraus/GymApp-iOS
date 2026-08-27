@@ -10,8 +10,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSHealthShareUsageDescription": "Workout Tracker čte z Apple Health tvoji váhu, tělesné složení a tréninky z Apple Watch, aby je ukázal v přehledech a grafech.",
-        "NSHealthUpdateUsageDescription": "Workout Tracker může zapisovat vybraná fitness data do Apple Health, pokud tuto funkci zapneš."
+        "NSHealthShareUsageDescription": "Reads your weight, body composition and Apple Watch sessions from Apple Health, so your charts and trends stay complete.",
+        "NSHealthUpdateUsageDescription": "Writes your finished sessions back to Apple Health, so other apps see the training you logged here. Only if you turn it on."
       }
     },
     "android": {
@@ -34,8 +34,8 @@
       [
         "@kingstinct/react-native-healthkit",
         {
-          "NSHealthShareUsageDescription": "Workout Tracker čte z Apple Health tvoji váhu, tělesné složení a tréninky z Apple Watch, aby je ukázal v přehledech a grafech.",
-          "NSHealthUpdateUsageDescription": "Workout Tracker může zapisovat vybraná fitness data do Apple Health, pokud tuto funkci zapneš.",
+          "NSHealthShareUsageDescription": "Reads your weight, body composition and Apple Watch sessions from Apple Health, so your charts and trends stay complete.",
+          "NSHealthUpdateUsageDescription": "Writes your finished sessions back to Apple Health, so other apps see the training you logged here. Only if you turn it on.",
           "background": false
         }
       ]
