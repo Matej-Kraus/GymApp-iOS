@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { confirm } from '@/lib/platform'
 import { useAppState } from '@/state/AppStateContext'
 import { sessionVolume, countScoringSets, epley1RM, findExercise } from '@/core'
 import type { WorkoutSession, Exercise } from '@/core'
@@ -156,11 +157,16 @@ export default function History() {
     if (session.splitId) router.push({ pathname: '/workout', params: { splitId: session.splitId } })
     else router.push({ pathname: '/workout', params: { splitId: 'free' } })
   }
-  function confirmDeleteSession(session: WorkoutSession) {
-    Alert.alert('Delete session?', formatLong(session.date), [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => { deleteSession(session.id); if (sessionsOnDay.length === 1) setSelectedDate(null) } },
-    ])
+  async function confirmDeleteSession(session: WorkoutSession) {
+    const yes = await confirm({
+      title: 'Delete session?',
+      message: formatLong(session.date),
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (!yes) return
+    deleteSession(session.id)
+    if (sessionsOnDay.length === 1) setSelectedDate(null)
   }
 
   return (

@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import * as FileSystem from 'expo-file-system/legacy'
-import * as Sharing from 'expo-sharing'
-import * as DocumentPicker from 'expo-document-picker'
+import { confirm, pickJson, saveJson } from '@/lib/platform'
+import { todayISO } from '@/lib/format'
 import { useAppState } from '@/state/AppStateContext'
 import { Button, Card, PageHeader, cn } from '@/components/ui'
 import { DATA_VERSION, deserialize } from '@/core'
@@ -68,45 +67,48 @@ export default function Settings() {
 
   async function handleExport() {
     try {
-      const path = FileSystem.cacheDirectory + `workout-backup-${new Date().toISOString().slice(0, 10)}.json`
-      await FileSystem.writeAsStringAsync(path, JSON.stringify(data, null, 2))
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(path, { mimeType: 'application/json', dialogTitle: 'Training backup' })
-      } else {
-        Alert.alert('Backup saved', path)
-      }
+      // Datum lokálně — toISOString() by po půlnoci ukázalo včerejšek.
+      const name = `workout-backup-${todayISO()}.json`
+      setStatus(await saveJson(name, JSON.stringify(data, null, 2)))
     } catch {
-      Alert.alert('Error', 'Could not save the backup.')
+      setStatus('Could not save the backup.')
     }
   }
 
   async function handleImport() {
+    let parsed: ReturnType<typeof deserialize>
     try {
-      const res = await DocumentPicker.getDocumentAsync({ type: 'application/json', copyToCacheDirectory: true })
-      if (res.canceled || !res.assets?.[0]) return
-      const content = await FileSystem.readAsStringAsync(res.assets[0].uri)
-      const parsed = deserialize(content)
+      const content = await pickJson()
+      if (content === null) return // uživatel zrušil výběr, není co hlásit
+      parsed = deserialize(content)
       if (parsed.version !== DATA_VERSION && parsed.sessions.length === 0 && parsed.splits.length === 0) {
         throw new Error('invalid')
       }
-      Alert.alert(
-        'Restore from backup?',
-        `This replaces ${data.sessions.length} sessions and ${data.splits.length} splits.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Obnovit', style: 'destructive', onPress: () => { replaceAllData(parsed); setStatus('Backup restored.') } },
-        ],
-      )
     } catch {
       setStatus('Could not read that file. Check it is a backup export.')
+      return
     }
+    // Potvrzení až po úspěšném načtení — ptát se na přepis dat kvůli
+    // souboru, který stejně nejde přečíst, nedává smysl.
+    const yes = await confirm({
+      title: 'Restore from backup?',
+      message: `This replaces ${data.sessions.length} sessions and ${data.splits.length} splits.`,
+      confirmLabel: 'Restore',
+      destructive: true,
+    })
+    if (!yes) return
+    replaceAllData(parsed)
+    setStatus('Backup restored.')
   }
 
-  function handleReset() {
-    Alert.alert('Delete ALL data?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete everything', style: 'destructive', onPress: resetAllData },
-    ])
+  async function handleReset() {
+    const yes = await confirm({
+      title: 'Delete ALL data?',
+      message: 'This cannot be undone.',
+      confirmLabel: 'Delete everything',
+      destructive: true,
+    })
+    if (yes) resetAllData()
   }
 
   return (
@@ -258,12 +260,15 @@ export default function Settings() {
                 title="Delete sample data"
                 variant="danger"
                 size="sm"
-                onPress={() =>
-                  Alert.alert('Delete sample data?', 'Your own sessions stay.', [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Smazat', style: 'destructive', onPress: deleteSampleData },
-                  ])
-                }
+                onPress={async () => {
+                  const yes = await confirm({
+                    title: 'Delete sample data?',
+                    message: 'Your own sessions stay.',
+                    confirmLabel: 'Delete',
+                    destructive: true,
+                  })
+                  if (yes) deleteSampleData()
+                }}
               />
             )}
           </Card>

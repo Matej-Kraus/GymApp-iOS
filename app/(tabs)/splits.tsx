@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { createId, SPLIT_TEMPLATES, findExercise } from '@/core'
+import { confirm } from '@/lib/platform'
 import { useAppState } from '@/state/AppStateContext'
 import { Button, Card, EmptyState, PageHeader, cn } from '@/components/ui'
 import { colors } from '@/theme/colors'
@@ -27,11 +28,14 @@ export default function Splits() {
     setTemplatesOpen(false)
   }
 
-  function confirmDelete(id: string) {
-    Alert.alert('Delete split?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteSplit(id) },
-    ])
+  async function confirmDelete(id: string) {
+    const yes = await confirm({
+      title: 'Delete split?',
+      message: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (yes) deleteSplit(id)
   }
 
   return (

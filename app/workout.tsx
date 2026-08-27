@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -17,6 +17,7 @@ import {
 } from '@/core'
 import type { DraftSet, DraftEntry } from '@/lib/workoutDraft'
 import { clearDraft, loadDraft, saveDraft } from '@/lib/workoutDraft'
+import { choose, confirm } from '@/lib/platform'
 import { useAppState } from '@/state/AppStateContext'
 import { Button, cn } from '@/components/ui'
 import { ExerciseImage } from '@/components/ExerciseImage'
@@ -346,12 +347,20 @@ export default function Workout() {
     setPlateCalc({ open: true, weight: wkg })
   }
 
-  function leave() {
-    Alert.alert('Leave this session?', 'It stays saved. You can pick it up again from Today.', [
-      { text: 'Stay', style: 'cancel' },
-      { text: 'Opustit', onPress: () => router.back() },
-      { text: 'Zahodit', style: 'destructive', onPress: () => { void clearDraft(); router.back() } },
-    ])
+  async function leave() {
+    // Tři možnosti — přesně proto nestačí window.confirm.
+    const answer = await choose<'stay' | 'keep' | 'discard'>({
+      title: 'Leave this session?',
+      message: 'It stays saved. You can pick it up again from Today.',
+      options: [
+        { label: 'Stay', value: 'stay', style: 'cancel' },
+        { label: 'Leave and keep', value: 'keep' },
+        { label: 'Discard', value: 'discard', style: 'destructive' },
+      ],
+    })
+    if (answer === 'stay' || answer === null) return
+    if (answer === 'discard') void clearDraft()
+    router.back()
   }
 
   function handleFinish() {
@@ -399,7 +408,7 @@ export default function Workout() {
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
       <View className="flex-row items-center gap-3 border-b border-white/10 px-4 py-3">
-        <Pressable onPress={leave} hitSlop={8} accessibilityLabel="Discard session">
+        <Pressable onPress={leave} hitSlop={8} accessibilityLabel="Leave session">
           <Text className="text-muted text-lg">✕</Text>
         </Pressable>
         <Text className="flex-1 font-display text-lg text-white">{meta.splitName}</Text>
@@ -448,9 +457,17 @@ export default function Workout() {
                   </View>
                 ) : null}
                 <Pressable
-                  onPress={() => Alert.alert('Odebrat cvik?', exercise.name, [{ text: 'Cancel', style: 'cancel' }, { text: 'Odebrat', style: 'destructive', onPress: () => removeEntry(ei) }])}
+                  onPress={async () => {
+                    const yes = await confirm({
+                      title: 'Remove exercise?',
+                      message: exercise.name,
+                      confirmLabel: 'Remove',
+                      destructive: true,
+                    })
+                    if (yes) removeEntry(ei)
+                  }}
                   hitSlop={6}
-                  accessibilityLabel="Odebrat cvik"
+                  accessibilityLabel="Remove exercise"
                 >
                   <Text className="text-muted/40 text-base">✕</Text>
                 </Pressable>

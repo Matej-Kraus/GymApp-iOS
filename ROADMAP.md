@@ -2,7 +2,7 @@
 
 Co je hotové, co se dělá dál a na co si dát pozor. Aktualizuj po každé větší dávce práce.
 
-**Stav k 27. 8. 2026:** motor progrese přepsaný na RIR (F6 hotovo) — appka je poprvé dlouhodobě použitelná. Další na řadě je **F3**, protože na webu (jediná testovací smyčka) tiše nefungují dialogy.
+**Stav k 27. 8. 2026:** hotové F6 (motor progrese na RIR) a F3 (web-safe vrstva). Dialogy i záloha teď fungují i na webu, takže testovací smyčka konečně ukazuje pravdu. Další na řadě je **F4** — rozpad `app/workout.tsx`, ať je kam psát RIR/supersety.
 
 ---
 
@@ -31,23 +31,17 @@ Testovací smyčka je **web**. Nativní věci (HealthKit, haptika, notifikace) n
 - [x] Design systém: `Button`, `Card`, `Chip`, `Segmented`, `Toggle`, `ProgressBar`, `Banner`, `Stat`, `HeroStat`, `Row`, `SectionTitle`
 - [x] **F6 · Motor progrese na RIR** — `src/core/rir.ts`, tvrdé stropy, rep-range clamp,
       mikro-deload, RIR chipy v UI (79 testů)
+- [x] **F3 · Web-safe vrstva** — `src/lib/dialogHost.ts` + `ConfirmProvider` + `src/lib/platform.ts`;
+      všech 9 `Alert.alert` pryč, export/import zálohy jede i na webu (87 testů)
 
 ---
 
 ## Co dál — v tomhle pořadí
 
-> F6 je hotová. Jak motor rozhoduje, je popsané v hlavičce `src/core/rir.ts`;
-> `progression.ts` už jen skládá text návrhu.
-
-### F3 · Web-safe vrstva
-
-Na webu **`Alert.alert` neexistuje** → dialogy „Smazat split?" tiše nic neudělají. Taky `Share.share` a export/import zálohy (`FileSystem.cacheDirectory` je `null`).
-
-- Nový `src/components/ConfirmProvider.tsx` — vlastní modal, **ne** fork nad `Alert`. Důvod: `window.confirm` neumí tři tlačítka a `app/workout.tsx` má přesně tři (Stay / Leave and keep / Discard).
-- Nový `src/lib/platform.ts` — `confirm()`, `choose<T>()`, `notify()`, `shareText()`, `saveJson()`, `pickJson()`
-- Nahradit **8 volání `Alert.alert`**: `workout.tsx:299,400` · `settings.tsx:76,79,92,106,262` · `history.tsx:160` · `splits.tsx:31`
-
----
+> F6 a F3 jsou hotové. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
+> Na cokoli, co se ptá uživatele nebo sahá na soubory, používej `@/lib/platform`
+> (`confirm`, `choose`, `notify`, `saveJson`, `pickJson`, `shareText`) — nikdy
+> `Alert.alert` ani `window.confirm`.
 
 ### F4 · Rozpad `app/workout.tsx` (513 ř.)
 
@@ -145,6 +139,7 @@ Odloženo, protože nic neblokuje. Až bude Apple Developer účet.
 - **Dotykové cíle pod 44 pt:** v `SetRow` má mazání série **20 px**, skip 28×32, ✓ 32×32. Buňky kalendáře v `history.tsx` 40 px.
 - **UTC posun dat:** `toISOString().slice(0,10)` v `stats.ts:61,73` · `history.tsx:25` · `progress.tsx` · `TrainingHeatmap.tsx:41,55` · `settings.tsx:71` · `health.ts:75,98`. V ČR po půlnoci ukáže „dnešek" o den zpět. **Náhrady už existují** — `todayISO()` a `localDateISO()` v `src/lib/format.ts`, jen se ještě nepoužívají.
 - **Notifikace:** `applyReminders()` tiše vrátí `false`, ale přepínač v UI zůstane zapnutý → uživatel si myslí, že připomínka běží.
+- **UTC posun** je pořád všude kromě `settings.tsx` (export už používá `todayISO()`).
 - `src/components/Screen.tsx` je **mrtvý kód** (0 importů) — každá obrazovka si `SafeAreaView` píše sama. Buď oživit jako jediné místo pro safe area, nebo smazat.
 
 ### Drobnosti
@@ -168,6 +163,10 @@ Než něco přidáš do UI, přečti si tohle — jinak se to rozpadne:
 4. **Jedna rodina písma** (Plus Jakarta Sans). Hierarchii dělá váha a velikost, ne míchání písem.
 5. **Žádná emoji jako ikony** — jen Ionicons.
 6. Zdroj pravdy pro barvy je `src/theme/colors.ts`; `tailwind.config.js` je jeho ruční zrcadlo — **měň obojí**.
+7. **Uvnitř `<Modal>` nedávej `className` na `Animated.View`** — neprojeví se (na `Pressable`
+   a `Text` ano). Barvy a rozvržení dej na obyčejný `View`, animaci nech uvnitř. A `flex-1`
+   tam nedostane výšku, takže na plochu přes celou obrazovku použij `StyleSheet.absoluteFill`.
+   Stálo to hodinu při F3, viz `ConfirmProvider.tsx`.
 
 ## Odkud vzešel návrh
 

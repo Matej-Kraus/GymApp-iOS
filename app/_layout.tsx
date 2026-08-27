@@ -12,6 +12,7 @@ import {
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans'
 import { AppStateProvider } from '@/state/AppStateContext'
+import { ConfirmProvider } from '@/components/ConfirmProvider'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -34,8 +35,10 @@ export default function RootLayout() {
 
   return (
     <AppStateProvider>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }} />
+      <ConfirmProvider>
+        <StatusBar style="light" />
+        <Stack screenOptions={{ headerShown: false }} />
+      </ConfirmProvider>
     </AppStateProvider>
   )
 }
