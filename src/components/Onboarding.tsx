@@ -6,6 +6,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { Button } from '@/components/ui'
 import { colors } from '@/theme/colors'
 import { tapLight, success } from '@/lib/haptics'
+import { phoneWidth } from '@/theme/layout'
 
 const POINTS: { icon: keyof typeof Ionicons.glyphMap; title: string; text: string }[] = [
   { icon: 'trending-up', title: 'Progressive overload', text: 'Every set gets a target based on how hard the last one felt — push when you have reps in reserve, hold when you don’t.' },
@@ -25,7 +26,7 @@ export function Onboarding({ visible }: { visible: boolean }) {
 
   return (
     <Modal visible={visible} animationType="fade" onRequestClose={() => finish()}>
-      <SafeAreaView className="flex-1 bg-bg">
+      <SafeAreaView className="flex-1 bg-bg" style={phoneWidth}>
         <View className="flex-1 px-6 pt-10">
           <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-accent">Welcome</Text>
           <Text className="mt-1 font-display text-4xl text-white">Workout</Text>

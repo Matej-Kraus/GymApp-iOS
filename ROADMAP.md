@@ -109,7 +109,11 @@ Než něco přidáš do UI, přečti si tohle — jinak se to rozpadne:
    a `Text` ano). Barvy a rozvržení dej na obyčejný `View`, animaci nech uvnitř. A `flex-1`
    tam nedostane výšku, takže na plochu přes celou obrazovku použij `StyleSheet.absoluteFill`.
    Stálo to hodinu při F3, viz `ConfirmProvider.tsx`.
-8. **Když prvek zmizí nebo nemá barvu, podezřívej NativeWind třídu, ne logiku.**
+8. **Web se drží v šířce telefonu** (`global.css` → `#root`, 480 px). Modaly se montují
+   mimo `#root`, takže si šířku berou samy z `phoneWidth` v `src/theme/layout.ts` —
+   nový modal na to nezapomeň. Obalit `<Stack>` do View **nefunguje**: rozbije to
+   Reanimated `entering` a obsah zůstane neviditelný.
+9. **Když prvek zmizí nebo nemá barvu, podezřívej NativeWind třídu, ne logiku.**
    Nepropsaly se `h-2.5`, `w-0.5` ani `bg-white/[0.13]` — bez chyby, prostě nic.
    Na malé rozměry a průhlednosti používej `style`, viz `VolumeBar.tsx`.
 

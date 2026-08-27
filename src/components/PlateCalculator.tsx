@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { platesForBarbell, DEFAULT_BAR_KG } from '@/core'
 import { colors } from '@/theme/colors'
 import { cn } from '@/components/ui'
+import { phoneWidth } from '@/theme/layout'
 
 const BAR_OPTIONS = [20, 15, 10]
 // Vizuální výška kotouče dle hmotnosti (větší kotouč = vyšší).
@@ -53,7 +54,7 @@ export function PlateCalculator({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-      <SafeAreaView className="flex-1 bg-bg/95">
+      <SafeAreaView className="flex-1 bg-bg/95" style={phoneWidth}>
         <View className="flex-1 px-4 pt-4">
           <View className="flex-row items-center justify-between mb-5">
             <Text className="font-display text-xl text-white">Plate calculator</Text>

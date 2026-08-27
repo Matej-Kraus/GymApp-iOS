@@ -6,6 +6,7 @@ import { MUSCLE_LABEL } from '@/core'
 import { cn } from '@/components/ui'
 import { ExerciseImage } from '@/components/ExerciseImage'
 import { colors } from '@/theme/colors'
+import { phoneWidth } from '@/theme/layout'
 
 const CATEGORIES: Array<{ value: Category | 'All'; label: string }> = [
   { value: 'All', label: 'All' },
@@ -38,7 +39,7 @@ export function ExercisePicker({ visible, exercises, selectedIds, onToggle, onCl
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-bg" edges={['top']} style={phoneWidth}>
         {/* Záhlaví */}
         <View className="flex-row items-center gap-3 border-b border-white/10 px-4 py-3">
           <Pressable onPress={onClose} hitSlop={8}>

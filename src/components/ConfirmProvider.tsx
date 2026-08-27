@@ -8,6 +8,7 @@ import {
 } from '@/lib/dialogHost'
 import { cn } from '@/components/ui'
 import { tapLight } from '@/lib/haptics'
+import { phoneWidth } from '@/theme/layout'
 
 /**
  * Jediné místo, kde se v appce ptáme uživatele na potvrzení.
@@ -81,7 +82,10 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               onPress={() => answer(cancelValue)}
             />
             <Animated.View entering={FadeInDown.duration(200).springify().damping(20)}>
-            <View className="m-3 mb-8 rounded-3xl bg-panel border border-line overflow-hidden">
+            <View
+              className="m-3 mb-8 rounded-3xl bg-panel border border-line overflow-hidden"
+              style={phoneWidth}
+            >
               <View className="px-5 pt-5 pb-4 gap-1.5">
                 <Text
                   accessibilityRole="header"

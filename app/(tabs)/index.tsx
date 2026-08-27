@@ -26,6 +26,7 @@ import {
   type WorkoutSession,
 } from '@/core'
 import { VolumeBar, volumeHeadline } from '@/components/VolumeBar'
+import { phoneWidth } from '@/theme/layout'
 
 /** Heaviest working set of a session — what the loaded bar renders. */
 function topSet(session: WorkoutSession): { name: string; weight: number; reps: number } | null {
@@ -295,7 +296,7 @@ export default function Dashboard() {
 
       {/* Session picker */}
       <Modal visible={pickerOpen} animationType="slide" transparent onRequestClose={closePicker}>
-        <SafeAreaView className="flex-1 bg-bg/95">
+        <SafeAreaView className="flex-1 bg-bg/95" style={phoneWidth}>
           <View className="flex-1 px-4 pt-4">
             {pickerStep === 'program' ? (
               <>

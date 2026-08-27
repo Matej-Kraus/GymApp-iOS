@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * Šířka telefonu na webu.
+ *
+ * Celé UI je navržené na mobil. V okně přes celou obrazovku se řádky sérií
+ * roztáhnou přes metr a nedá se to číst ani ověřovat — a web je přitom
+ * jediná testovací smyčka projektu.
+ *
+ * Schválně CSS a ne obalová komponenta: obalení <Stack> do dalšího View
+ * rozbilo nábězné animace na dashboardu (Reanimated `entering` zůstalo na
+ * nulové průhlednosti a obsah byl neviditelný, i když byl v DOM). Takhle se
+ * strom komponent vůbec nemění a na nativu se global.css neuplatní.
+ *
+ * Modaly tady NEŘEŠÍME. React Native for Web je montuje mimo #root jako
+ * bezejmenné <div>y a uvnitř mají `position: fixed`, takže se omezení
+ * rodiče nechytí. Pokusy o to (transform jako vztažný rámec) rozbily
+ * svislý layout. Každý modal si proto šířku hlídá sám přes PHONE_MAX_WIDTH
+ * z `src/theme/layout.ts` — viz `ConfirmProvider`, `Onboarding`.
+ */
+html,
+body {
+  background-color: #000;
+}
+
+#root {
+  max-width: 480px;
+  margin: 0 auto;
+  /* Aby bylo poznat, kde appka končí a kde je jen plocha okolo. */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
