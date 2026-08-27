@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "moje-app-native",
-    "slug": "moje-app-native",
+    "name": "Workout",
+    "slug": "workout",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
