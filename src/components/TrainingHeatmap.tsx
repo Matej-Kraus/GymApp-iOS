@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import type { WorkoutSession } from '@/core'
 import { cn } from '@/components/ui'
+import { localDateISO } from '@/lib/format'
 
 interface Props {
   sessions: WorkoutSession[]
@@ -38,7 +39,7 @@ export function TrainingHeatmap({ sessions }: Props) {
     weeks.push(days.slice(i, i + 7))
   }
 
-  const todayKey = today.toISOString().slice(0, 10)
+  const todayKey = localDateISO(today)
 
   return (
     <View className="gap-1.5">
@@ -52,7 +53,7 @@ export function TrainingHeatmap({ sessions }: Props) {
             <View key={wi} className="gap-0.5">
               {week.map((day, di) => {
                 if (!day) return <View key={di} className="w-3 h-3" />
-                const key = day.toISOString().slice(0, 10)
+                const key = localDateISO(day)
                 const count = counts.get(key) ?? 0
                 return (
                   <View

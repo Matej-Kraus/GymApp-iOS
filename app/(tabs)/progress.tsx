@@ -5,7 +5,7 @@ import { useAppState } from '@/state/AppStateContext'
 import { epley1RM, countsTowardProgress, findExercise, allExercises, createId } from '@/core'
 import type { WorkoutSession } from '@/core'
 import { PageHeader, Card, Button, Stat, cn } from '@/components/ui'
-import { formatDate } from '@/lib/format'
+import { formatDate, todayISO } from '@/lib/format'
 import {
   isHealthAvailable,
   requestHealthAccess,
@@ -149,7 +149,7 @@ export default function Progresss() {
     setDeadlineInput('')
   }
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayISO()
   const todayEntry = data.bodyWeightLog.find((e) => e.date === today)
   const lastWeightEntry = data.bodyWeightLog.length > 0 ? [...data.bodyWeightLog].sort((a, b) => b.date.localeCompare(a.date))[0] : null
   const [weightInput, setWeightInput] = useState(todayEntry ? String(todayEntry.kg) : '')

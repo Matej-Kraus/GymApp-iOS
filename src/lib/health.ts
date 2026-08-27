@@ -1,6 +1,7 @@
 import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 import type { ObjectTypeIdentifier } from '@kingstinct/react-native-healthkit'
+import { localDateISO } from './format'
 
 /**
  * Apple Health (HealthKit) — čtení váhy, tělesného složení a tréninků z Apple Watch.
@@ -104,7 +105,7 @@ export async function readWeightHistory(): Promise<{ date: string; kg: number }[
       ascending: true,
     })
     return samples
-      .map((s) => ({ date: new Date(s.startDate).toISOString().slice(0, 10), kg: Math.round(s.quantity * 10) / 10 }))
+      .map((s) => ({ date: localDateISO(s.startDate), kg: Math.round(s.quantity * 10) / 10 }))
       .sort((a, b) => a.date.localeCompare(b.date))
   } catch {
     return []
@@ -130,7 +131,7 @@ export async function readRecentWorkouts(limit = 20): Promise<HealthWorkout[]> {
       const durationMin = Math.max(0, Math.round((end - start) / 60000))
       const energy = w.totalEnergyBurned?.quantity
       return {
-        date: new Date(w.startDate).toISOString().slice(0, 10),
+        date: localDateISO(w.startDate),
         activity: workoutLabel(w.workoutActivityType),
         durationMin,
         energyKcal: typeof energy === 'number' ? Math.round(energy) : null,

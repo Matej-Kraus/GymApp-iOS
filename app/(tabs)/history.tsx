@@ -7,7 +7,7 @@ import { useAppState } from '@/state/AppStateContext'
 import { sessionVolume, countScoringSets, epley1RM, findExercise } from '@/core'
 import type { WorkoutSession, Exercise } from '@/core'
 import { Button, Card, PageHeader, Stat, cn } from '@/components/ui'
-import { formatLong } from '@/lib/format'
+import { formatLong, todayISO } from '@/lib/format'
 
 const DAYS = ['Po', 'Tue', 'St', 'Thu', 'Fri', 'So', 'Ne']
 const MONTHS_CZ = ['January', 'February', 'March', 'April', 'May', 'June', 'Juneec', 'August', 'September', 'October', 'November', 'December']
@@ -23,7 +23,7 @@ function Calendar({ year, month, trainingDays, selected, onSelect, onPrev, onNex
     ...Array(startOffset).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ]
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayISO()
 
   return (
     <Card>

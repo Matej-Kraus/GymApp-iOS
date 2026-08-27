@@ -1,5 +1,6 @@
 import type { SetLog, WorkoutEntry, WorkoutSession, Exercise } from './types'
 import { findExercise } from './exerciseDb'
+import { localDateISO, mondayOf } from './dates'
 
 /**
  * Statistiky a výpočty nad sériemi/tréninky. Vše čisté funkce.
@@ -53,16 +54,8 @@ export function countScoringSets(session: WorkoutSession): number {
 export function workoutStreakWeeks(sessions: WorkoutSession[]): number {
   if (sessions.length === 0) return 0
 
-  function getMonday(dateStr: string): string {
-    const d = new Date(dateStr)
-    const day = d.getDay()
-    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1))
-    d.setHours(0, 0, 0, 0)
-    return d.toISOString().slice(0, 10)
-  }
-
-  const trainingWeeks = new Set(sessions.map((s) => getMonday(s.date)))
-  const currentWeek = getMonday(new Date().toISOString())
+  const trainingWeeks = new Set(sessions.map((s) => mondayOf(s.date)))
+  const currentWeek = mondayOf(new Date())
 
   const start = new Date(currentWeek)
   if (!trainingWeeks.has(currentWeek)) {
@@ -70,7 +63,7 @@ export function workoutStreakWeeks(sessions: WorkoutSession[]): number {
   }
 
   let streak = 0
-  while (trainingWeeks.has(start.toISOString().slice(0, 10))) {
+  while (trainingWeeks.has(localDateISO(start))) {
     streak++
     start.setDate(start.getDate() - 7)
   }
