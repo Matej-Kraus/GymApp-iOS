@@ -2,7 +2,7 @@
 
 Co je hotové, co se dělá dál a na co si dát pozor. Aktualizuj po každé větší dávce práce.
 
-**Stav k 27. 8. 2026:** hotové F6, F3, F4, F5, F7 a F8. Zbývá **F9** (warm-up UI, supersety, náhrada cviku) a odložená F2.
+**Stav k 27. 8. 2026:** hotové F3–F9. Zbývá jediná věc: **F2** (Expo SDK 56 + dev-client), a ta čeká na Apple Developer účet a iPhone — nic z ní teď nejde ověřit.
 
 ---
 
@@ -41,27 +41,19 @@ Testovací smyčka je **web**. Nativní věci (HealthKit, haptika, notifikace) n
       under/optimal/warn/over místo jednolitě zelených pruhů (130 testů)
 - [x] **F8 · Mezocyklus + deload** — `src/core/mesocycle.ts`, volitelné pole v `Settings`
       (žádná migrace), deload banner na dashboardu, 2 ze 3 signálů (149 testů)
+- [x] **F9 · Warm-up, supersety, náhrada cviku** — `src/core/supersets.ts` +
+      `substitutes.ts`, schémata rozcvičky, trvalé poznámky ke cvikům (172 testů)
 
 ---
 
 ## Co dál — v tomhle pořadí
 
-> F6, F3, F4, F5, F7 a F8 jsou hotové. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
+> Hotové je všechno kromě F2. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
 > Na cokoli, co se ptá uživatele nebo sahá na soubory, používej `@/lib/platform`
 > (`confirm`, `choose`, `notify`, `saveJson`, `pickJson`, `shareText`) — nikdy
 > `Alert.alert` ani `window.confirm`. Obrazovka tréninku je rozdělená:
 > stav v `useWorkoutSession`, vzhled v `features/workout/*` — nová funkce
 > (supersety, náhrada cviku) patří tam, ne do `app/workout.tsx`.
-
-### F9 · Warm-up, supersety, náhrada cviku
-
-- Warm-up: core hotový z F4, doplnit UI + `Settings.warmupScheme`
-- Supersety: `supersetGroup?: string | null` na `WorkoutEntry` a `DraftEntry` (volitelné → bez migrace). Rest timer až po poslední sérii skupiny.
-- Náhrada cviku: nový `src/core/substitutes.ts` — skóre: shodný primární sval +3, průnik sekundárních +1, shodná kategorie +1, shodné vybavení +1
-- Poznámky ke cviku (výška sedačky, úchop)
-- Historie přímo v tréninku: „minule 80 kg × 8 @ RIR 2" — data jsou v `lastPerformance()`, chybí jen zobrazení
-
----
 
 ### F2 · Expo SDK 56 + dev-client
 

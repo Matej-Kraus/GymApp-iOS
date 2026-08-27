@@ -125,7 +125,7 @@ function DialogButton({ option, onPress }: { option: DialogOption<unknown>; onPr
         // 52 px — pohodlně nad 44pt minimem, i když jich je pod sebou víc.
         'h-[52px] rounded-2xl items-center justify-center',
         style === 'destructive' && 'border border-danger/40 bg-danger/10',
-        style === 'cancel' && 'bg-panel2 border border-line',
+        (style === 'cancel' || style === 'neutral') && 'bg-panel2 border border-line',
         style === 'default' && 'bg-accent',
       )}
     >
@@ -133,7 +133,7 @@ function DialogButton({ option, onPress }: { option: DialogOption<unknown>; onPr
         className={cn(
           'font-display text-base',
           style === 'destructive' && 'text-danger',
-          style === 'cancel' && 'text-white',
+          (style === 'cancel' || style === 'neutral') && 'text-white',
           style === 'default' && 'text-accent-text',
         )}
       >

@@ -106,6 +106,11 @@ export interface WorkoutEntry {
   /** Název ukládáme i textem — kdyby se cvik z knihovny smazal. */
   exerciseName: string
   sets: SetLog[]
+  /**
+   * Klíč supersetu (A, B, …). Cviky se stejným klíčem se cvičí hned po sobě
+   * bez pauzy. Volitelné, takže starší tréninky nepotřebují migraci.
+   */
+  supersetGroup?: string | null
 }
 
 /** Celý jeden odtrénovaný trénink. */
@@ -148,6 +153,13 @@ export interface Settings {
   onboarded?: boolean
   /** Mezocyklus (týdny akumulace + deload). Nenastaveno = neřeší se. */
   mesocycle?: MesocycleConfig
+  /** Kolik rozcvičovacích sérií nabídnout. Default 'standard'. */
+  warmupScheme?: 'short' | 'standard' | 'thorough'
+  /**
+   * Vlastní poznámky ke cvikům podle `exerciseId` — výška sedačky, úchop.
+   * Volitelná mapa v nastavení, takže žádná nová entita ani migrace.
+   */
+  exerciseNotes?: Record<string, string>
 }
 
 /**

@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { useMemo, useState } from 'react'
+import { Pressable, Text, TextInput, View } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import type { Exercise, SetLog, SetRole } from '@/core'
 import type { DraftEntry, DraftSet } from '@/lib/workoutDraft'
 import { ExerciseImage } from '@/components/ExerciseImage'
-import { confirm } from '@/lib/platform'
+import { choose, confirm } from '@/lib/platform'
+import { colors } from '@/theme/colors'
 import { SetRow, rirLabel } from './SetRow'
 
 /**
@@ -25,6 +26,14 @@ interface Props {
   onAutoWarmup: () => void
   onOpenPlates: () => void
   onRemove: () => void
+  /** Označení pozice v supersetu (A1), nebo null. */
+  supersetLabel: string | null
+  onToggleSuperset: () => void
+  /** Kandidáti na náhradu, od nejvhodnějšího. */
+  substitutes: Exercise[]
+  onReplace: (replacement: Exercise) => void
+  note: string
+  onChangeNote: (note: string) => void
 }
 
 /** Série i s původním indexem — obrazovka je adresuje pozicí v `entry.sets`. */
@@ -46,7 +55,28 @@ export function ExerciseCard({
   onAutoWarmup,
   onOpenPlates,
   onRemove,
+  supersetLabel,
+  onToggleSuperset,
+  substitutes,
+  onReplace,
+  note,
+  onChangeNote,
 }: Props) {
+  const [noteOpen, setNoteOpen] = useState(false)
+
+  async function pickSubstitute() {
+    if (substitutes.length === 0) return
+    const picked = await choose<string>({
+      title: 'Swap exercise',
+      message: `Something that trains ${exercise.name} the same way.`,
+      options: [
+        ...substitutes.map((e) => ({ label: e.name, value: e.id, style: 'neutral' as const })),
+        { label: 'Cancel', value: '', style: 'cancel' as const },
+      ],
+    })
+    const replacement = substitutes.find((e) => e.id === picked)
+    if (replacement) onReplace(replacement)
+  }
   // Jeden průchod místo tří `entry.sets.map()` s filtrem na null. Dřív se
   // seznam procházel pro každou roli znovu a vyráběl null uzly k zahození.
   const grouped = useMemo(() => {
@@ -65,9 +95,16 @@ export function ExerciseCard({
       <View className="flex-row items-center gap-3 px-3 py-2.5 border-b border-white/10">
         <ExerciseImage exercise={exercise} size={40} />
         <View className="flex-1">
-          <Text className="font-display text-base text-white" numberOfLines={1}>
-            {exercise.name}
-          </Text>
+          <View className="flex-row items-center gap-1.5">
+            {supersetLabel ? (
+              <View className="rounded-md bg-accent/20 px-1.5 py-0.5">
+                <Text className="text-[10px] font-bold text-accent">{supersetLabel}</Text>
+              </View>
+            ) : null}
+            <Text className="flex-1 font-display text-base text-white" numberOfLines={1}>
+              {exercise.name}
+            </Text>
+          </View>
           <Text className="text-xs text-muted" numberOfLines={1}>
             {exercise.muscleGroup}
             {lastWorking
@@ -111,6 +148,43 @@ export function ExerciseCard({
           <Text className="text-muted/40 text-base">✕</Text>
         </Pressable>
       </View>
+
+      <View className="flex-row items-center gap-2 px-3 py-1.5 border-b border-white/[0.06]">
+        <Pressable onPress={pickSubstitute} disabled={substitutes.length === 0} hitSlop={8}>
+          <Text
+            className={substitutes.length === 0 ? 'text-[11px] text-faint' : 'text-[11px] text-muted'}
+          >
+            Swap
+          </Text>
+        </Pressable>
+        <Text className="text-faint">·</Text>
+        <Pressable onPress={onToggleSuperset} hitSlop={8}>
+          <Text className="text-[11px] text-muted">
+            {supersetLabel ? 'Un-superset' : 'Superset with next'}
+          </Text>
+        </Pressable>
+        <Text className="text-faint">·</Text>
+        <Pressable onPress={() => setNoteOpen((v) => !v)} hitSlop={8}>
+          <Text className={note ? 'text-[11px] text-accent' : 'text-[11px] text-muted'}>
+            {note ? 'Note ✓' : 'Note'}
+          </Text>
+        </Pressable>
+      </View>
+
+      {noteOpen ? (
+        <View className="px-3 py-2 border-b border-white/[0.06]">
+          <TextInput
+            value={note}
+            onChangeText={onChangeNote}
+            placeholder="Seat height, grip width, cues…"
+            placeholderTextColor={colors.muted}
+            multiline
+            accessibilityLabel={`Note for ${exercise.name}`}
+            className="rounded-2xl bg-panel2 px-3 py-2 text-sm text-white min-h-12"
+          />
+          <Text className="mt-1 text-[10px] text-faint">Saved for this exercise, not just today.</Text>
+        </View>
+      ) : null}
 
       {/* Hlavička sloupců — šířky musí sedět se SetRow. */}
       <View className="flex-row items-center gap-1.5 px-3 py-1.5 bg-panel2">
