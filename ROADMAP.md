@@ -2,7 +2,7 @@
 
 Co je hotové, co se dělá dál a na co si dát pozor. Aktualizuj po každé větší dávce práce.
 
-**Stav k 27. 8. 2026:** hotové F6, F3, F4, F5 a F7. Další na řadě je **F8** — mezocyklus a deload.
+**Stav k 27. 8. 2026:** hotové F6, F3, F4, F5, F7 a F8. Zbývá **F9** (warm-up UI, supersety, náhrada cviku) a odložená F2.
 
 ---
 
@@ -39,32 +39,19 @@ Testovací smyčka je **web**. Nativní věci (HealthKit, haptika, notifikace) n
       `secondaryMuscles` za půl série, `DATA_VERSION = 2` s migrací vlastních cviků (116 testů)
 - [x] **F7 · Objem vs. MEV/MAV/MRV** — `src/core/landmarks.ts`, `VolumeBar` s pásmy
       under/optimal/warn/over místo jednolitě zelených pruhů (130 testů)
+- [x] **F8 · Mezocyklus + deload** — `src/core/mesocycle.ts`, volitelné pole v `Settings`
+      (žádná migrace), deload banner na dashboardu, 2 ze 3 signálů (149 testů)
 
 ---
 
 ## Co dál — v tomhle pořadí
 
-> F6, F3, F4, F5 a F7 jsou hotové. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
+> F6, F3, F4, F5, F7 a F8 jsou hotové. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
 > Na cokoli, co se ptá uživatele nebo sahá na soubory, používej `@/lib/platform`
 > (`confirm`, `choose`, `notify`, `saveJson`, `pickJson`, `shareText`) — nikdy
 > `Alert.alert` ani `window.confirm`. Obrazovka tréninku je rozdělená:
 > stav v `useWorkoutSession`, vzhled v `features/workout/*` — nová funkce
 > (supersety, náhrada cviku) patří tam, ne do `app/workout.tsx`.
-
-### F8 · Mezocyklus + deload
-
-**Žádná nová entita** — volitelné pole v `Settings`, takže migrace ani export netřeba:
-
-```ts
-mesocycle?: { startDate: string; lengthWeeks: number; deloadWeek: boolean }
-// default { lengthWeeks: 5, deloadWeek: true } = 4 týdny akumulace + 1 deload
-```
-
-Nový `src/core/mesocycle.ts` — `currentWeek()`, `volumeTargetMultiplier()`, `deloadSignals()`.
-
-Deload se navrhne při naplánovaném týdnu, nebo když platí 2 ze 3: ≥2 partie nad MRV dva týdny po sobě · průměrný RIR za týden ≤ 0,5 · ≥2 cviky ve stagnaci.
-
----
 
 ### F9 · Warm-up, supersety, náhrada cviku
 

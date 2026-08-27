@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { confirm, pickJson, saveJson } from '@/lib/platform'
-import { todayISO } from '@/lib/format'
+import { formatShort, todayISO } from '@/lib/format'
 import { useAppState } from '@/state/AppStateContext'
-import { Button, Card, PageHeader, cn } from '@/components/ui'
-import { DATA_VERSION, deserialize } from '@/core'
+import { Button, Card, PageHeader, Toggle, cn } from '@/components/ui'
+import { DATA_VERSION, currentWeek, defaultMesocycle, deserialize, isDeloadWeek } from '@/core'
 import type { Unit, ReminderConfig } from '@/core'
 import { applyReminders } from '@/lib/reminders'
 
@@ -15,6 +15,7 @@ const REMINDER_HOURS = [6, 7, 8, 9, 10, 12, 16, 17, 18, 19, 20, 21]
 const UNIT_OPTIONS: Unit[] = ['kg', 'lb']
 const PLATE_OPTIONS = [1.25, 2.5, 5]
 const REST_OPTIONS = [60, 90, 120, 150, 180]
+const MESO_LENGTHS = [4, 5, 6]
 const BAR_OPTIONS = [20, 15, 10]
 
 function Segmented({ options, value, onChange }: {
@@ -41,6 +42,7 @@ export default function Settings() {
   const { data, updateSettings, resetAllData, replaceAllData, loadSampleData, deleteSampleData } = useAppState()
   const { unit, smallestPlateKg, activeProgramId } = data.settings
   const restSeconds = data.settings.restSeconds ?? 120
+  const mesocycle = data.settings.mesocycle
   const barWeightKg = data.settings.barWeightKg ?? 20
   const [status, setStatus] = useState<string | null>(null)
   const hasSampleData = data.sessions.some((s) => s.isSample) || data.splits.some((s) => s.isSample)
@@ -195,13 +197,75 @@ export default function Settings() {
         </View>
 
         <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Mesocycle</Text>
+          <Card className="gap-3">
+            <Pressable
+              onPress={() =>
+                updateSettings({
+                  mesocycle: mesocycle ? undefined : defaultMesocycle(todayISO()),
+                })
+              }
+              className="flex-row items-center justify-between"
+            >
+              <View className="flex-1 pr-3">
+                <Text className="text-sm text-white">Run a mesocycle</Text>
+                <Text className="text-xs text-muted">
+                  Weeks of accumulation ending in a deload, so volume does not climb forever.
+                </Text>
+              </View>
+              <Toggle value={!!mesocycle} onChange={() =>
+                updateSettings({
+                  mesocycle: mesocycle ? undefined : defaultMesocycle(todayISO()),
+                })
+              } />
+            </Pressable>
+
+            {mesocycle ? (
+              <>
+                <Segmented
+                  options={MESO_LENGTHS.map((w) => ({ value: String(w), label: `${w} weeks` }))}
+                  value={String(mesocycle.lengthWeeks)}
+                  onChange={(v) => updateSettings({ mesocycle: { ...mesocycle, lengthWeeks: Number(v) } })}
+                />
+                <Pressable
+                  onPress={() =>
+                    updateSettings({ mesocycle: { ...mesocycle, deloadWeek: !mesocycle.deloadWeek } })
+                  }
+                  className="flex-row items-center justify-between"
+                >
+                  <Text className="text-sm text-white">Last week is a deload</Text>
+                  <Toggle
+                    value={mesocycle.deloadWeek}
+                    onChange={() =>
+                      updateSettings({ mesocycle: { ...mesocycle, deloadWeek: !mesocycle.deloadWeek } })
+                    }
+                  />
+                </Pressable>
+                <Text className="text-xs text-muted">
+                  {`Week ${currentWeek(mesocycle)} of ${mesocycle.lengthWeeks}${
+                    isDeloadWeek(mesocycle) ? ' — deload week' : ''
+                  }. Started ${formatShort(mesocycle.startDate)}.`}
+                </Text>
+                <Button
+                  title="Restart from today"
+                  variant="secondary"
+                  size="sm"
+                  onPress={() => updateSettings({ mesocycle: { ...mesocycle, startDate: todayISO() } })}
+                />
+              </>
+            ) : null}
+          </Card>
+        </View>
+
+        <View className="gap-2">
           <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Training reminders</Text>
           <Card className="gap-3">
             <Pressable onPress={() => updateReminder({ enabled: !reminder.enabled })} className="flex-row items-center justify-between">
               <Text className="text-sm text-white">Remind me to train</Text>
-              <View className={cn('h-6 w-11 rounded-full justify-center', reminder.enabled ? 'bg-accent' : 'bg-panel2')}>
-                <View className={cn('h-5 w-5 rounded-full bg-white', reminder.enabled ? 'ml-5' : 'ml-0.5')} />
-              </View>
+              <Toggle
+                value={reminder.enabled}
+                onChange={() => updateReminder({ enabled: !reminder.enabled })}
+              />
             </Pressable>
             {reminder.enabled && (
               <>

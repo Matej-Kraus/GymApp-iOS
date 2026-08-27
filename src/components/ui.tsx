@@ -362,10 +362,21 @@ export function Toggle({ value, onChange }: { value: boolean; onChange: (v: bool
     borderColor: withTiming(on.value ? colors.accent : colors.line, { duration: 160 }),
   }))
 
+  // Rozměry přes style, ne třídami: `Animated.View` si `className` v tomhle
+  // setupu nebere spolehlivě (a `px-0.5` se nepropíše vůbec), takže přepínač
+  // vycházel nulový a byl neviditelný. Proto si settings dlouho kreslily
+  // vlastní přepínač místo téhle komponenty.
   return (
-    <Pressable onPress={() => onChange(!value)} hitSlop={10}>
-      <Animated.View className="h-7 w-12 justify-center rounded-full border px-0.5" style={track}>
-        <Animated.View className="h-6 w-6 rounded-full bg-white" style={knob} />
+    <Pressable onPress={() => onChange(!value)} hitSlop={10} accessibilityRole="switch">
+      <Animated.View
+        style={[
+          { height: 28, width: 48, borderRadius: 999, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
+          track,
+        ]}
+      >
+        <Animated.View
+          style={[{ height: 22, width: 22, borderRadius: 999, backgroundColor: '#FFFFFF' }, knob]}
+        />
       </Animated.View>
     </Pressable>
   )

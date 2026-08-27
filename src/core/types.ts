@@ -146,6 +146,21 @@ export interface Settings {
   barWeightKg?: number
   /** true = uživatel prošel úvodním onboardingem (nezobrazovat znovu). */
   onboarded?: boolean
+  /** Mezocyklus (týdny akumulace + deload). Nenastaveno = neřeší se. */
+  mesocycle?: MesocycleConfig
+}
+
+/**
+ * Mezocyklus. Schválně jen konfigurace v `Settings`, ne vlastní entita —
+ * díky tomu nepotřebuje migraci ani nemění tvar exportu.
+ */
+export interface MesocycleConfig {
+  /** ISO datum (YYYY-MM-DD), odkdy se cyklus počítá. */
+  startDate: string
+  /** Celková délka cyklu v týdnech včetně deloadu. */
+  lengthWeeks: number
+  /** true = poslední týden je deload. */
+  deloadWeek: boolean
 }
 
 /** Nastavení připomínky tréninku. `days`: 1 = pondělí … 7 = neděle. */
