@@ -74,6 +74,8 @@ Testovací smyčka je **web**. Nativní věci (HealthKit, haptika, notifikace) n
 
 ## Co dál — v tomhle pořadí
 
+> Úkoly jsou i jako [GitHub issues s labelem `roadmap`](../../issues?q=label%3Aroadmap). Hotové odškrtni na obou místech.
+
 > Hotové je všechno kromě F2. Jak motor rozhoduje, je v hlavičce `src/core/rir.ts`.
 > Na cokoli, co se ptá uživatele nebo sahá na soubory, používej `@/lib/platform`
 > (`confirm`, `choose`, `notify`, `saveJson`, `pickJson`, `shareText`) — nikdy
@@ -81,7 +83,7 @@ Testovací smyčka je **web**. Nativní věci (HealthKit, haptika, notifikace) n
 > stav v `useWorkoutSession`, vzhled v `features/workout/*` — nová funkce
 > (supersety, náhrada cviku) patří tam, ne do `app/workout.tsx`.
 
-### F10 · Ověřit na iPhonu ← TEĎ
+### F10 · Ověřit na iPhonu ← TEĎ · [#1](../../issues/1)
 
 Všechno níž je na webu ověřené jen přes fallbacky. Projít na telefonu:
 
@@ -97,7 +99,7 @@ Všechno níž je na webu ověřené jen přes fallbacky. Projít na telefonu:
 
 Nalezené chyby zapisovat do „Známé chyby".
 
-### F11 · Data nesmí zmizet
+### F11 · Data nesmí zmizet · [#2](../../issues/2)
 
 Teď žijí jen v AsyncStorage jednoho telefonu. Ztráta / reset iPhonu = ztráta všeho.
 
@@ -106,17 +108,17 @@ Teď žijí jen v AsyncStorage jednoho telefonu. Ztráta / reset iPhonu = ztrát
 - [x] Varování, když zápis na disk selže (`SaveErrorBanner`) — 2. 10. 2026
 - [x] `ErrorBoundary` místo bílé obrazovky při pádu renderu — 2. 10. 2026
 
-### F12 · Apple Health naplno
+### F12 · Apple Health naplno · [#3](../../issues/3), [#4](../../issues/4)
 
 - [ ] **Zápis tréninků do Health** — `NSHealthUpdateUsageDescription` to slibuje,
       ale kód zapisuje nic (`requestAuthorization` má jen `toRead`). Buď dodělat
       (`saveWorkoutSample`, přepínač v Settings), nebo text z `app.json` vyhodit.
-- [ ] **Rozhodnout: Watch tréninky do historie?** Stará verze (stash `stash@{0}`,
+- [ ] **Rozhodnout: Watch tréninky do historie?** Stará verze (větev `archive/lokalni-verze-2026-08`,
       `src/lib/healthImport.ts`) je importovala jako sessions bez cviků. Pozor:
       prázdné sessions zkreslí streak, objem a landmarky — musely by se ze statistik
       vyřadit (`source: 'healthkit'`).
 
-### F13 · Funkce na „plnohodnotnou" appku
+### F13 · Funkce na „plnohodnotnou" appku · [#5](../../issues/5), [#6](../../issues/6), [#7](../../issues/7)
 
 Seřazené podle poměru přínos / práce:
 
