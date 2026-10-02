@@ -1,4 +1,5 @@
 import '../global.css'
+import '@/theme/webStyles'
 import { useEffect } from 'react'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -13,6 +14,8 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans'
 import { AppStateProvider } from '@/state/AppStateContext'
 import { ConfirmProvider } from '@/components/ConfirmProvider'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { SaveErrorBanner } from '@/components/SaveErrorBanner'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -34,11 +37,14 @@ export default function RootLayout() {
   if (!fontsLoaded) return null
 
   return (
-    <AppStateProvider>
-      <ConfirmProvider>
-        <StatusBar style="light" />
-        <Stack screenOptions={{ headerShown: false }} />
-      </ConfirmProvider>
-    </AppStateProvider>
+    <ErrorBoundary>
+      <AppStateProvider>
+        <ConfirmProvider>
+          <StatusBar style="light" />
+          <Stack screenOptions={{ headerShown: false }} />
+          <SaveErrorBanner />
+        </ConfirmProvider>
+      </AppStateProvider>
+    </ErrorBoundary>
   )
 }
