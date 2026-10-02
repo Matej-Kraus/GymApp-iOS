@@ -40,4 +40,16 @@ describe('createAsyncStore', () => {
     store.removeItem!('k')
     expect(store.getItem('k')).toBeNull()
   })
+
+  it('hlásí selhaný zápis a pak zase úspěch', async () => {
+    const results: boolean[] = []
+    const store = createAsyncStore((ok) => results.push(ok))
+    await store.hydrate()
+    jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('disk full'))
+    store.setItem('k', 'a')
+    store.setItem('k', 'b')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(results).toEqual([false, true])
+    expect(store.getItem('k')).toBe('b')
+  })
 })
