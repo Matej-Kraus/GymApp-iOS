@@ -15,6 +15,16 @@ const REMINDER_HOURS = [6, 7, 8, 9, 10, 12, 16, 17, 18, 19, 20, 21]
 
 const UNIT_OPTIONS: Unit[] = ['kg', 'lb']
 const PLATE_OPTIONS = [1.25, 2.5, 5]
+const REST_OPTIONS: { secs: number; label: string }[] = [
+  { secs: 0, label: 'Vypnuto' },
+  { secs: 30, label: '30 s' },
+  { secs: 60, label: '1 min' },
+  { secs: 90, label: '1:30' },
+  { secs: 120, label: '2 min' },
+  { secs: 180, label: '3 min' },
+  { secs: 240, label: '4 min' },
+  { secs: 300, label: '5 min' },
+]
 
 function Segmented({ options, value, onChange }: {
   options: { value: string; label: string }[]
@@ -43,10 +53,18 @@ export default function Settings() {
   const hasSampleData = data.sessions.some((s) => s.isSample) || data.splits.some((s) => s.isSample)
 
   const reminder: ReminderConfig = data.settings.reminder ?? { enabled: false, hour: 18, days: [] }
-  function updateReminder(patch: Partial<ReminderConfig>) {
+  async function updateReminder(patch: Partial<ReminderConfig>) {
+    const prev = reminder
     const next = { ...reminder, ...patch }
     updateSettings({ reminder: next })
-    applyReminders(next)
+    const ok = await applyReminders(next)
+    if (!ok) {
+      updateSettings({ reminder: prev })
+      Alert.alert(
+        'Připomínky se nepodařilo nastavit',
+        'Notifikace jsou pravděpodobně zakázané — zkontroluj oprávnění v Nastavení telefonu.',
+      )
+    }
   }
   function toggleDay(d: number) {
     const days = reminder.days.includes(d)
@@ -165,6 +183,43 @@ export default function Settings() {
         </View>
 
         <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Kalkulátor kotoučů</Text>
+          <Card>
+            <Pressable
+              onPress={() => updateSettings({ showPlateCalc: !data.settings.showPlateCalc })}
+              className="flex-row items-center justify-between"
+            >
+              <Text className="text-sm text-white">Zobrazit kotouče v tréninku</Text>
+              <View className={cn('h-6 w-11 rounded-full justify-center', data.settings.showPlateCalc ? 'bg-accent' : 'bg-card2')}>
+                <View className={cn('h-5 w-5 rounded-full bg-white', data.settings.showPlateCalc ? 'ml-5' : 'ml-0.5')} />
+              </View>
+            </Pressable>
+            <Text className="mt-2 text-xs text-muted">Pod working sériemi zobrazí kotouče na každou stranu tyče (tyč = 20 kg).</Text>
+          </Card>
+        </View>
+
+        <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Odpočinek mezi sériemi</Text>
+          <Card>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-1.5">
+              {REST_OPTIONS.map(({ secs, label }) => {
+                const active = (data.settings.restTimerSecs ?? 90) === secs
+                return (
+                  <Pressable
+                    key={secs}
+                    onPress={() => updateSettings({ restTimerSecs: secs })}
+                    className={cn('rounded-full px-3 py-1.5', active ? 'bg-accent' : 'bg-card2')}
+                  >
+                    <Text className={cn('text-xs font-semibold', active ? 'text-black' : 'text-muted')}>{label}</Text>
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+            <Text className="mt-2 text-xs text-muted">Odpočinkový timer se spustí po dokončení working nebo backoff série.</Text>
+          </Card>
+        </View>
+
+        <View className="gap-2">
           <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Připomínky tréninku</Text>
           <Card className="gap-3">
             <Pressable onPress={() => updateReminder({ enabled: !reminder.enabled })} className="flex-row items-center justify-between">
@@ -238,6 +293,14 @@ export default function Settings() {
                 }
               />
             )}
+          </Card>
+        </View>
+
+        <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Průvodce</Text>
+          <Card>
+            <Text className="text-xs text-muted mb-3">Znovu zobrazit průvodce při prvním spuštění.</Text>
+            <Button title="Spustit průvodce" variant="secondary" size="sm" onPress={() => updateSettings({ onboardingDone: false })} />
           </Card>
         </View>
 

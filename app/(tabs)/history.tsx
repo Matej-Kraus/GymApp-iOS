@@ -3,8 +3,8 @@ import { Alert, Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useAppState } from '@/state/AppStateContext'
-import { sessionVolume, countScoringSets, epley1RM, findExercise } from '@/core'
-import type { WorkoutSession, Exercise } from '@/core'
+import { sessionVolume, countScoringSets, epley1RM, findExercise, formatWeight, formatVolume, toDisplayWeight } from '@/core'
+import type { WorkoutSession, Exercise, Unit } from '@/core'
 import { Button, Card, PageHeader, Stat, cn } from '@/components/ui'
 import { formatLongCZ } from '@/lib/format'
 
@@ -65,7 +65,8 @@ function Calendar({ year, month, trainingDays, selected, onSelect, onPrev, onNex
   )
 }
 
-function WorkoutDetail({ session, onDelete, onRepeat }: { session: WorkoutSession; onDelete: () => void; onRepeat: () => void }) {
+function WorkoutDetail({ session, unit, onDelete, onRepeat }: { session: WorkoutSession; unit: Unit; onDelete: () => void; onRepeat: () => void }) {
+  const isHealthKit = session.source === 'healthkit'
   const vol = Math.round(sessionVolume(session))
   const sets = countScoringSets(session)
   const hasPR = session.entries.some((e) => e.sets.some((s) => s.isPR))
@@ -80,20 +81,21 @@ function WorkoutDetail({ session, onDelete, onRepeat }: { session: WorkoutSessio
         </View>
         {hasPR ? <View className="rounded-full bg-accent/20 px-2 py-0.5"><Text className="text-xs font-bold text-accent">PR</Text></View> : null}
       </View>
-      <View className="flex-row gap-6">
-        <View>
-          <View className="flex-row items-baseline">
-            <Text className="font-display text-2xl font-bold text-white">{vol.toLocaleString('cs-CZ')}</Text>
-            <Text className="ml-1 text-xs text-muted">kg</Text>
+      {!isHealthKit && (
+        <View className="flex-row gap-6">
+          <View>
+            <View className="flex-row items-baseline">
+              <Text className="font-display text-2xl font-bold text-white">{formatVolume(vol, unit)}</Text>
+            </View>
+            <Text className="text-xs text-muted">Objem</Text>
           </View>
-          <Text className="text-xs text-muted">Objem</Text>
+          <View>
+            <Text className="font-display text-2xl font-bold text-white">{sets}</Text>
+            <Text className="text-xs text-muted">Sérií</Text>
+          </View>
         </View>
-        <View>
-          <Text className="font-display text-2xl font-bold text-white">{sets}</Text>
-          <Text className="text-xs text-muted">Sérií</Text>
-        </View>
-      </View>
-      {session.entries.map((entry) => (
+      )}
+      {!isHealthKit && session.entries.map((entry) => (
         <View key={entry.exerciseId} className="gap-1">
           <Text className="text-sm font-semibold text-white">{entry.exerciseName}</Text>
           {entry.sets.filter((s) => s.completed).map((s, i) => (
@@ -101,7 +103,7 @@ function WorkoutDetail({ session, onDelete, onRepeat }: { session: WorkoutSessio
               <Text className={cn('text-xs', s.role === 'warmup' ? 'text-muted/50' : s.role === 'backoff' ? 'text-accent/70' : 'text-white')}>
                 {s.role === 'warmup' ? 'W' : s.role === 'backoff' ? 'B' : `${i + 1}`}
               </Text>
-              <Text className="text-xs font-bold text-white">{s.reps}×{s.weight} kg</Text>
+              <Text className="text-xs font-bold text-white">{s.reps}×{formatWeight(s.weight, unit)}</Text>
               {s.rpe ? <Text className="text-xs text-muted">@{s.rpe}</Text> : null}
               {s.isPR ? <Text className="text-xs font-bold text-accent">PR</Text> : null}
             </View>
@@ -110,8 +112,8 @@ function WorkoutDetail({ session, onDelete, onRepeat }: { session: WorkoutSessio
       ))}
       {session.notes ? <Text className="text-xs text-muted italic">„{session.notes}"</Text> : null}
       <View className="flex-row gap-2">
-        <Button title="Zopakovat" variant="secondary" size="sm" className="flex-1" onPress={onRepeat} />
-        <Button title="Smazat" variant="danger" size="sm" onPress={onDelete} />
+        {!isHealthKit && <Button title="Zopakovat" variant="secondary" size="sm" className="flex-1" onPress={onRepeat} />}
+        <Button title="Smazat" variant="danger" size="sm" onPress={onDelete} className={isHealthKit ? 'flex-1' : undefined} />
       </View>
     </Card>
   )
@@ -119,6 +121,7 @@ function WorkoutDetail({ session, onDelete, onRepeat }: { session: WorkoutSessio
 
 export default function History() {
   const { data, deleteSession } = useAppState()
+  const unit = data.settings.unit
   const router = useRouter()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
@@ -183,7 +186,7 @@ export default function History() {
               selected={selectedDate} onSelect={setSelectedDate} onPrev={prevMonth} onNext={nextMonth}
             />
             {sessionsOnDay.map((session) => (
-              <WorkoutDetail key={session.id} session={session} onDelete={() => confirmDeleteSession(session)} onRepeat={() => repeat(session)} />
+              <WorkoutDetail key={session.id} session={session} unit={unit} onDelete={() => confirmDeleteSession(session)} onRepeat={() => repeat(session)} />
             ))}
             {data.sessions.length === 0 ? (
               <Text className="text-center text-sm text-muted py-8">Zatím žádné odtrénované tréninky.</Text>
@@ -217,16 +220,16 @@ export default function History() {
                     <Text className="text-xs text-muted">{formatLongCZ(session.date)}</Text>
                   </View>
                   {warmups.length > 0 ? (
-                    <Text className="text-xs text-muted">W: {warmups.map((s) => `${s.reps}×${s.weight}`).join(', ')} kg</Text>
+                    <Text className="text-xs text-muted">W: {warmups.map((s) => `${s.reps}×${toDisplayWeight(s.weight, unit)}`).join(', ')} {unit}</Text>
                   ) : null}
                   {working.map((s, i) => (
                     <Text key={`w${i}`} className="text-xs text-muted">
-                      {i + 1}: <Text className="text-white font-semibold">{s.reps}×{s.weight} kg</Text>
+                      {i + 1}: <Text className="text-white font-semibold">{s.reps}×{formatWeight(s.weight, unit)}</Text>
                       {s.rpe ? ` @${s.rpe}` : ''}{s.isPR ? '  PR' : ''}
                     </Text>
                   ))}
                   {backoff.map((s, i) => (
-                    <Text key={`b${i}`} className="text-xs text-accent">B: {s.reps}×{s.weight} kg</Text>
+                    <Text key={`b${i}`} className="text-xs text-accent">B: {s.reps}×{formatWeight(s.weight, unit)}</Text>
                   ))}
                 </Card>
               )

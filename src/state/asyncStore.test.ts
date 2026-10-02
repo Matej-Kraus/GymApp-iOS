@@ -40,4 +40,16 @@ describe('createAsyncStore', () => {
     store.removeItem!('k')
     expect(store.getItem('k')).toBeNull()
   })
+
+  it('onWriteError se zavolá, když AsyncStorage.setItem selže', async () => {
+    const onWriteError = jest.fn()
+    const store = createAsyncStore(onWriteError)
+    await store.hydrate()
+    const spy = jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('disk full'))
+    store.setItem('k', 'value')
+    expect(store.getItem('k')).toBe('value') // cache se aktualizuje okamžitě i při selhání disku
+    await new Promise((r) => setTimeout(r, 0))
+    expect(onWriteError).toHaveBeenCalledTimes(1)
+    spy.mockRestore()
+  })
 })

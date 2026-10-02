@@ -30,3 +30,19 @@ export function toDisplayWeight(kg: number, unit: Unit): number {
   const value = unit === 'lb' ? kgToLb(kg) : kg
   return Math.round(value * 10) / 10
 }
+
+/** Inverze toDisplayWeight — převede hodnotu zadanou/zobrazenou v `unit` zpět na kg pro uložení. */
+export function fromDisplayWeight(value: number, unit: Unit): number {
+  return unit === 'lb' ? lbToKg(value) : value
+}
+
+/** Váha připravená k vykreslení, např. "102.5 kg" / "225 lb". */
+export function formatWeight(kg: number, unit: Unit): string {
+  return `${toDisplayWeight(kg, unit)} ${unit}`
+}
+
+/** Souhrnná váha (objem) připravená k vykreslení — celé číslo, oddělovač tisíců. */
+export function formatVolume(kg: number, unit: Unit): string {
+  const value = unit === 'lb' ? kgToLb(kg) : kg
+  return `${Math.round(value).toLocaleString('cs-CZ')} ${unit}`
+}

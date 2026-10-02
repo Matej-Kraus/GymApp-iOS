@@ -11,7 +11,7 @@ export default function SplitFormScreen() {
   const editing = id ? data.splits.find((s) => s.id === id) : undefined
 
   return (
-    <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-bg" edges={['top', 'bottom']}>
       <View className="px-4 pt-2 pb-3">
         <Text className="text-3xl font-display text-white">{editing ? 'Upravit split' : 'Nový split'}</Text>
       </View>

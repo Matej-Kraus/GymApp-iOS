@@ -59,7 +59,7 @@ export function weightIncrementKg(exercise: Exercise): number {
 }
 
 /** Naformátuje váhu pro text cíle (42.5 → "42,5", 40 → "40"). */
-function formatKg(n: number): string {
+function formatNum(n: number): string {
   return (Math.round(n * 100) / 100).toString().replace('.', ',')
 }
 
@@ -118,7 +118,7 @@ export function suggestWorkingSet(
   return {
     weight,
     reps,
-    reason: `Minule ${last.reps}×${formatKg(last.weight)} = ${formatKg(lastVolume)} kg → cíl ${reps}×${formatKg(weight)} = ${formatKg(volume)} kg (víc objemu).`,
+    reason: `Minule ${last.reps}×${formatNum(last.weight)} = ${formatNum(lastVolume)} → cíl ${reps}×${formatNum(weight)} = ${formatNum(volume)} (víc objemu).`,
   }
 }
 
@@ -146,12 +146,12 @@ export function suggestBackoffSet(
     return {
       weight,
       reps: 0,
-      reason: `Back-off ${formatKg(weight)} kg (−20 %). Cíl: co nejvíc opakování.`,
+      reason: `Back-off ${formatNum(weight)} (−20 %). Cíl: co nejvíc opakování.`,
     }
   }
   return {
     weight,
     reps: last.reps + 1,
-    reason: `Minule ${last.reps}×${formatKg(last.weight)} → dnes ${formatKg(weight)} kg, cíl víc než ${last.reps} opakování.`,
+    reason: `Minule ${last.reps}×${formatNum(last.weight)} → dnes ${formatNum(weight)}, cíl víc než ${last.reps} opakování.`,
   }
 }

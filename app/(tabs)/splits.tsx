@@ -9,7 +9,7 @@ import { Button, Card, EmptyState, PageHeader, cn } from '@/components/ui'
 import { colors } from '@/theme/colors'
 
 export default function Splits() {
-  const { data, deleteSplit, duplicateSplit, addSplit } = useAppState()
+  const { data, deleteSplit, duplicateSplit, addSplit, deleteCustomExercise } = useAppState()
   const { splits } = data
   const router = useRouter()
   const [templatesOpen, setTemplatesOpen] = useState(false)
@@ -31,6 +31,22 @@ export default function Splits() {
     Alert.alert('Smazat split?', 'Tuto akci nelze vrátit.', [
       { text: 'Zrušit', style: 'cancel' },
       { text: 'Smazat', style: 'destructive', onPress: () => deleteSplit(id) },
+    ])
+  }
+
+  function confirmDeleteExercise(id: string, name: string) {
+    const usedIn = data.splits.filter((s) => s.exerciseIds.includes(id))
+    if (usedIn.length > 0) {
+      Alert.alert(
+        'Cvik je použit',
+        `„${name}" je součástí: ${usedIn.map((s) => s.name).join(', ')}. Nejdřív ho odeber ze splitů.`,
+        [{ text: 'OK' }],
+      )
+      return
+    }
+    Alert.alert('Smazat cvik?', name, [
+      { text: 'Zrušit', style: 'cancel' },
+      { text: 'Smazat', style: 'destructive', onPress: () => deleteCustomExercise(id) },
     ])
   }
 
@@ -103,7 +119,7 @@ export default function Splits() {
             className="flex-row items-center justify-between rounded-2xl border border-white/10 bg-card px-4 py-3"
           >
             <Text className="text-sm font-semibold text-white">Šablony (PPL, Upper-Lower, Full Body)</Text>
-            <Text className={cn('text-muted', templatesOpen && 'rotate-180')}>▾</Text>
+            <Text className="text-muted" style={{ transform: [{ rotate: templatesOpen ? '180deg' : '0deg' }] }}>▾</Text>
           </Pressable>
           {templatesOpen &&
             SPLIT_TEMPLATES.map((tpl) => (
@@ -130,12 +146,25 @@ export default function Splits() {
           <View className="gap-1">
             <Text className="text-xs font-semibold text-muted uppercase tracking-wide">Vlastní cviky</Text>
             {data.customExercises.map((e) => (
-              <View
-                key={e.id}
-                className="flex-row items-center gap-2 rounded-2xl border border-white/10 bg-card px-3 py-2"
-              >
-                <Text className="text-sm font-semibold text-white flex-1">{e.name}</Text>
-                <Text className="text-xs text-muted">{e.muscleGroup}</Text>
+              <View key={e.id} className="rounded-2xl border border-white/10 bg-card px-3 py-2 gap-2">
+                <View className="flex-row items-center">
+                  <Text className="text-sm font-semibold text-white flex-1">{e.name}</Text>
+                  <Text className="text-xs text-muted">{e.muscleGroup}</Text>
+                </View>
+                <View className="flex-row gap-1.5">
+                  <Pressable
+                    onPress={() => router.push({ pathname: '/custom-exercise', params: { id: e.id } })}
+                    className="rounded-md border border-white/15 px-3 py-1.5"
+                  >
+                    <Text className="text-xs text-muted">Upravit</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => confirmDeleteExercise(e.id, e.name)}
+                    className="rounded-md border border-danger/30 px-3 py-1.5"
+                  >
+                    <Text className="text-xs text-danger/80">Smazat</Text>
+                  </Pressable>
+                </View>
               </View>
             ))}
           </View>

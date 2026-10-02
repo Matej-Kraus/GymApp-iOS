@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import type { Category, Equipment, Exercise, MuscleGroup } from '@/core'
 import { createId } from '@/core'
 import { useAppState } from '@/state/AppStateContext'
@@ -30,36 +30,43 @@ function Chip({ label, active, onPress, flex }: { label: string; active: boolean
 
 export default function CustomExerciseScreen() {
   const router = useRouter()
-  const { addCustomExercise } = useAppState()
-  const [name, setName] = useState('')
-  const [muscle, setMuscle] = useState<MuscleGroup>('Chest')
-  const [category, setCategory] = useState<Category>('Push')
-  const [equipment, setEquipment] = useState<Equipment>('Barbell')
-  const [isBodyweight, setIsBodyweight] = useState(false)
+  const { id } = useLocalSearchParams<{ id?: string }>()
+  const { addCustomExercise, updateCustomExercise, data } = useAppState()
+  const editing = id ? data.customExercises.find((e) => e.id === id) : undefined
+
+  const [name, setName] = useState(editing?.name ?? '')
+  const [muscle, setMuscle] = useState<MuscleGroup>(editing?.muscleGroup ?? 'Chest')
+  const [category, setCategory] = useState<Category>(editing?.category ?? 'Push')
+  const [equipment, setEquipment] = useState<Equipment>(editing?.equipment ?? 'Barbell')
+  const [isBodyweight, setIsBodyweight] = useState(editing?.isBodyweight ?? false)
   const [error, setError] = useState('')
 
   function handleSave() {
     if (!name.trim()) { setError('Zadej název cviku.'); return }
     const exercise: Exercise = {
-      id: createId(),
+      id: editing?.id ?? createId(),
       name: name.trim(),
       muscleGroup: muscle,
       category,
       equipment,
       isBodyweight: isBodyweight || equipment === 'Bodyweight',
-      imageUrl: null,
+      imageUrl: editing?.imageUrl ?? null,
       isCustom: true,
-      defaultRepRange: [5, 9],
-      defaultSets: 3,
+      defaultRepRange: editing?.defaultRepRange ?? [5, 9],
+      defaultSets: editing?.defaultSets ?? 3,
     }
-    addCustomExercise(exercise)
+    if (editing) {
+      updateCustomExercise(exercise)
+    } else {
+      addCustomExercise(exercise)
+    }
     router.back()
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-bg" edges={['top', 'bottom']}>
       <ScrollView className="flex-1 px-4" contentContainerClassName="gap-6 pb-8">
-        <Text className="text-3xl font-display text-white mt-2">Vlastní cvik</Text>
+        <Text className="text-3xl font-display text-white mt-2">{editing ? 'Upravit cvik' : 'Vlastní cvik'}</Text>
         <Card className="gap-4">
           <View>
             <Text className="text-xs font-semibold text-muted">Název</Text>
@@ -110,7 +117,7 @@ export default function CustomExerciseScreen() {
 
           <View className="flex-row gap-3 pt-1">
             <Button title="Zrušit" variant="secondary" className="flex-1" onPress={() => router.back()} />
-            <Button title="Přidat cvik" className="flex-1" onPress={handleSave} />
+            <Button title={editing ? 'Uložit cvik' : 'Přidat cvik'} className="flex-1" onPress={handleSave} />
           </View>
         </Card>
       </ScrollView>
