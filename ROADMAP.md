@@ -2,11 +2,37 @@
 
 Co je hotové, co se dělá dál a na co si dát pozor. Aktualizuj po každé větší dávce práce.
 
-**Stav k 27. 8. 2026:** hotové F3–F9 i všechny známé chyby, které šlo opravit bez zařízení. Zbývá jediná věc: **F2** (Expo SDK 56 + dev-client), a ta čeká na Apple Developer účet a iPhone.
+**Stav k 2. 10. 2026:** hotové F3–F9. Appka se poprvé builduje nativně pro iPhone
+(free Apple Developer účet, team `5WVQ93537F`). Teď je na řadě **F10 — ověřit všechno
+na reálném iPhonu**, pak funkce, které z „deníku" dělají plnohodnotnou appku (F11+).
 
 ---
 
 ## Jak to spustit
+
+### Na iPhonu (Release build — běží samostatně, bez Metra)
+
+```bash
+npx expo prebuild --platform ios --clean   # jen po změně app.json / nativních balíčků
+cd ios && pod install                        # potřebuje síť (stahuje Hermes)
+npm run ios:device    # = scripts/ios-device.sh: build + instalace na připojený iPhone
+
+# ručně:
+xcodebuild -workspace Workout.xcworkspace -scheme Workout -configuration Release \
+  -destination 'generic/platform=iOS' -derivedDataPath build/dd \
+  -allowProvisioningUpdates DEVELOPMENT_TEAM=5WVQ93537F build
+xcrun devicectl device install app --device <UDID> build/dd/Build/Products/Release-iphoneos/Workout.app
+```
+
+- **Free účet = podpis platí 7 dní.** Pak appka nejde otevřít a musí se znovu nainstalovat
+  (data zůstanou). Placený účet (99 USD/rok) → TestFlight a podpis na rok.
+- Na iPhonu musí být zapnutý **Developer Mode** a při prvním spuštění důvěřovat vývojáři
+  (Nastavení → Obecné → Správa VPN a zařízení).
+- **Nemaž `ios/build/generated`** — je tam codegen z `pod install`; bez něj build padá
+  na „Build input file cannot be found … States.cpp". Spraví to `pod install`.
+- První build trvá ~15–20 min a chce ~10 GB volného místa.
+
+### Vývoj
 
 ```bash
 npm install
@@ -55,15 +81,67 @@ Testovací smyčka je **web**. Nativní věci (HealthKit, haptika, notifikace) n
 > stav v `useWorkoutSession`, vzhled v `features/workout/*` — nová funkce
 > (supersety, náhrada cviku) patří tam, ne do `app/workout.tsx`.
 
+### F10 · Ověřit na iPhonu ← TEĎ
+
+Všechno níž je na webu ověřené jen přes fallbacky. Projít na telefonu:
+
+- [ ] Onboarding, vytvoření splitu, celý trénink od startu po souhrn
+- [ ] Autosave draftu — zabít appku uprostřed tréninku a otevřít znovu
+- [ ] Rest timer, haptika, kalkulačka kotoučů s klávesnicí
+- [ ] HealthKit — dialog oprávnění, váha, složení těla, Watch tréninky v Progress
+- [ ] Notifikace — připomínka tréninku přijde i se zavřenou appkou
+- [ ] Export / import zálohy přes share sheet a Soubory
+- [ ] Safe area (Dynamic Island), dotykové cíle, scroll, klávesnice na všech formulářích
+- [ ] Ikona a splash na ploše
+- [ ] Výkon: historie s rokem dat (vzorová data), animace grafů
+
+Nalezené chyby zapisovat do „Známé chyby".
+
+### F11 · Data nesmí zmizet
+
+Teď žijí jen v AsyncStorage jednoho telefonu. Ztráta / reset iPhonu = ztráta všeho.
+
+- [ ] Automatická záloha (týdně + po každém tréninku) do Souborů / iCloud Drive
+- [ ] Upozornění „poslední záloha před X dny" v Settings
+- [x] Varování, když zápis na disk selže (`SaveErrorBanner`) — 2. 10. 2026
+- [x] `ErrorBoundary` místo bílé obrazovky při pádu renderu — 2. 10. 2026
+
+### F12 · Apple Health naplno
+
+- [ ] **Zápis tréninků do Health** — `NSHealthUpdateUsageDescription` to slibuje,
+      ale kód zapisuje nic (`requestAuthorization` má jen `toRead`). Buď dodělat
+      (`saveWorkoutSample`, přepínač v Settings), nebo text z `app.json` vyhodit.
+- [ ] **Rozhodnout: Watch tréninky do historie?** Stará verze (stash `stash@{0}`,
+      `src/lib/healthImport.ts`) je importovala jako sessions bez cviků. Pozor:
+      prázdné sessions zkreslí streak, objem a landmarky — musely by se ze statistik
+      vyřadit (`source: 'healthkit'`).
+
+### F13 · Funkce na „plnohodnotnou" appku
+
+Seřazené podle poměru přínos / práce:
+
+1. [ ] **Rest timer na zamčené obrazovce** — lokální notifikace při konci pauzy
+       (Live Activity až s placeným účtem / dev-clientem)
+2. [ ] **Historie cviku** — v tréninku ťuknout na cvik → poslední 3 tréninky + PR
+3. [ ] **Plate/1RM kalkulačka mimo trénink** jako nástroj v Settings
+4. [ ] **Widget** s dalším tréninkem a streakem (vyžaduje nativní target)
+5. [ ] **Apple Watch appka** — logování sérií z hodinek (velké, až po F2)
+6. [ ] Crash reporting (Sentry — `.sentryclirc` už existuje, SDK v projektu není)
+
 ### F2 · Expo SDK 56 + dev-client
 
-Odloženo, protože nic neblokuje. Až bude Apple Developer účet.
+Odloženo, protože nic neblokuje — nativní build jede na SDK 54.
+
+- [x] `eas.json`, `ios.bundleIdentifier`, `appleTeamId` v `app.json` (2. 10. 2026)
+- [x] Plugin `plugins/withoutPushEntitlement.js` — free účet nesmí mít push entitlement
+      (lokální notifikace fungují i bez něj)
+- [x] Chyběl peer `react-native-nitro-modules` (vyžaduje ho HealthKit v14) —
+      bez něj padal `pod install`
 
 - Skill `expo-upgrade`, postupně 54 → 55 → 56
 - **NativeWind zůstává na 4.2.6** — v5 je pořád jen preview a SDK 56 ji nevynucuje. Největší riziko upgradu tím odpadá.
 - `@expo/vector-icons` je v SDK 56 deprecated → `@react-native-vector-icons/ionicons`. Už v **sedmi** souborech (emoji se nahradily ikonami), ne ve dvou.
 - `expo-file-system/legacy` → nové API. Import se při F3 přesunul do `src/lib/platform.ts:2`, takže je to jedno místo.
-- Vytvořit `eas.json`, doplnit `ios.bundleIdentifier` (v `app.json` chybí, bez něj nejde build)
 
 ---
 
