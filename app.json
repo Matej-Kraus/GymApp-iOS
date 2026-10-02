@@ -8,7 +8,10 @@
     "scheme": "workout",
     "userInterfaceStyle": "dark",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
+      "bundleIdentifier": "com.matejkraus.workouttracker",
+      "buildNumber": "1",
+      "appleTeamId": "5WVQ93537F",
       "infoPlist": {
         "NSHealthShareUsageDescription": "Reads your weight, body composition and Apple Watch sessions from Apple Health, so your charts and trends stay complete.",
         "NSHealthUpdateUsageDescription": "Writes your finished sessions back to Apple Health, so other apps see the training you logged here. Only if you turn it on."
@@ -38,7 +41,13 @@
           "NSHealthUpdateUsageDescription": "Writes your finished sessions back to Apple Health, so other apps see the training you logged here. Only if you turn it on.",
           "background": false
         }
-      ]
-    ]
+      ],
+      "./plugins/withoutPushEntitlement.js"
+    ],
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#070A08"
+    }
   }
 }

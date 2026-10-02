@@ -13,8 +13,15 @@ export interface AsyncBackedStore extends KeyValueStore {
   hydrate(): Promise<void>
 }
 
-export function createAsyncStore(): AsyncBackedStore {
+/**
+ * `onWriteResult` dostane `false`, když zápis na disk selže (plné úložiště),
+ * a `true`, když další zápis projde — UI podle toho ukáže / schová varování.
+ * Cache se aktualizuje vždy, takže appka jede dál i bez disku.
+ */
+export function createAsyncStore(onWriteResult?: (ok: boolean) => void): AsyncBackedStore {
   const cache = new Map<string, string>()
+  const report = (p: Promise<unknown>) =>
+    p.then(() => onWriteResult?.(true), () => onWriteResult?.(false))
   return {
     async hydrate() {
       const keys = await AsyncStorage.getAllKeys()
@@ -28,11 +35,11 @@ export function createAsyncStore(): AsyncBackedStore {
     },
     setItem(key, value) {
       cache.set(key, value)
-      void AsyncStorage.setItem(key, value)
+      void report(AsyncStorage.setItem(key, value))
     },
     removeItem(key) {
       cache.delete(key)
-      void AsyncStorage.removeItem(key)
+      void report(AsyncStorage.removeItem(key))
     },
   }
 }

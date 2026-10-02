@@ -11,11 +11,16 @@ import type { AppData, Exercise, ExerciseGoal, Settings, Split, WorkoutSession, 
 import { createId, createRepository, emptyData, SAMPLE_SPLITS, SAMPLE_SESSIONS } from '@/core'
 import { createAsyncStore } from '@/state/asyncStore'
 
-const store = createAsyncStore()
+// Posluchač výsledku zápisu — store vzniká mimo React, provider se k němu přihlásí.
+let onWriteResult: (ok: boolean) => void = () => {}
+const store = createAsyncStore((ok) => onWriteResult(ok))
 const repo = createRepository(store)
 
 interface AppStateValue {
   data: AppData
+  /** Poslední zápis na disk selhal — změny zatím žijí jen v paměti. */
+  saveError: boolean
+  dismissSaveError: () => void
   updateSettings: (patch: Partial<Settings>) => void
   addSplit: (split: Split) => void
   updateSplit: (split: Split) => void
@@ -44,7 +49,13 @@ const AppStateContext = createContext<AppStateValue | null>(null)
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false)
   const [data, setData] = useState<AppData>(() => emptyData())
+  const [saveError, setSaveError] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    onWriteResult = (ok) => setSaveError(!ok)
+    return () => { onWriteResult = () => {} }
+  }, [])
 
   // Jednorázová hydratace z AsyncStorage do sync cache, pak načteme stav.
   useEffect(() => {
@@ -69,6 +80,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppStateValue>(
     () => ({
       data,
+      saveError,
+      dismissSaveError: () => setSaveError(false),
       updateSettings: (patch) =>
         setData((d) => ({ ...d, settings: { ...d.settings, ...patch } })),
       addSplit: (s) => setData((d) => ({ ...d, splits: [...d.splits, s] })),
@@ -80,7 +93,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setData((d) => {
           const orig = d.splits.find((s) => s.id === id)
           if (!orig) return d
-          return { ...d, splits: [...d.splits, { ...orig, id: createId(), name: `${orig.name} (kopie)` }] }
+          return { ...d, splits: [...d.splits, { ...orig, id: createId(), name: `${orig.name} (copy)` }] }
         }),
       addSession: (s) => setData((d) => ({ ...d, sessions: [...d.sessions, s] })),
       updateSession: (s) =>
@@ -136,7 +149,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       deleteMeasurement: (date) =>
         setData((d) => ({ ...d, measurements: d.measurements.filter((e) => e.date !== date) })),
     }),
-    [data],
+    [data, saveError],
   )
 
   if (!hydrated) return null

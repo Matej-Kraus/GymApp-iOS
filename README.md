@@ -9,13 +9,13 @@ Tréninkový deník s progresivním přetížením. UI je anglicky, kód a komen
 ```bash
 npm install
 npx expo start --web      # hlavní testovací smyčka
-npm test                  # 180 testů jádra
+npm test                  # 188 testů
 npx tsc --noEmit          # typecheck
 ```
 
 **Testuje se na webu.** Nativní funkce (HealthKit, haptika, notifikace) tam nejedou — mají bezpečné fallbacky a ověří se až na iPhonu.
 
-Na iPhonu: potřeba dev build (`app.json` obsahuje nativní config plugin HealthKitu, takže Expo Go nestačí). Vyžaduje Apple Developer účet — viz F2 v roadmapě.
+Na iPhonu: nativní build přes Xcode — postup v [ROADMAP.md](./ROADMAP.md#na-iphonu-release-build--běží-samostatně-bez-metra).
 
 ## Architektura
 
