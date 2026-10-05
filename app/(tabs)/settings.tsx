@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { confirm, pickJson, saveJson } from '@/lib/platform'
+import { confirm } from '@/lib/platform'
 import { formatShort, todayISO } from '@/lib/format'
 import { useAppState } from '@/state/AppStateContext'
 import { Button, Card, PageHeader, Toggle, cn } from '@/components/ui'
-import { DATA_VERSION, currentWeek, defaultMesocycle, deserialize, isDeloadWeek } from '@/core'
+import { currentWeek, defaultMesocycle, isDeloadWeek } from '@/core'
 import type { Unit, ReminderConfig } from '@/core'
 import { applyReminders } from '@/lib/reminders'
+import { BackupCard } from '@/features/backup/BackupCard'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const REMINDER_HOURS = [6, 7, 8, 9, 10, 12, 16, 17, 18, 19, 20, 21]
@@ -39,7 +40,7 @@ function Segmented({ options, value, onChange }: {
 }
 
 export default function Settings() {
-  const { data, updateSettings, resetAllData, replaceAllData, loadSampleData, deleteSampleData } = useAppState()
+  const { data, updateSettings, resetAllData, loadSampleData, deleteSampleData } = useAppState()
   const { unit, smallestPlateKg, activeProgramId } = data.settings
   const restSeconds = data.settings.restSeconds ?? 120
   const mesocycle = data.settings.mesocycle
@@ -73,42 +74,6 @@ export default function Settings() {
     for (const s of data.splits) if (s.groupId) map.set(s.groupId, s.groupName ?? s.groupId)
     return [...map.entries()]
   }, [data.splits])
-
-  async function handleExport() {
-    try {
-      // Datum lokálně — toISOString() by po půlnoci ukázalo včerejšek.
-      const name = `workout-backup-${todayISO()}.json`
-      setStatus(await saveJson(name, JSON.stringify(data, null, 2)))
-    } catch {
-      setStatus('Could not save the backup.')
-    }
-  }
-
-  async function handleImport() {
-    let parsed: ReturnType<typeof deserialize>
-    try {
-      const content = await pickJson()
-      if (content === null) return // uživatel zrušil výběr, není co hlásit
-      parsed = deserialize(content)
-      if (parsed.version !== DATA_VERSION && parsed.sessions.length === 0 && parsed.splits.length === 0) {
-        throw new Error('invalid')
-      }
-    } catch {
-      setStatus('Could not read that file. Check it is a backup export.')
-      return
-    }
-    // Potvrzení až po úspěšném načtení — ptát se na přepis dat kvůli
-    // souboru, který stejně nejde přečíst, nedává smysl.
-    const yes = await confirm({
-      title: 'Restore from backup?',
-      message: `This replaces ${data.sessions.length} sessions and ${data.splits.length} splits.`,
-      confirmLabel: 'Restore',
-      destructive: true,
-    })
-    if (!yes) return
-    replaceAllData(parsed)
-    setStatus('Backup restored.')
-  }
 
   async function handleReset() {
     const yes = await confirm({
@@ -321,20 +286,11 @@ export default function Settings() {
                 <Text className="text-xs text-muted">Note: notifications only work in a native build, not in Expo Go.</Text>
               </>
             )}
+            {status ? <Text className="text-xs text-warn">{status}</Text> : null}
           </Card>
         </View>
 
-        <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Data & backup</Text>
-          <Card className="gap-3">
-            <Text className="text-xs text-muted">
-              {data.sessions.length} tréninků · {data.splits.length} splitů · {data.customExercises.length} vlastních cviků
-            </Text>
-            <Button title="Export backup (JSON)" variant="secondary" onPress={handleExport} />
-            <Button title="Restore from backup" variant="secondary" onPress={handleImport} />
-            {status ? <Text className="text-xs text-accent">{status}</Text> : null}
-          </Card>
-        </View>
+        <BackupCard />
 
         <View className="gap-2">
           <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Sample data</Text>
@@ -364,10 +320,10 @@ export default function Settings() {
         </View>
 
         <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">O aplikaci</Text>
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">About</Text>
           <Card>
             <Text className="text-xs text-muted">Workout · 100% offline · data stays on your phone · no accounts, no ads.</Text>
-            <Text className="mt-1 text-xs text-muted">Verze dat: {data.version}</Text>
+            <Text className="mt-1 text-xs text-muted">Data version: {data.version}</Text>
           </Card>
         </View>
 

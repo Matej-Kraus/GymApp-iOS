@@ -101,12 +101,25 @@ Nalezené chyby zapisovat do „Známé chyby".
 
 ### F11 · Data nesmí zmizet · [#2](../../issues/2)
 
-Teď žijí jen v AsyncStorage jednoho telefonu. Ztráta / reset iPhonu = ztráta všeho.
+Hotovo 5. 10. 2026, zbývá ověřit na iPhonu. Logika `src/core/backup.ts` (testy),
+soubory `src/lib/backups.ts` + `snapshotFolder` v `@/lib/platform`, UI
+`src/features/backup/BackupCard.tsx` a banner na dashboardu.
 
-- [ ] Automatická záloha (týdně + po každém tréninku) do Souborů / iCloud Drive
-- [ ] Upozornění „poslední záloha před X dny" v Settings
-- [x] Varování, když zápis na disk selže (`SaveErrorBanner`) — 2. 10. 2026
-- [x] `ErrorBoundary` místo bílé obrazovky při pádu renderu — 2. 10. 2026
+- [x] Automatické snapshoty v telefonu — po změně tréninků (5 s debounce) a týdně
+      při jiné změně; 10 automatických + 5 pojistných, starší se mažou
+- [x] Pojistný snapshot před obnovou a před „Delete all data"
+- [x] Obnova ze snapshotu v Settings (s potvrzením)
+- [x] Připomínka kopie mimo telefon (≥ 3 tréninky a 14 dní / nikdy) v Settings
+      i na dashboardu, „Later" ji odloží o 3 dny
+- [x] `Documents/Backups` vidět v Soubory (`UIFileSharingEnabled`)
+- [x] Varování při selhání zápisu (`SaveErrorBanner`) a `ErrorBoundary`
+- [ ] Na iPhonu: snapshoty v Soubory → Na mém iPhonu → Workout, share sheet → iCloud Drive,
+      obnova ze souboru na čisté instalaci
+- [ ] **Automaticky do iCloud Drive** — free účet nemá iCloud entitlement. Až s placeným
+      účtem (iCloud Documents container), do té doby ručně přes share sheet.
+
+Pozor: `lastExportAt` se nastaví po zavření share sheetu — `expo-sharing` neřekne,
+jestli uživatel soubor opravdu uložil.
 
 ### F12 · Apple Health naplno · [#3](../../issues/3), [#4](../../issues/4)
 

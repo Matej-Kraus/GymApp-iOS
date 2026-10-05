@@ -96,9 +96,9 @@ export function PlateCalculator({
             {target <= 0 ? (
               <Text className="text-sm text-muted py-10">Enter a target weight.</Text>
             ) : result.belowBar ? (
-              <Text className="text-sm text-muted py-10">Cíl je menší než samotná osa ({bar} kg).</Text>
+              <Text className="text-sm text-muted py-10">The target is lighter than the bar alone ({bar} kg).</Text>
             ) : result.perSide.length === 0 ? (
-              <Text className="text-sm text-muted py-10">Prázdná osa ({bar} kg) — žádné kotouče.</Text>
+              <Text className="text-sm text-muted py-10">Empty bar ({bar} kg), no plates.</Text>
             ) : (
               <View className="w-full items-center">
                 <View className="flex-row items-center justify-center" style={{ height: 110 }}>

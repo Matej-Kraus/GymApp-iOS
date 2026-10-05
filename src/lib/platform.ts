@@ -116,3 +116,64 @@ export async function shareText(text: string, title?: string): Promise<boolean> 
     return false
   }
 }
+
+/**
+ * Složka automatických snapshotů.
+ *
+ * Telefon: `Documents/Backups`. Díky `UIFileSharingEnabled` v `app.json` je
+ * vidět v appce Soubory (Na mém iPhonu → Workout) a je součástí iCloud
+ * zálohy telefonu. Web: localStorage — jen kvůli testovací smyčce.
+ */
+export interface SnapshotFolder {
+  list(): Promise<string[]>
+  read(name: string): Promise<string>
+  write(name: string, content: string): Promise<void>
+  remove(name: string): Promise<void>
+  /** Kde je uživatel najde, krátce. */
+  location: string
+}
+
+const WEB_PREFIX = 'workout-tracker:snapshot:'
+
+const webSnapshots: SnapshotFolder = {
+  async list() {
+    return Object.keys(localStorage)
+      .filter((k) => k.startsWith(WEB_PREFIX))
+      .map((k) => k.slice(WEB_PREFIX.length))
+  },
+  async read(name) {
+    const v = localStorage.getItem(WEB_PREFIX + name)
+    if (v === null) throw new Error(`Snapshot ${name} not found`)
+    return v
+  },
+  async write(name, content) {
+    localStorage.setItem(WEB_PREFIX + name, content)
+  },
+  async remove(name) {
+    localStorage.removeItem(WEB_PREFIX + name)
+  },
+  location: 'this browser',
+}
+
+function nativeSnapshots(): SnapshotFolder {
+  const dir = `${FileSystem.documentDirectory}Backups/`
+  const ensureDir = async () => {
+    const info = await FileSystem.getInfoAsync(dir)
+    if (!info.exists) await FileSystem.makeDirectoryAsync(dir, { intermediates: true })
+  }
+  return {
+    async list() {
+      await ensureDir()
+      return FileSystem.readDirectoryAsync(dir)
+    },
+    read: (name) => FileSystem.readAsStringAsync(dir + name),
+    async write(name, content) {
+      await ensureDir()
+      await FileSystem.writeAsStringAsync(dir + name, content)
+    },
+    remove: (name) => FileSystem.deleteAsync(dir + name, { idempotent: true }),
+    location: 'Files → On My iPhone → Workout → Backups',
+  }
+}
+
+export const snapshotFolder: SnapshotFolder = isWeb ? webSnapshots : nativeSnapshots()

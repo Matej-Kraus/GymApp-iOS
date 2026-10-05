@@ -46,7 +46,7 @@ export function ExercisePicker({ visible, exercises, selectedIds, onToggle, onCl
             <Text className="text-muted text-sm font-medium">Back</Text>
           </Pressable>
           <Text className="flex-1 text-base font-semibold text-white">Add exercises</Text>
-          <Text className="text-xs text-muted">{selectedIds.length} vybráno</Text>
+          <Text className="text-xs text-muted">{selectedIds.length} selected</Text>
         </View>
 
         {/* Vyhledávání + filtr */}

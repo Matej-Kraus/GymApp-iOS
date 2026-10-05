@@ -12,8 +12,7 @@ export function SaveErrorBanner() {
   if (!saveError) return null
   return (
     <View
-      pointerEvents="box-none"
-      style={{ position: 'absolute', top: top + 8, left: 16, right: 16, zIndex: 50 }}
+      style={{ pointerEvents: 'box-none', position: 'absolute', top: top + 8, left: 16, right: 16, zIndex: 50 }}
     >
       <Banner
         tone="over"

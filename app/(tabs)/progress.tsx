@@ -466,7 +466,7 @@ export default function Progresss() {
                   </>
                 ) : (
                   <>
-                    <Text className="text-xs text-muted">Nastav cílový odhadovaný 1RM pro {exercise?.name ?? 'tento cvik'}.</Text>
+                    <Text className="text-xs text-muted">Set a target estimated 1RM for {exercise?.name ?? 'this exercise'}.</Text>
                     <View className="flex-row gap-2 items-center">
                       <TextInput
                         keyboardType="decimal-pad"

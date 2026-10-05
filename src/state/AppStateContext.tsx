@@ -10,6 +10,7 @@ import {
 import type { AppData, Exercise, ExerciseGoal, Settings, Split, WorkoutSession, BodyWeightEntry, MeasurementEntry } from '@/core'
 import { createId, createRepository, emptyData, SAMPLE_SPLITS, SAMPLE_SESSIONS } from '@/core'
 import { createAsyncStore } from '@/state/asyncStore'
+import { maybeAutoSnapshot, safetySnapshot } from '@/lib/backups'
 
 // Posluchač výsledku zápisu — store vzniká mimo React, provider se k němu přihlásí.
 let onWriteResult: (ok: boolean) => void = () => {}
@@ -51,6 +52,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(() => emptyData())
   const [saveError, setSaveError] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const backupTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Pojistné snapshoty potřebují stav PŘED přepsáním, mimo setData updater
+  // (ten může React zavolat dvakrát).
+  const dataRef = useRef(data)
+  dataRef.current = data
 
   useEffect(() => {
     onWriteResult = (ok) => setSaveError(!ok)
@@ -75,6 +81,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => repo.save(data), 300)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
+  }, [data, hydrated])
+
+  // Automatický snapshot — s delší prodlevou, ať se během tréninku nezálohuje
+  // každá série. Rozhoduje jádro (core/backup.ts), většinou nic neudělá.
+  useEffect(() => {
+    if (!hydrated) return
+    if (backupTimer.current) clearTimeout(backupTimer.current)
+    backupTimer.current = setTimeout(() => void maybeAutoSnapshot(data), 5000)
+    return () => { if (backupTimer.current) clearTimeout(backupTimer.current) }
   }, [data, hydrated])
 
   const value = useMemo<AppStateValue>(
@@ -109,8 +124,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         })),
       deleteCustomExercise: (id) =>
         setData((d) => ({ ...d, customExercises: d.customExercises.filter((e) => e.id !== id) })),
-      replaceAllData: (next) => setData(next),
-      resetAllData: () => setData(emptyData()),
+      replaceAllData: (next) => {
+        void safetySnapshot(dataRef.current, 'before-restore')
+        setData(next)
+      },
+      resetAllData: () => {
+        void safetySnapshot(dataRef.current, 'before-reset')
+        setData(emptyData())
+      },
       loadSampleData: () =>
         setData((d) => ({
           ...d,

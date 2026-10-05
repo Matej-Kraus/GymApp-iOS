@@ -12,6 +12,7 @@ import { Onboarding } from '@/components/Onboarding'
 import { formatLong, formatShort, isThisMonth, isThisWeek } from '@/lib/format'
 import { loadDraft, type WorkoutDraft } from '@/lib/workoutDraft'
 import { colors } from '@/theme/colors'
+import { exportBackup } from '@/lib/backups'
 import {
   sessionVolume,
   countScoringSets,
@@ -23,6 +24,10 @@ import {
   isDeloadWeek,
   recommendNextSplit,
   countsTowardProgress,
+  daysAgoLabel,
+  offPhoneBackupStatus,
+  showBackupReminder,
+  snoozeBackupReminder,
   type WorkoutSession,
 } from '@/core'
 import { VolumeBar, volumeHeadline } from '@/components/VolumeBar'
@@ -43,7 +48,7 @@ function topSet(session: WorkoutSession): { name: string; weight: number; reps: 
 }
 
 export default function Dashboard() {
-  const { data } = useAppState()
+  const { data, updateSettings } = useAppState()
   const router = useRouter()
   const { splits, sessions } = data
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -225,6 +230,41 @@ export default function Dashboard() {
                   tone={deload.scheduled ? 'warn' : 'over'}
                   title={deload.scheduled ? 'Deload week' : 'Time to deload'}
                   description={deload.reasons[0]}
+                />
+              </Animated.View>
+            )}
+
+            {showBackupReminder(data, new Date()) && (
+              <Animated.View entering={stage(3)}>
+                <Banner
+                  tone="warn"
+                  title="Back up your training"
+                  description={backupReminderText(offPhoneBackupStatus(data, new Date()).daysAgo)}
+                  action={
+                    <View className="items-end gap-1">
+                      <Button
+                        title="Save"
+                        size="sm"
+                        variant="secondary"
+                        onPress={async () => {
+                          try {
+                            await exportBackup(data)
+                            updateSettings({ lastExportAt: new Date().toISOString() })
+                          } catch {
+                            // Share sheet selhal — připomínka zůstane, zkusí se příště.
+                          }
+                        }}
+                      />
+                      <Pressable
+                        onPress={() => updateSettings({ backupReminderSnoozedUntil: snoozeBackupReminder(new Date()) })}
+                        hitSlop={8}
+                        className="min-h-[28px] justify-center"
+                        accessibilityRole="button"
+                      >
+                        <Text className="text-[12px] text-muted">Later</Text>
+                      </Pressable>
+                    </View>
+                  }
                 />
               </Animated.View>
             )}
@@ -461,4 +501,10 @@ function PickerRow({
       {chevron ? <Ionicons name="chevron-forward" size={18} color={colors.muted} /> : null}
     </Pressable>
   )
+}
+
+function backupReminderText(daysAgo: number | null): string {
+  return daysAgo === null
+    ? 'No copy outside this phone yet. Save one to iCloud Drive.'
+    : `Last copy off this phone: ${daysAgoLabel(daysAgo)}. Save a fresh one.`
 }

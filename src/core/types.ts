@@ -160,6 +160,10 @@ export interface Settings {
    * Volitelná mapa v nastavení, takže žádná nová entita ani migrace.
    */
   exerciseNotes?: Record<string, string>
+  /** Kdy naposledy odešla záloha mimo telefon (export, ISO). Řídí připomínku. */
+  lastExportAt?: string
+  /** Připomínka zálohy na dashboardu odložená do (ISO). */
+  backupReminderSnoozedUntil?: string
 }
 
 /**
