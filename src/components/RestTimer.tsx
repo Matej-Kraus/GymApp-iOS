@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native'
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
 import { StyleSheet } from 'react-native'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { colors } from '@/theme/colors'
 import { tapLight, warning } from '@/lib/haptics'
 
@@ -15,6 +16,7 @@ function mmss(sec: number): string {
 /**
  * Rest mezi sériemi — sticky lišta s odpočtem, ±15 s a přeskočením.
  * Běží v appce (interval + haptika na konci). `endsAt` = epoch ms konce.
+ * Se zamčeným telefonem ohlásí konec lokální notifikace (`lib/restAlert.ts`).
  */
 export function RestTimer({
   endsAt,
@@ -56,13 +58,13 @@ export function RestTimer({
       <View className="relative mx-4 mb-2 overflow-hidden rounded-2xl border border-accent/30 bg-panel2">
         {/* progress výplň */}
         <LinearGradient
-          colors={['rgba(200,169,97,0.22)', 'rgba(200,169,97,0.10)']}
+          colors={[`${colors.accent}38`, `${colors.accent}1A`]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[StyleSheet.absoluteFillObject, { right: `${(1 - pct) * 100}%` }]}
         />
         <View className="flex-row items-center gap-3 px-3 py-2.5">
-          <Text className="text-base">⏱️</Text>
+          <Ionicons name="timer-outline" size={20} color={colors.accent} />
           <View className="flex-1">
             <Text className="text-[10px] font-semibold uppercase tracking-wide text-accent/80">Rest</Text>
             <Text className="font-display text-xl text-white" style={{ fontVariant: ['tabular-nums'] }}>
@@ -72,7 +74,7 @@ export function RestTimer({
           <Pressable
             onPress={() => { tapLight(); onAdjust(-15) }}
             hitSlop={8}
-            accessibilityLabel="Odebrat 15 sekund"
+            accessibilityLabel="Remove 15 seconds"
             className="h-9 w-12 items-center justify-center rounded-xl bg-panel"
           >
             <Text className="text-xs font-bold text-white">−15</Text>

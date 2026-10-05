@@ -16,6 +16,7 @@ import type { DraftEntry, DraftSet } from '@/lib/workoutDraft'
 import { clearDraft, loadDraft, saveDraft } from '@/lib/workoutDraft'
 import { choose } from '@/lib/platform'
 import { success, tapLight, tapMedium } from '@/lib/haptics'
+import { cancelRestEnd, scheduleRestEnd } from '@/lib/restAlert'
 import { useAppState } from '@/state/AppStateContext'
 import { blankBackoff, blankWarmup, blankWorking, buildEntry, setToLog } from './draftFactories'
 
@@ -61,7 +62,7 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
     splitId: freshSplit?.id ?? 'free',
     splitName: freshSplit?.name ?? 'Session',
   }))
-  const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null)
+  const [rest, setRest] = useState<{ endsAt: number; total: number; next?: string } | null>(null)
   const [plateCalc, setPlateCalc] = useState<{ open: boolean; weight: number | null }>({
     open: false,
     weight: null,
@@ -106,13 +107,34 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
     }
   }, [entries, notes, ready, meta])
 
-  function startRest() {
-    setRest({ endsAt: Date.now() + restSec * 1000, total: restSec })
+  function startRest(doneEi: number, doneSi: number) {
+    setRest({ endsAt: Date.now() + restSec * 1000, total: restSec, next: nextUpName(doneEi, doneSi) })
   }
+
+  /** Cvik další nedokončené série (bez té, která se právě odškrtla) — do notifikace. */
+  function nextUpName(doneEi: number, doneSi: number): string | undefined {
+    for (let ei = 0; ei < entries.length; ei++) {
+      const open = entries[ei].sets.some(
+        (s, si) => !s.completed && !s.skipped && !(ei === doneEi && si === doneSi),
+      )
+      if (open) return findExercise(entries[ei].exerciseId, data.customExercises)?.name
+    }
+    return undefined
+  }
+
+  // Konec pauzy i se zamčeným telefonem: lokální notifikace kopíruje stav
+  // odpočtu (±15 s ji přeplánuje, Skip / konec ji zruší).
+  useEffect(() => {
+    if (rest) void scheduleRestEnd(rest.endsAt, rest.next)
+    else void cancelRestEnd()
+  }, [rest])
+  // Odchod z tréninku (dokončení, Leave) — žádná notifikace o pauze navíc.
+  useEffect(() => () => void cancelRestEnd(), [])
   const adjustRest = useCallback((delta: number) => {
     setRest((r) =>
       r
         ? {
+            ...r,
             endsAt: Math.max(Date.now(), r.endsAt + delta * 1000),
             total: Math.max(15, r.total + delta),
           }
@@ -218,7 +240,7 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
     if (willComplete) {
       tapMedium()
       // Uprostřed supersetu se nepauzuje — jinak by to žádný superset nebyl.
-      if (current && current.role !== 'warmup' && isLastInSuperset(entries, ei)) startRest()
+      if (current && current.role !== 'warmup' && isLastInSuperset(entries, ei)) startRest(ei, si)
     }
   }
 

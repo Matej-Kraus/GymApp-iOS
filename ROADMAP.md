@@ -135,8 +135,10 @@ jestli uživatel soubor opravdu uložil.
 
 Seřazené podle poměru přínos / práce:
 
-1. [ ] **Rest timer na zamčené obrazovce** — lokální notifikace při konci pauzy
-       (Live Activity až s placeným účtem / dev-clientem)
+1. [x] **Konec pauzy jako notifikace** (5. 10. 2026) — `src/lib/restAlert.ts`, pevné id
+       `rest-end`, ±15 s přeplánuje, Skip/odchod zruší, v popředí se nezobrazí.
+       Připomínky už neruší všechno (`cancelAllScheduled…` → jen své).
+       Na iPhonu ověřit se zamčeným telefonem. Live Activity až s placeným účtem.
 2. [ ] **Historie cviku** — v tréninku ťuknout na cvik → poslední 3 tréninky + PR
 3. [ ] **Plate/1RM kalkulačka mimo trénink** jako nástroj v Settings
 4. [ ] **Widget** s dalším tréninkem a streakem (vyžaduje nativní target)
