@@ -8,7 +8,9 @@ import { Button, Card, PageHeader, Toggle, cn } from '@/components/ui'
 import { currentWeek, defaultMesocycle, isDeloadWeek } from '@/core'
 import type { Unit, ReminderConfig } from '@/core'
 import { applyReminders } from '@/lib/reminders'
+import { isHealthAvailable, requestHealthAccess } from '@/lib/health'
 import { BackupCard } from '@/features/backup/BackupCard'
+import { ToolsCard } from '@/features/tools/ToolsCard'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const REMINDER_HOURS = [6, 7, 8, 9, 10, 12, 16, 17, 18, 19, 20, 21]
@@ -47,6 +49,23 @@ export default function Settings() {
   const barWeightKg = data.settings.barWeightKg ?? 20
   const [status, setStatus] = useState<string | null>(null)
   const hasSampleData = data.sessions.some((s) => s.isSample) || data.splits.some((s) => s.isSample)
+
+  const [healthStatus, setHealthStatus] = useState<string | null>(null)
+  async function toggleHealthWrite() {
+    if (data.settings.writeWorkoutsToHealth) {
+      updateSettings({ writeWorkoutsToHealth: false })
+      return
+    }
+    // Zapnout jde jen když Health existuje a uživatel povolí přístup —
+    // jinak by přepínač svítil a nic by se nezapisovalo.
+    const ok = (await isHealthAvailable()) && (await requestHealthAccess())
+    if (ok) {
+      updateSettings({ writeWorkoutsToHealth: true })
+      setHealthStatus(null)
+    } else {
+      setHealthStatus('Apple Health is not available here, or access was denied. Allow it in Settings → Health.')
+    }
+  }
 
   const reminder: ReminderConfig = data.settings.reminder ?? { enabled: false, hour: 18, days: [] }
   async function updateReminder(patch: Partial<ReminderConfig>) {
@@ -248,6 +267,18 @@ export default function Settings() {
         </View>
 
         <View className="gap-2">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Apple Health</Text>
+          <Card className="gap-2">
+            <Pressable onPress={toggleHealthWrite} className="flex-row items-center justify-between">
+              <Text className="text-sm text-white">Save finished sessions to Health</Text>
+              <Toggle value={!!data.settings.writeWorkoutsToHealth} onChange={toggleHealthWrite} />
+            </Pressable>
+            <Text className="text-xs text-muted">Logged as strength training. Only works in the native iPhone build.</Text>
+            {healthStatus ? <Text className="text-xs text-warn">{healthStatus}</Text> : null}
+          </Card>
+        </View>
+
+        <View className="gap-2">
           <Text className="text-xs font-semibold uppercase tracking-wide text-muted">Training reminders</Text>
           <Card className="gap-3">
             <Pressable onPress={() => updateReminder({ enabled: !reminder.enabled })} className="flex-row items-center justify-between">
@@ -289,6 +320,8 @@ export default function Settings() {
             {status ? <Text className="text-xs text-warn">{status}</Text> : null}
           </Card>
         </View>
+
+        <ToolsCard barWeightKg={barWeightKg} stepKg={smallestPlateKg * 2} />
 
         <BackupCard />
 

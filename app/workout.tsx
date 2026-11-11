@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { ScrollView, Text, TextInput, View, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { allExercises, findExercise, lastPerformance, supersetLabel } from '@/core'
+import type { Exercise } from '@/core'
+import { allExercises, exerciseHistory, findExercise, lastPerformance, supersetLabel } from '@/core'
 import { Button } from '@/components/ui'
 import { ExercisePicker } from '@/components/ExercisePicker'
+import { ExerciseHistorySheet } from '@/features/workout/ExerciseHistorySheet'
 import { PlateCalculator } from '@/components/PlateCalculator'
 import { ExerciseCard } from '@/features/workout/ExerciseCard'
 import { WorkoutFooter } from '@/features/workout/WorkoutFooter'
@@ -17,6 +20,7 @@ import { colors } from '@/theme/colors'
 export default function Workout() {
   const params = useLocalSearchParams<{ splitId?: string; resume?: string }>()
   const router = useRouter()
+  const [historyFor, setHistoryFor] = useState<Exercise | null>(null)
   const s = useWorkoutSession({ splitId: params.splitId, isResume: params.resume === '1' })
 
   if (s.splitMissing) {
@@ -74,6 +78,7 @@ export default function Workout() {
               onAddSet={(role) => s.addSet(ei, role)}
               onAutoWarmup={() => s.autoWarmup(ei)}
               onOpenPlates={() => s.openPlates(entry)}
+              onOpenHistory={() => setHistoryFor(exercise)}
               onRemove={() => s.removeEntry(ei)}
               supersetLabel={supersetLabel(s.entries, ei)}
               onToggleSuperset={() => s.toggleSuperset(ei)}
@@ -120,6 +125,12 @@ export default function Workout() {
         selectedIds={s.entries.map((e) => e.exerciseId)}
         onToggle={s.addEntry}
         onClose={() => s.setPickerOpen(false)}
+      />
+
+      <ExerciseHistorySheet
+        exercise={historyFor}
+        history={historyFor ? exerciseHistory(s.data.sessions, historyFor.id) : null}
+        onClose={() => setHistoryFor(null)}
       />
 
       <PlateCalculator

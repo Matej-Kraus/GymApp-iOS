@@ -11,10 +11,12 @@ import {
   nextSupersetGroup,
   warmupSets,
 } from '@/core'
+import { healthWorkoutWindow } from '@/core'
 import type { Exercise, SetRole, Split, WorkoutEntry } from '@/core'
 import type { DraftEntry, DraftSet } from '@/lib/workoutDraft'
 import { clearDraft, loadDraft, saveDraft } from '@/lib/workoutDraft'
 import { choose } from '@/lib/platform'
+import { saveWorkout } from '@/lib/health'
 import { success, tapLight, tapMedium } from '@/lib/haptics'
 import { cancelRestEnd, scheduleRestEnd } from '@/lib/restAlert'
 import { useAppState } from '@/state/AppStateContext'
@@ -375,6 +377,10 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
       data.sessions,
     )
     addSession(marked)
+    if (settings.writeWorkoutsToHealth) {
+      // Bez await: zápis do Health nesmí zdržet přechod na souhrn.
+      void saveWorkout(healthWorkoutWindow(durationMinutes, Date.now()))
+    }
     void clearDraft()
     success()
     router.replace({ pathname: '/workout-summary', params: { id: marked.id } })

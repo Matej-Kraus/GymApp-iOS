@@ -123,10 +123,10 @@ jestli uživatel soubor opravdu uložil.
 
 ### F12 · Apple Health naplno · [#3](../../issues/3), [#4](../../issues/4)
 
-- [ ] **Zápis tréninků do Health** — `NSHealthUpdateUsageDescription` to slibuje,
+- [x] (10. 11. 2026, na iPhonu ověřit: Health → Browse → Workouts; přepínač v Settings → Apple Health, `saveWorkout` v `src/lib/health.ts`) **Zápis tréninků do Health** — `NSHealthUpdateUsageDescription` to slibuje,
       ale kód zapisuje nic (`requestAuthorization` má jen `toRead`). Buď dodělat
       (`saveWorkoutSample`, přepínač v Settings), nebo text z `app.json` vyhodit.
-- [ ] **Rozhodnout: Watch tréninky do historie?** Stará verze (větev `archive/lokalni-verze-2026-08`,
+- [x] **Rozhodnuto 10. 11. 2026: Watch tréninky do historie NE**, zůstávají jen v Progress. (původní otázka:) Stará verze (větev `archive/lokalni-verze-2026-08`,
       `src/lib/healthImport.ts`) je importovala jako sessions bez cviků. Pozor:
       prázdné sessions zkreslí streak, objem a landmarky — musely by se ze statistik
       vyřadit (`source: 'healthkit'`).
@@ -139,8 +139,10 @@ Seřazené podle poměru přínos / práce:
        `rest-end`, ±15 s přeplánuje, Skip/odchod zruší, v popředí se nezobrazí.
        Připomínky už neruší všechno (`cancelAllScheduled…` → jen své).
        Na iPhonu ověřit se zamčeným telefonem. Live Activity až s placeným účtem.
-2. [ ] **Historie cviku** — v tréninku ťuknout na cvik → poslední 3 tréninky + PR
-3. [ ] **Plate/1RM kalkulačka mimo trénink** jako nástroj v Settings
+2. [x] **Historie cviku** (10. 11. 2026) — ťuknout na název cviku → poslední 3 tréninky + PR.
+       `src/core/exerciseHistory.ts`, `features/workout/ExerciseHistorySheet.tsx`. Na iPhonu ověřit.
+3. [x] **Plate/1RM kalkulačka mimo trénink** (10. 11. 2026) — `features/tools/ToolsCard.tsx` v Settings.
+       Na iPhonu ověřit.
 4. [ ] **Widget** s dalším tréninkem a streakem (vyžaduje nativní target)
 5. [ ] **Apple Watch appka** — logování sérií z hodinek (velké, až po F2)
 6. [ ] Crash reporting (Sentry — `.sentryclirc` už existuje, SDK v projektu není)

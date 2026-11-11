@@ -1,6 +1,6 @@
 import Constants from 'expo-constants'
 import { Platform } from 'react-native'
-import type { ObjectTypeIdentifier } from '@kingstinct/react-native-healthkit'
+import type { ObjectTypeIdentifier, SampleTypeIdentifierWriteable } from '@kingstinct/react-native-healthkit'
 import { localDateISO } from './format'
 
 /**
@@ -56,11 +56,16 @@ export async function isHealthAvailable(): Promise<boolean> {
   }
 }
 
-/** Požádá o přístup ke zdravotním datům (čtení). Vrací true při úspěchu. */
+/** Co appka smí do Health zapisovat — jen hotové tréninky. */
+const SHARE_TYPES = ['HKWorkoutTypeIdentifier'] satisfies readonly SampleTypeIdentifierWriteable[]
+
+/** Požádá o přístup ke zdravotním datům (čtení + zápis tréninků). Vrací true při úspěchu. */
 export async function requestHealthAccess(): Promise<boolean> {
   try {
     const healthkit = await getHealthKit()
-    return healthkit ? await healthkit.requestAuthorization({ toRead: READ_TYPES }) : false
+    return healthkit
+      ? await healthkit.requestAuthorization({ toRead: READ_TYPES, toShare: SHARE_TYPES })
+      : false
   } catch {
     return false
   }
@@ -139,5 +144,25 @@ export async function readRecentWorkouts(limit = 20): Promise<HealthWorkout[]> {
     })
   } catch {
     return []
+  }
+}
+
+/**
+ * Zapíše dokončený trénink do Apple Health jako silový trénink. Nikdy
+ * nevyhazuje — vrací true jen když se zápis povedl (na webu / v Expo Go false).
+ */
+export async function saveWorkout(window: { start: Date; end: Date }): Promise<boolean> {
+  try {
+    const healthkit = await getHealthKit()
+    if (!healthkit) return false
+    await healthkit.saveWorkoutSample(
+      healthkit.WorkoutActivityType.traditionalStrengthTraining,
+      [],
+      window.start,
+      window.end,
+    )
+    return true
+  } catch {
+    return false
   }
 }

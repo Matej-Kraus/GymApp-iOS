@@ -27,6 +27,7 @@ interface Props {
   onAddSet: (role: SetRole) => void
   onAutoWarmup: () => void
   onOpenPlates: () => void
+  onOpenHistory: () => void
   onRemove: () => void
   /** Označení pozice v supersetu (A1), nebo null. */
   supersetLabel: string | null
@@ -56,6 +57,7 @@ export function ExerciseCard({
   onAddSet,
   onAutoWarmup,
   onOpenPlates,
+  onOpenHistory,
   onRemove,
   supersetLabel,
   onToggleSuperset,
@@ -96,7 +98,11 @@ export function ExerciseCard({
     >
       <View className="flex-row items-center gap-3 px-3 py-2.5 border-b border-white/10">
         <ExerciseImage exercise={exercise} size={40} />
-        <View className="flex-1">
+        <Pressable
+          onPress={onOpenHistory}
+          accessibilityLabel={`History for ${exercise.name}`}
+          className="flex-1"
+        >
           <View className="flex-row items-center gap-1.5">
             {supersetLabel ? (
               <View className="rounded-md bg-accent/20 px-1.5 py-0.5">
@@ -115,7 +121,7 @@ export function ExerciseCard({
                 }`
               : ''}
           </Text>
-        </View>
+        </Pressable>
         <Pressable
           onPress={onOpenPlates}
           hitSlop={8}
