@@ -4,6 +4,7 @@ import { Num, Rule, Sheet, tnum } from '@/components/ui'
 import { fmtNum, fmtSet, formatShort } from '@/lib/format'
 import { tr } from '@/i18n'
 import { rirLabel } from './SetRow'
+import { exName } from '@/lib/exerciseName'
 
 /** Sheet s osobním rekordem a posledními třemi tréninky cviku. */
 export function ExerciseHistorySheet({
@@ -18,7 +19,7 @@ export function ExerciseHistorySheet({
   const t = tr()
   const w = t.workout
   return (
-    <Sheet visible={exercise !== null} onClose={onClose} title={exercise?.name ?? ''} scroll>
+    <Sheet visible={exercise !== null} onClose={onClose} title={exercise ? exName(exercise) : ''} scroll>
       {history?.pr ? (
         <View className="pb-4">
           <Text className="text-[14px] text-muted">{w.historyPr}</Text>

@@ -63,7 +63,7 @@ export function PlateCalculator({
           <Text className="text-[16px] text-muted">{t.emptyBar(fmtNum(bar))}</Text>
         ) : (
           <View>
-            <LoadedBar weightKg={target} barKg={bar} height={84} showLabels={false} />
+            <LoadedBar weightKg={target} barKg={bar} height={84} />
             <Text className="mb-1 mt-5 text-[13px] text-muted">{t.perSide}</Text>
             <View className="flex-row flex-wrap" style={{ columnGap: 18, rowGap: 2 }}>
               {result.perSide.map((p) => (

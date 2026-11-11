@@ -1,110 +1,65 @@
-import { useMemo, useState } from 'react'
-import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import type { Category, Exercise } from '@/core'
-import { MUSCLE_LABEL } from '@/core'
-import { cn } from '@/components/ui'
-import { ExerciseImage } from '@/components/ExerciseImage'
+import { useState } from 'react'
+import { Modal, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import type { Exercise } from '@/core'
+import { GUTTER, IconButton, Title } from '@/components/ui'
+import { ExerciseBrowser } from '@/features/exercises/ExerciseBrowser'
+import { ExerciseDetailSheet } from '@/features/exercises/ExerciseDetailSheet'
 import { colors } from '@/theme/colors'
-import { phoneWidth } from '@/theme/layout'
+import { PHONE_MAX_WIDTH } from '@/theme/layout'
+import { tr } from '@/i18n'
 
-const CATEGORIES: Array<{ value: Category | 'All'; label: string }> = [
-  { value: 'All', label: 'All' },
-  { value: 'Push', label: 'Push' },
-  { value: 'Pull', label: 'Pull' },
-  { value: 'Legs', label: 'Legs' },
-  { value: 'Core', label: 'Core' },
-]
-
-interface Props {
+/**
+ * Výběr cviku přes celou obrazovku — do tréninku, do plánu, do úpravy
+ * tréninku. Seznam a hledání dělá `ExerciseBrowser`.
+ */
+export function ExercisePicker({
+  visible,
+  selectedIds,
+  onToggle,
+  onClose,
+}: {
   visible: boolean
-  exercises: Exercise[]
+  /** Dřív seznam cviků; knihovnu si teď bere `ExerciseBrowser` sám. */
+  exercises?: Exercise[]
   selectedIds: string[]
   onToggle: (exercise: Exercise) => void
   onClose: () => void
-}
+}) {
+  const insets = useSafeAreaInsets()
+  const [detail, setDetail] = useState<Exercise | null>(null)
 
-export function ExercisePicker({ visible, exercises, selectedIds, onToggle, onClose }: Props) {
-  const [search, setSearch] = useState('')
-  const [category, setCategory] = useState<Category | 'All'>('All')
-
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase()
-    return exercises.filter((e) => {
-      if (category !== 'All' && e.category !== category) return false
-      if (q && !e.name.toLowerCase().includes(q)) return false
-      return true
-    })
-  }, [exercises, search, category])
-
+  // Kořen přes style: `className` uvnitř <Modal> na webu nemusí dorazit.
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-bg" edges={['top']} style={phoneWidth}>
-        {/* Záhlaví */}
-        <View className="flex-row items-center gap-3 border-b border-white/10 px-4 py-3">
-          <Pressable onPress={onClose} hitSlop={8}>
-            <Text className="text-muted text-sm font-medium">Back</Text>
-          </Pressable>
-          <Text className="flex-1 text-base font-semibold text-white">Add exercises</Text>
-          <Text className="text-xs text-muted">{selectedIds.length} selected</Text>
-        </View>
-
-        {/* Vyhledávání + filtr */}
-        <View className="px-4 py-3 gap-2">
-          <TextInput
-            placeholder="Search exercises…"
-            placeholderTextColor={colors.muted}
-            value={search}
-            onChangeText={setSearch}
-            className="h-11 rounded-2xl bg-panel2 px-4 text-sm text-white"
-          />
-          <View className="flex-row gap-1.5">
-            {CATEGORIES.map(({ value, label }) => (
-              <Pressable
-                key={value}
-                onPress={() => setCategory(value)}
-                className={cn(
-                  'rounded-full px-3 py-1',
-                  category === value ? 'bg-accent' : 'bg-panel2',
-                )}
-              >
-                <Text className={cn('text-xs font-semibold', category === value ? 'text-black' : 'text-muted')}>
-                  {label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        {/* Seznam */}
-        <FlatList
-          data={filtered}
-          keyExtractor={(e) => e.id}
-          contentContainerClassName="px-4 gap-1.5 pb-6"
-          ListEmptyComponent={<Text className="text-center text-sm text-muted py-8">No exercises match.</Text>}
-          renderItem={({ item }) => {
-            const selected = selectedIds.includes(item.id)
-            return (
-              <Pressable
-                onPress={() => onToggle(item)}
-                className={cn(
-                  'flex-row items-center gap-3 rounded-2xl border p-3',
-                  selected ? 'border-accent bg-accent/10' : 'border-white/10 bg-panel',
-                )}
-              >
-                <ExerciseImage exercise={item} size={48} />
-                <View className="flex-1">
-                  <Text className="font-semibold text-sm text-white" numberOfLines={1}>{item.name}</Text>
-                  <Text className="text-xs text-muted mt-0.5">
-                    {MUSCLE_LABEL[item.muscleGroup]} · {item.equipment}{item.isCustom ? ' · custom' : ''}
-                  </Text>
-                </View>
-                {selected ? <Text className="text-accent text-lg">✓</Text> : null}
-              </Pressable>
-            )
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <View
+          style={{
+            flex: 1,
+            width: '100%',
+            maxWidth: PHONE_MAX_WIDTH,
+            alignSelf: 'center',
+            paddingTop: insets.top,
           }}
-        />
-      </SafeAreaView>
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingLeft: GUTTER,
+              paddingRight: 8,
+              height: 52,
+            }}
+          >
+            <Title size="sm" className="flex-1">
+              {tr().exercises.pickTitle}
+            </Title>
+            <IconButton icon="close" label={tr().common.close} onPress={onClose} />
+          </View>
+          <ExerciseBrowser selectedIds={selectedIds} onPress={onToggle} onInfo={setDetail} />
+        </View>
+      </View>
+      <ExerciseDetailSheet exercise={detail} onClose={() => setDetail(null)} />
     </Modal>
   )
 }

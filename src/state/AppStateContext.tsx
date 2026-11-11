@@ -8,7 +8,14 @@ import {
   type ReactNode,
 } from 'react'
 import type { AppData, Exercise, ExerciseGoal, Settings, Split, WorkoutSession, BodyWeightEntry, MeasurementEntry } from '@/core'
-import { createId, createRepository, emptyData, SAMPLE_SPLITS, SAMPLE_SESSIONS } from '@/core'
+import {
+  createId,
+  createRepository,
+  emptyData,
+  recomputeAllPRs,
+  SAMPLE_SPLITS,
+  SAMPLE_SESSIONS,
+} from '@/core'
 import { createAsyncStore } from '@/state/asyncStore'
 import { maybeAutoSnapshot, safetySnapshot } from '@/lib/backups'
 import { resolveLang, setLang } from '@/i18n'
@@ -29,7 +36,8 @@ interface AppStateValue {
   deleteSplit: (id: string) => void
   duplicateSplit: (id: string) => void
   addSession: (session: WorkoutSession) => void
-  updateSession: (session: WorkoutSession) => void
+  /** Uloží upravený nebo zpětně doplněný trénink a přepočítá rekordy v celé historii. */
+  saveSession: (session: WorkoutSession) => void
   deleteSession: (id: string) => void
   addCustomExercise: (exercise: Exercise) => void
   updateCustomExercise: (exercise: Exercise) => void
@@ -112,10 +120,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return { ...d, splits: [...d.splits, { ...orig, id: createId(), name: `${orig.name} (copy)` }] }
         }),
       addSession: (s) => setData((d) => ({ ...d, sessions: [...d.sessions, s] })),
-      updateSession: (s) =>
-        setData((d) => ({ ...d, sessions: d.sessions.map((x) => (x.id === s.id ? s : x)) })),
+      saveSession: (s) =>
+        setData((d) => {
+          const exists = d.sessions.some((x) => x.id === s.id)
+          const sessions = exists ? d.sessions.map((x) => (x.id === s.id ? s : x)) : [...d.sessions, s]
+          return { ...d, sessions: recomputeAllPRs(sessions) }
+        }),
       deleteSession: (id) =>
-        setData((d) => ({ ...d, sessions: d.sessions.filter((s) => s.id !== id) })),
+        // Smazaný trénink mohl nést rekord — přepočítat, kdo ho drží teď.
+        setData((d) => ({ ...d, sessions: recomputeAllPRs(d.sessions.filter((s) => s.id !== id)) })),
       addCustomExercise: (e) =>
         setData((d) => ({ ...d, customExercises: [...d.customExercises, e] })),
       updateCustomExercise: (e) =>

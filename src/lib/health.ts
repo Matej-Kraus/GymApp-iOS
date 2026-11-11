@@ -20,24 +20,6 @@ const READ_TYPES = [
 
 type HealthKitModule = typeof import('@kingstinct/react-native-healthkit')
 
-const WORKOUT_LABELS: Record<number, string> = {
-  50: 'Strength training',
-  20: 'Functional strength',
-  63: 'HIIT',
-  11: 'Cross training',
-  59: 'Core',
-  37: 'Running',
-  52: 'Walking',
-  13: 'Cycling',
-  46: 'Swimming',
-  35: 'Rowing',
-  57: 'Yoga',
-}
-
-function workoutLabel(type: number): string {
-  return WORKOUT_LABELS[type] ?? 'Workout'
-}
-
 async function getHealthKit(): Promise<HealthKitModule | null> {
   if (Platform.OS !== 'ios' || Constants.expoGoConfig != null) return null
   try {
@@ -119,7 +101,8 @@ export async function readWeightHistory(): Promise<{ date: string; kg: number }[
 
 export interface HealthWorkout {
   date: string
-  activity: string
+  /** HKWorkoutActivityType — název podle něj skládá UI (`tr().health.activity`). */
+  activityType: number
   durationMin: number
   energyKcal: number | null
 }
@@ -137,7 +120,7 @@ export async function readRecentWorkouts(limit = 20): Promise<HealthWorkout[]> {
       const energy = w.totalEnergyBurned?.quantity
       return {
         date: localDateISO(w.startDate),
-        activity: workoutLabel(w.workoutActivityType),
+        activityType: w.workoutActivityType,
         durationMin,
         energyKcal: typeof energy === 'number' ? Math.round(energy) : null,
       }

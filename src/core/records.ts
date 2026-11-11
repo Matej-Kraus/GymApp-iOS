@@ -55,3 +55,43 @@ export function markPRs(session: WorkoutSession, history: WorkoutSession[]): Wor
 
   return { ...session, entries }
 }
+
+/**
+ * Přepočítá příznak PR ve VŠECH trénincích, chronologicky.
+ *
+ * Potřeba po úpravě, doplnění nebo smazání staršího tréninku: rekord se
+ * mohl přesunout na jiný den. Jeden průchod s průběžným maximem na cvik —
+ * `markPRs` v cyklu by historii procházel pro každý trénink znovu.
+ *
+ * Vrací nové pole ve STEJNÉM pořadí jako vstup; tréninky, kde se nic
+ * nezměnilo, zůstávají stejnou referencí (kvůli ukládání rozdílů).
+ */
+export function recomputeAllPRs(sessions: WorkoutSession[]): WorkoutSession[] {
+  const best = new Map<string, number>()
+  const updated = new Map<string, WorkoutSession>()
+  const chronological = [...sessions].sort((a, b) => a.date.localeCompare(b.date))
+
+  for (const session of chronological) {
+    let changed = false
+    const entries = session.entries.map((entry) => {
+      let bar = best.get(entry.exerciseId) ?? 0
+      const sets = entry.sets.map((set) => {
+        let isPR = false
+        if (countsTowardProgress(set)) {
+          const e1rm = epley1RM(set.weight, set.reps)
+          if (e1rm > bar && e1rm > 0) {
+            bar = e1rm
+            isPR = true
+          }
+        }
+        if (isPR === set.isPR) return set
+        changed = true
+        return { ...set, isPR }
+      })
+      best.set(entry.exerciseId, bar)
+      return changed ? { ...entry, sets } : entry
+    })
+    if (changed) updated.set(session.id, { ...session, entries })
+  }
+  return updated.size === 0 ? sessions : sessions.map((s) => updated.get(s.id) ?? s)
+}

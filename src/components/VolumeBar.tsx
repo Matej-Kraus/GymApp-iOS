@@ -1,6 +1,5 @@
 import { Text, View } from 'react-native'
 import type { VolumeRow } from '@/core'
-import { MUSCLE_LABEL } from '@/core'
 import { colors } from '@/theme/colors'
 import { tr } from '@/i18n'
 import { fmtNum } from '@/lib/format'
@@ -86,18 +85,4 @@ export function VolumeBar({ row }: { row: VolumeRow }) {
       </Text>
     </View>
   )
-}
-
-/** Krátké shrnutí nad seznamem — co je potřeba udělat. */
-export function volumeHeadline(rows: VolumeRow[]): string {
-  const under = rows.filter((r) => r.status === 'under' && r.landmark.mev > 0)
-  const over = rows.filter((r) => r.status === 'over')
-  if (over.length > 0) {
-    return `${over.length} over MRV — back off or deload.`
-  }
-  if (under.length === 0) return 'Every muscle is in range this week.'
-  if (under.length <= 2) {
-    return `Low on ${under.map((r) => MUSCLE_LABEL[r.muscle]).join(' and ')}.`
-  }
-  return `${under.length} muscles below MEV this week.`
 }

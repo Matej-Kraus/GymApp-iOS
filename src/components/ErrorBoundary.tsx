@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { Button } from '@/components/ui'
 import { colors } from '@/theme/colors'
+import { tr } from '@/i18n'
 
 interface Props { children: ReactNode }
 interface State { error: Error | null }
@@ -32,12 +33,12 @@ export class ErrorBoundary extends Component<Props, State> {
       <SafeAreaView className="flex-1 items-center justify-center gap-6 bg-bg px-8">
         <Ionicons name="warning-outline" size={40} color={colors.warn} />
         <View className="items-center gap-2">
-          <Text className="text-center font-display text-xl text-white">Something went wrong</Text>
-          <Text className="text-center text-sm text-muted">
-            Your data is safe. {this.state.error.message}
+          <Text className="text-center font-display text-[28px] text-white">{tr().errors.crashTitle}</Text>
+          <Text className="text-center text-[15px] leading-[21px] text-muted">
+            {tr().errors.crashText} ({this.state.error.message})
           </Text>
         </View>
-        <Button title="Try again" onPress={this.reset} />
+        <Button title={tr().errors.retry} onPress={this.reset} />
       </SafeAreaView>
     )
   }

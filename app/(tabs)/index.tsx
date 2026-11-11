@@ -25,7 +25,7 @@ import { daysSince, fmtNum, fmtSet, formatLong, formatShort, isThisWeek } from '
 import { loadDraft, type WorkoutDraft } from '@/lib/workoutDraft'
 import { exportBackup } from '@/lib/backups'
 import { colors } from '@/theme/colors'
-import { getLang, localeTag, tr } from '@/i18n'
+import { localeTag, tr } from '@/i18n'
 import {
   countScoringSets,
   currentWeek,
@@ -46,6 +46,7 @@ import {
   type Split,
   type WorkoutSession,
 } from '@/core'
+import { exName } from '@/lib/exerciseName'
 
 /** Sedm dní aktuálního týdne (Po–Ne) a jestli se v nich cvičilo. */
 function weekDays(sessions: WorkoutSession[]) {
@@ -205,8 +206,15 @@ export default function Today() {
                 <Banner
                   tone={deload.scheduled ? 'warn' : 'over'}
                   title={deload.scheduled ? t.today.deloadPlanned : t.today.deloadNeeded}
-                  // Důvody skládá jádro zatím jen anglicky.
-                  description={getLang() === 'en' ? deload.reasons[0] : undefined}
+                  description={
+                    deload.scheduled
+                      ? t.deloadWhy.scheduled
+                      : deload.overreached
+                        ? t.deloadWhy.overreached(deload.overMrvCount)
+                        : deload.exhausted
+                          ? t.deloadWhy.exhausted
+                          : t.deloadWhy.stagnating(deload.stalledCount)
+                  }
                 />
               </View>
             ) : null}
@@ -402,7 +410,7 @@ function PlanLine({ row }: { row: PlanRow }) {
     <Row>
       <View className="flex-1">
         <Text className="text-[16px] font-medium text-white" numberOfLines={1}>
-          {row.exercise.name}
+          {exName(row.exercise)}
         </Text>
         <Text className="mt-0.5 text-[14px] text-muted" style={tnum}>
           {row.last ? `${t.today.planLast} ${fmtSet(row.last.weight, row.last.reps)}` : t.today.planFirst}

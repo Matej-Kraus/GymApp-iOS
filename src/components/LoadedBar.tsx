@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 import Animated, {
   FadeIn,
   FadeOut,
@@ -33,13 +33,11 @@ export function LoadedBar({
   barKg = 20,
   smallestPlateKg = 1.25,
   height = 56,
-  showLabels = true,
 }: {
   weightKg: number
   barKg?: number
   smallestPlateKg?: number
   height?: number
-  showLabels?: boolean
 }) {
   const result = useMemo(
     () =>
@@ -57,15 +55,8 @@ export function LoadedBar({
     [result],
   )
 
-  if (result.belowBar) {
-    return (
-      <View className="items-center justify-center" style={{ height }}>
-        <Text className="font-mono text-[11px] uppercase tracking-[1.2px] text-faint">
-          Below bar weight
-        </Text>
-      </View>
-    )
-  }
+  // Cíl lehčí než osa nemá co kreslit — text k tomu má volající.
+  if (result.belowBar) return null
 
   const sleeve = height * 0.16
 
@@ -93,30 +84,6 @@ export function LoadedBar({
         </View>
       </View>
 
-      {showLabels ? (
-        <View className="mt-2 flex-row items-center justify-center gap-2">
-          <Text className="font-mono text-[10px] uppercase tracking-[1.2px] text-faint">
-            bar {barKg}
-          </Text>
-          {result.perSide.map(({ plate, count }) => (
-            <View key={plate} className="flex-row items-center gap-1">
-              <View
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: plateColor(plate) }}
-              />
-              <Text className="font-mono text-[10px] text-muted" >
-                {plate}
-                <Text className="text-faint">×{count}</Text>
-              </Text>
-            </View>
-          ))}
-          {result.remainderKg > 0.01 ? (
-            <Text className="font-mono text-[10px] uppercase tracking-[1px] text-over">
-              +{result.remainderKg.toFixed(2)} off
-            </Text>
-          ) : null}
-        </View>
-      ) : null}
     </View>
   )
 }

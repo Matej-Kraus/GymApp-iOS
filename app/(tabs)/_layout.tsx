@@ -26,20 +26,19 @@ export default function TabsLayout() {
           backgroundColor: colors.bg,
           borderTopColor: colors.line,
           // Na iPhonu výšku počítá navigace sama (safe area); web ji má moc nízkou.
-          ...(Platform.OS === 'web' ? { height: 60, paddingTop: 6, paddingBottom: 8 } : null),
+          ...(Platform.OS === 'web' ? { height: 64 } : null),
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >
       <Tabs.Screen name="index" options={{ title: t.today, tabBarIcon: icon('today-outline', 'today') }} />
-      <Tabs.Screen name="splits" options={{ title: t.plans, tabBarIcon: icon('list-outline', 'list') }} />
       <Tabs.Screen name="history" options={{ title: t.history, tabBarIcon: icon('calendar-outline', 'calendar') }} />
       <Tabs.Screen
         name="progress"
         options={{ title: t.progress, tabBarIcon: icon('trending-up-outline', 'trending-up') }}
       />
-      <Tabs.Screen name="settings" options={{ title: t.settings, tabBarIcon: icon('settings-outline', 'settings') }} />
+      <Tabs.Screen name="splits" options={{ title: t.plans, tabBarIcon: icon('list-outline', 'list') }} />
     </Tabs>
   )
 }

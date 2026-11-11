@@ -8,6 +8,7 @@ import { fmtSet } from '@/lib/format'
 import { colors } from '@/theme/colors'
 import { tr } from '@/i18n'
 import { COL, SetRow, rirLabel } from './SetRow'
+import { exName } from '@/lib/exerciseName'
 
 /**
  * Jeden cvik v tréninku: název, minulý výkon a cíl, tabulka sérií.
@@ -63,11 +64,12 @@ export function ExerciseBlock({
 }: Props) {
   const t = tr()
   const w = t.workout
+  const name = exName(exercise)
   const target = entry.sets.find((s) => s.role === 'working')?.suggestion ?? null
 
   async function openMenu() {
     const picked = await choose<MenuAction>({
-      title: exercise.name,
+      title: name,
       options: [
         { label: w.menuHistory, value: 'history', style: 'neutral' },
         { label: w.menuPlates, value: 'plates', style: 'neutral' },
@@ -92,7 +94,7 @@ export function ExerciseBlock({
     if (picked === 'remove') {
       const yes = await confirm({
         title: w.removeTitle,
-        message: exercise.name,
+        message: name,
         confirmLabel: t.common.remove,
         destructive: true,
       })
@@ -103,9 +105,9 @@ export function ExerciseBlock({
   async function pickSubstitute() {
     const picked = await choose<string>({
       title: w.menuSwap,
-      message: w.swapText(exercise.name),
+      message: w.swapText(name),
       options: [
-        ...substitutes.map((e) => ({ label: e.name, value: e.id, style: 'neutral' as const })),
+        ...substitutes.map((e) => ({ label: exName(e), value: e.id, style: 'neutral' as const })),
         { label: t.common.cancel, value: '', style: 'cancel' as const },
       ],
     })
@@ -141,7 +143,7 @@ export function ExerciseBlock({
         <Pressable
           onPress={onOpenHistory}
           accessibilityRole="button"
-          accessibilityLabel={`${w.menuHistory}: ${exercise.name}`}
+          accessibilityLabel={`${w.menuHistory}: ${name}`}
           className="flex-1 active:opacity-60"
         >
           <View className="flex-row items-center" style={{ gap: 8 }}>
@@ -151,7 +153,7 @@ export function ExerciseBlock({
               </View>
             ) : null}
             <Title size="md" className="flex-1">
-              {exercise.name}
+              {name}
             </Title>
           </View>
           <Text className="mt-1 text-[15px] text-muted" style={tnum}>
@@ -166,6 +168,9 @@ export function ExerciseBlock({
             <Text className="text-[15px] font-medium text-white" style={tnum}>
               {w.target(fmtSet(target.weight, target.reps))}
             </Text>
+          ) : null}
+          {target?.action ? (
+            <Text className="text-[14px] leading-[19px] text-faint">{t.why[target.action]}</Text>
           ) : null}
           {note ? (
             <Text className="mt-1 text-[14px] leading-[19px] text-faint" numberOfLines={2}>

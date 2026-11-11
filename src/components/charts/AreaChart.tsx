@@ -1,32 +1,18 @@
 import { useMemo, useRef, useState } from 'react'
 import { LayoutChangeEvent, PanResponder, Text, View } from 'react-native'
-import Svg, {
-  Circle,
-  Defs,
-  G,
-  Line,
-  LinearGradient,
-  Path,
-  Rect,
-  Stop,
-} from 'react-native-svg'
-import Animated, {
-  Easing,
-  useAnimatedProps,
-  useSharedValue,
-  withTiming,
-  type SharedValue,
-} from 'react-native-reanimated'
+import Svg, { Circle, G, Line, Path } from 'react-native-svg'
 import { colors } from '@/theme/colors'
 import { tnum } from '@/components/ui'
+import { fmtNum } from '@/lib/format'
+import { tr } from '@/i18n'
 
-/** Plošný graf.
+/** Čárový graf vývoje v čase.
  *
- *  Návrh vychází z toho, co dělá Bklit — gradientní výplň slábnoucí k nule,
- *  přerušovaná mřížka, čárkovaný „ocas" u rozpracovaného období, crosshair
- *  s tooltipem a hlavně clip-reveal náběh: graf se odkryje zleva doprava.
+ *  Jen křivka na přerušované mřížce: žádná výplň pod čarou a žádný náběh —
+ *  graf je hned celý. Tažením prstu se ukáže hodnota konkrétního bodu.
+ *  Poslední úsek jde vykreslit čárkovaně, když období ještě neskončilo.
  *
- *  Postaveno na react-native-svg + Reanimated, protože Bklit sám je DOM-only. */
+ *  Postaveno na react-native-svg, aby vypadal stejně na webu i iPhonu. */
 
 export interface Point {
   /** Hodnota na ose Y. */
@@ -34,8 +20,6 @@ export interface Point {
   /** Popisek na ose X. */
   label: string
 }
-
-const AnimatedRect = Animated.createAnimatedComponent(Rect)
 
 /** Monotónní kubická interpolace — hladká křivka, která nepřestřeluje. */
 function monotonePath(pts: { x: number; y: number }[]): string {
@@ -102,9 +86,6 @@ export function AreaChart({
 }) {
   const [width, setWidth] = useState(0)
   const [active, setActive] = useState<number | null>(null)
-  // Clip-reveal: graf se odkryje zleva doprava.
-  const reveal = useSharedValue(0)
-
   const PAD_L = 34
   const PAD_R = 8
   const PAD_T = 10
@@ -143,12 +124,6 @@ export function AreaChart({
   }, [data, plotW, plotH])
 
   const linePath = useMemo(() => monotonePath(pts), [pts])
-  const areaPath = useMemo(() => {
-    if (pts.length < 2) return ''
-    const base = PAD_T + plotH
-    return `${linePath} L ${pts[pts.length - 1].x} ${base} L ${pts[0].x} ${base} Z`
-  }, [linePath, pts, plotH])
-
   // Čárkovaný ocas: poslední úsek zvlášť.
   const tailPath = useMemo(() => {
     if (!dashedTail || pts.length < 2) return ''
@@ -163,12 +138,6 @@ export function AreaChart({
     const w = e.nativeEvent.layout.width
     if (w !== width) {
       setWidth(w)
-      // 1100 ms, cubic-bezier(0.85, 0, 0.15, 1) — pomalý rozjezd, rychlý střed.
-      reveal.value = 0
-      reveal.value = withTiming(1, {
-        duration: 1100,
-        easing: Easing.bezier(0.85, 0, 0.15, 1),
-      })
     }
   }
 
@@ -204,7 +173,7 @@ export function AreaChart({
   if (data.length < 2) {
     return (
       <View className="items-center justify-center" style={{ height }}>
-        <Text className="text-[13px] text-muted">Two sessions are needed to draw a trend.</Text>
+        <Text className="text-[15px] text-muted">{tr().progress.needTwo}</Text>
       </View>
     )
   }
@@ -217,14 +186,6 @@ export function AreaChart({
       <View {...responder.panHandlers}>
           {width > 0 ? (
             <Svg width={width} height={height}>
-              <Defs>
-                <LinearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                  {/* 0.4 nahoře, k nule dolů — jinak výplň přebije samotnou křivku */}
-                  <Stop offset="0" stopColor={color} stopOpacity={0.4} />
-                  <Stop offset="1" stopColor={color} stopOpacity={0} />
-                </LinearGradient>
-              </Defs>
-
               {/* Mřížka — čárkovaná 4,4, aby ustoupila datům */}
               {ticks.map((t, i) => {
                 const y = PAD_T + plotH - ((t - min) / (max - min)) * plotH
@@ -245,7 +206,6 @@ export function AreaChart({
               })}
 
               <G>
-                <Path d={areaPath} fill="url(#areaFill)" />
                 <Path
                   d={solidPath}
                   stroke={color}
@@ -264,15 +224,6 @@ export function AreaChart({
                   />
                 ) : null}
               </G>
-
-              {/* Zakrytí zprava, které postupně odjíždí = clip-reveal */}
-              <AnimatedClipCover
-                reveal={reveal}
-                plotW={plotW}
-                padL={PAD_L}
-                height={height}
-                width={width}
-              />
 
               {/* Crosshair */}
               {activePt ? (
@@ -308,39 +259,18 @@ export function AreaChart({
 
       {/* Tooltip */}
       {activeDatum ? (
-        <View className="mt-1 flex-row items-baseline justify-center gap-1.5">
-          <Text className="font-display text-lg text-white" style={tnum}>
-            {formatTick(activeDatum.value)}
+        <View className="mt-1 flex-row items-baseline" style={{ gap: 6, height: 26 }}>
+          <Text className="font-display text-[22px] text-white" style={tnum}>
+            {fmtNum(activeDatum.value, 1)}
           </Text>
-          {unit ? <Text className="font-sans-medium text-xs text-muted">{unit}</Text> : null}
-          <Text className="ml-1 text-[11px] text-faint">{activeDatum.label}</Text>
+          {unit ? <Text className="text-[14px] text-muted">{unit}</Text> : null}
+          <Text className="text-[14px] text-faint">{activeDatum.label}</Text>
         </View>
       ) : (
-        <View className="mt-1 h-[22px]" />
+        <View className="mt-1" style={{ height: 26 }} />
       )}
     </View>
   )
-}
-
-/** Obdélník, který zprava zakrývá graf a při náběhu odjíždí pryč. */
-function AnimatedClipCover({
-  reveal,
-  plotW,
-  padL,
-  height,
-  width,
-}: {
-  reveal: SharedValue<number>
-  plotW: number
-  padL: number
-  height: number
-  width: number
-}) {
-  const props = useAnimatedProps(() => ({
-    x: padL + plotW * reveal.value,
-    width: Math.max(0, plotW * (1 - reveal.value) + 2),
-  }))
-  return <AnimatedRect y={0} height={height} fill={colors.panel} animatedProps={props} />
 }
 
 function SvgLabel({
@@ -366,7 +296,7 @@ import { Text as SvgTextRaw } from 'react-native-svg'
 import { decimate } from './decimate'
 function SvgText({ x, y, fill, children }: { x: number; y: number; fill: string; children: string }) {
   return (
-    <SvgTextRaw x={x} y={y} fill={fill} fontSize={9} fontFamily="JakartaMedium">
+    <SvgTextRaw x={x} y={y} fill={fill} fontSize={11}>
       {children}
     </SvgTextRaw>
   )

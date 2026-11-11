@@ -16,6 +16,7 @@
   "exclude": [
     "**/*.test.ts",
     "**/*.test.tsx",
+    "jest.setup.ts",
     "node_modules"
   ]
 }

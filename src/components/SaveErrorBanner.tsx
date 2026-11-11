@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { Banner } from '@/components/ui'
 import { useAppState } from '@/state/AppStateContext'
 import { colors } from '@/theme/colors'
+import { tr } from '@/i18n'
 
 /** Varování nad vším, když zápis na disk selže (typicky plné úložiště iPhonu). */
 export function SaveErrorBanner() {
@@ -16,10 +17,10 @@ export function SaveErrorBanner() {
     >
       <Banner
         tone="over"
-        title="Couldn't save"
-        description="Your phone may be out of storage. Recent changes are kept until the app closes."
+        title={tr().errors.saveTitle}
+        description={tr().errors.saveText}
         action={
-          <Pressable onPress={dismissSaveError} hitSlop={12} accessibilityLabel="Dismiss">
+          <Pressable onPress={dismissSaveError} hitSlop={12} accessibilityLabel={tr().common.close}>
             <Ionicons name="close" size={20} color={colors.muted} />
           </Pressable>
         }

@@ -1,72 +1,64 @@
 import { Modal, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useAppState } from '@/state/AppStateContext'
-import Ionicons from '@expo/vector-icons/Ionicons'
-import { Button } from '@/components/ui'
+import { Button, GUTTER, Rule, Title } from '@/components/ui'
+import { tapLight } from '@/lib/haptics'
 import { colors } from '@/theme/colors'
-import { tapLight, success } from '@/lib/haptics'
-import { phoneWidth } from '@/theme/layout'
-
-const POINTS: { icon: keyof typeof Ionicons.glyphMap; title: string; text: string }[] = [
-  { icon: 'trending-up', title: 'Progressive overload', text: 'Every set gets a target based on how hard the last one felt — push when you have reps in reserve, hold when you don’t.' },
-  { icon: 'stats-chart', title: 'Your progress', text: 'Estimated 1RM charts, personal records, volume, streak and how balanced your week is.' },
-  { icon: 'lock-closed', title: '100% offline', text: 'No accounts, no ads. Data stays on your phone and you can export a backup any time.' },
-]
+import { PHONE_MAX_WIDTH } from '@/theme/layout'
+import { tr } from '@/i18n'
 
 /** Úvodní obrazovka pro první spuštění. Po volbě nastaví `onboarded`. */
 export function Onboarding({ visible }: { visible: boolean }) {
   const { updateSettings, loadSampleData } = useAppState()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
+  const o = tr().onboarding
 
   function finish(then?: () => void) {
+    tapLight()
     updateSettings({ onboarded: true })
     then?.()
   }
 
+  // Kořen přes style: `className` uvnitř <Modal> na webu nemusí dorazit.
   return (
     <Modal visible={visible} animationType="fade" onRequestClose={() => finish()}>
-      <SafeAreaView className="flex-1 bg-bg" style={phoneWidth}>
-        <View className="flex-1 px-6 pt-10">
-          <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-accent">Welcome</Text>
-          <Text className="mt-1 font-display text-4xl text-white">Workout</Text>
-          <Text className="mt-2 text-sm text-muted">Your training log, with a suggestion for every set.</Text>
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <View
+          style={{
+            flex: 1,
+            width: '100%',
+            maxWidth: PHONE_MAX_WIDTH,
+            alignSelf: 'center',
+            paddingHorizontal: GUTTER,
+            paddingTop: insets.top + 48,
+            paddingBottom: Math.max(insets.bottom, 16),
+          }}
+        >
+          <Title>{o.title}</Title>
+          <Text className="mt-3 text-[18px] leading-[26px] text-muted">{o.lead}</Text>
 
-          <View className="mt-10 gap-6">
-            {POINTS.map((p) => (
-              <View key={p.title} className="flex-row gap-4">
-                <View className="h-10 w-10 items-center justify-center rounded-2xl bg-panel2">
-                  <Ionicons name={p.icon} size={20} color={colors.accent} />
-                </View>
-                <View className="flex-1">
-                  <Text className="font-display text-base text-white">{p.title}</Text>
-                  <Text className="mt-0.5 text-sm text-muted leading-5">{p.text}</Text>
+          <View className="mt-10">
+            {o.points.map(([title, text]) => (
+              <View key={title}>
+                <Rule />
+                <View className="py-4">
+                  <Text className="text-[17px] font-semibold text-white">{title}</Text>
+                  <Text className="mt-1 text-[15px] leading-[22px] text-muted">{text}</Text>
                 </View>
               </View>
             ))}
+            <Rule />
           </View>
 
-          <View className="mt-auto mb-2 gap-2">
-            <Button
-              title="Explore with sample data"
-              size="lg"
-              onPress={() => { success(); finish(() => loadSampleData()) }}
-            />
-            <Button
-              title="Create first split"
-              variant="secondary"
-              size="lg"
-              onPress={() => { tapLight(); finish(() => router.push('/splits')) }}
-            />
-            <Button
-              title="Start from scratch"
-              variant="ghost"
-              size="md"
-              onPress={() => { tapLight(); finish() }}
-            />
+          <View style={{ marginTop: 'auto', gap: 8 }}>
+            <Button title={o.sample} size="lg" onPress={() => finish(loadSampleData)} />
+            <Button title={o.create} variant="secondary" onPress={() => finish(() => router.push('/split-form'))} />
+            <Button title={o.blank} variant="ghost" onPress={() => finish()} />
           </View>
         </View>
-      </SafeAreaView>
+      </View>
     </Modal>
   )
 }

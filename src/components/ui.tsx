@@ -251,13 +251,14 @@ export function Chip({
   active,
   onPress,
   className,
+  compact,
 }: {
   label: string
   active?: boolean
   onPress?: () => void
-  /** Dřív barva výplně; vybraný stav je teď vždy bílý. */
-  color?: string
   className?: string
+  /** Bez vodorovného odsazení — pro úzké štítky rozdělené na stejné díly. */
+  compact?: boolean
 }) {
   return (
     <Pressable
@@ -265,7 +266,8 @@ export function Chip({
       accessibilityRole="button"
       accessibilityState={{ selected: !!active }}
       className={cn(
-        'h-10 justify-center rounded-full px-4 active:opacity-70',
+        'h-10 justify-center rounded-full active:opacity-70',
+        compact ? 'items-center' : 'px-4',
         active ? 'bg-white' : 'bg-panel2',
         className,
       )}
