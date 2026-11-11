@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   registerDialogHost,
   type DialogOption,
   type DialogRequest,
 } from '@/lib/dialogHost'
-import { cn } from '@/components/ui'
+import { Button, GUTTER, Rule, Title } from '@/components/ui'
 import { tapLight } from '@/lib/haptics'
-import { phoneWidth } from '@/theme/layout'
+import { PHONE_MAX_WIDTH } from '@/theme/layout'
+import { colors } from '@/theme/colors'
+import { tr } from '@/i18n'
 
 /**
  * Jediné místo, kde se v appce ptáme uživatele na potvrzení.
@@ -56,93 +58,96 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   // dotaz vyřídil hodnotou, kterou uživatel nevybral.
   const cancelValue = request?.options.find((o) => o.style === 'cancel')?.value ?? null
 
+  const insets = useSafeAreaInsets()
+  const options = (request?.options ?? []) as DialogOption<unknown>[]
+  // Rovnocenné volby (seznam náhrad, nabídka cviku) jsou řádky seznamu;
+  // potvrzení, smazání a zrušení jsou tlačítka pod nimi.
+  const choices = options.filter((o) => o.style === 'neutral')
+  // Zrušit vždy až dole, ať je potvrzení blíž textu dotazu.
+  const buttons = [
+    ...options.filter((o) => o.style !== 'neutral' && o.style !== 'cancel'),
+    ...options.filter((o) => o.style === 'cancel'),
+  ]
+  const pick = (option: DialogOption<unknown>) => {
+    tapLight()
+    answer(option.value)
+  }
+
   return (
     <>
       {children}
       <Modal
         visible={!!request}
         transparent
-        animationType="none"
+        animationType="fade"
         onRequestClose={() => answer(cancelValue)}
       >
         {request ? (
-          // Pozadí i kartu drží obyčejné View, animace jsou uvnitř.
-          // Uvnitř Modalu se `className` na `Animated.View` neprojeví
-          // (Pressable a Text ho drží, Animated.View ne), takže barvy
-          // a rozvržení musí být na komponentě, která ho respektuje.
-          // absoluteFill navíc kvůli tomu, že `flex-1` tady nedostane výšku.
-          <View
-            style={StyleSheet.absoluteFill}
-            className="justify-end bg-black/70"
-          >
+          // Rozměry přes style: uvnitř Modalu `flex-1` nedostane výšku a
+          // třídy na kořeni se na webu občas neprojeví.
+          <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' }]}>
             {/* Ťuknutí mimo okno = zrušit. */}
             <Pressable
-              accessibilityLabel="Dismiss dialog"
-              className="absolute inset-0"
+              accessibilityLabel={tr().common.close}
+              style={StyleSheet.absoluteFill}
               onPress={() => answer(cancelValue)}
             />
-            <Animated.View entering={FadeInDown.duration(200).springify().damping(20)}>
             <View
-              className="m-3 mb-8 rounded-3xl bg-panel border border-line overflow-hidden"
-              style={phoneWidth}
+              style={{
+                width: '100%',
+                maxWidth: PHONE_MAX_WIDTH,
+                alignSelf: 'center',
+                backgroundColor: colors.panel,
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+                paddingHorizontal: GUTTER,
+                paddingTop: 18,
+                paddingBottom: Math.max(insets.bottom, 16),
+              }}
             >
-              <View className="px-5 pt-5 pb-4 gap-1.5">
-                <Text
-                  accessibilityRole="header"
-                  className="font-display text-lg text-white"
-                >
-                  {request.title}
-                </Text>
-                {request.message ? (
-                  <Text className="text-sm text-muted leading-5">{request.message}</Text>
-                ) : null}
-              </View>
-              <View className="gap-2 px-3 pb-3">
-                {request.options.map((option, i) => (
-                  <DialogButton
+              <Title size="sm">{request.title}</Title>
+              {request.message ? (
+                <Text className="mt-1.5 text-[15px] leading-[21px] text-muted">{request.message}</Text>
+              ) : null}
+
+              {choices.length > 0 ? (
+                <View className="mt-3">
+                  {choices.map((option, i) => (
+                    <View key={i}>
+                      <Rule />
+                      <Pressable
+                        onPress={() => pick(option)}
+                        accessibilityRole="button"
+                        className="min-h-[50px] justify-center active:opacity-60"
+                      >
+                        <Text className="text-[17px] text-white">{option.label}</Text>
+                      </Pressable>
+                    </View>
+                  ))}
+                  <Rule />
+                </View>
+              ) : null}
+
+              <View className="mt-4" style={{ gap: 8 }}>
+                {buttons.map((option, i) => (
+                  <Button
                     key={i}
-                    option={option as DialogOption<unknown>}
-                    onPress={() => {
-                      tapLight()
-                      answer(option.value)
-                    }}
+                    title={option.label}
+                    variant={
+                      option.style === 'destructive'
+                        ? 'danger'
+                        : option.style === 'cancel'
+                          ? 'secondary'
+                          : 'primary'
+                    }
+                    onPress={() => pick(option)}
                   />
                 ))}
               </View>
             </View>
-            </Animated.View>
           </View>
         ) : null}
       </Modal>
     </>
-  )
-}
-
-function DialogButton({ option, onPress }: { option: DialogOption<unknown>; onPress: () => void }) {
-  const style = option.style ?? 'default'
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={option.label}
-      className={cn(
-        // 52 px — pohodlně nad 44pt minimem, i když jich je pod sebou víc.
-        'h-[52px] rounded-2xl items-center justify-center',
-        style === 'destructive' && 'border border-danger/40 bg-danger/10',
-        (style === 'cancel' || style === 'neutral') && 'bg-panel2 border border-line',
-        style === 'default' && 'bg-accent',
-      )}
-    >
-      <Text
-        className={cn(
-          'font-display text-base',
-          style === 'destructive' && 'text-danger',
-          (style === 'cancel' || style === 'neutral') && 'text-white',
-          style === 'default' && 'text-accent-text',
-        )}
-      >
-        {option.label}
-      </Text>
-    </Pressable>
   )
 }

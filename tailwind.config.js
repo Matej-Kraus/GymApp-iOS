@@ -1,4 +1,11 @@
 /** @type {import('tailwindcss').Config} */
+// Barvy maji jediny zdroj pravdy v src/theme/tokens.json (cte ho i colors.ts).
+const t = require('./src/theme/tokens.json')
+
+// Text je systemove pismo (na iPhonu SF). Na nativu NativeWind vezme prvni
+// polozku, zbytek je fallback pro web.
+const SYSTEM = ['System', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+
 module.exports = {
   content: ['./app/**/*.{js,jsx,ts,tsx}', './src/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
@@ -8,39 +15,39 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Viz src/theme/colors.ts - tam je zdroj pravdy, tohle je jeho zrcadlo.
-        bg: '#070A08',
-        panel: '#101511',
-        panel2: '#18201A',
-        line: '#232C26',
-        muted: '#8A9690',
-        faint: '#5A665F',
-        accent: '#00E676',
-        'accent-text': '#04140B',
-        optimal: '#00E676',
-        warn: '#FFC53D',
-        over: '#FF4D4F',
-        danger: '#FF4D4F',
-        under: '#5A665F',
-        pr: '#00E676',
-        // Barvy kotoucu pro primy zapis v UI
+        bg: t.bg,
+        panel: t.panel,
+        panel2: t.panel2,
+        line: t.line,
+        muted: t.muted,
+        faint: t.faint,
+        accent: t.accent,
+        'accent-text': t.accentText,
+        optimal: t.optimal,
+        warn: t.warn,
+        over: t.over,
+        danger: t.danger,
+        under: t.under,
+        pr: t.pr,
         'plate-25': '#E5322D',
         'plate-20': '#2F6FE0',
         'plate-15': '#F5C518',
         'plate-10': '#34A853',
         'plate-5': '#E8EDF2',
-        white: '#ECF2ED',
+        white: t.text,
       },
       fontFamily: {
-        // Jedna rodina, hierarchii nese velikost a vaha - jako Whoop, Nike, Apple Fitness.
-        // Nazvy trid zustavaji, aby se zmena propsala do vsech obrazovek naraz.
-        sans: ['Jakarta'],
-        display: ['JakartaExtraBold'], // nadpisy a prerostla cisla
-        'display-bold': ['JakartaBold'],
-        'sans-medium': ['JakartaMedium'],
-        'sans-semibold': ['JakartaSemiBold'],
-        mono: ['JakartaMedium'], // drobne popisky
-        'mono-semibold': ['JakartaBold'], // cisla ve statistikach
+        // Dve role: systemove pismo na text, zuzene Barlow Condensed na
+        // velka cisla a nazvy (jako cisla na kotoucich). Vahu textu ridi
+        // font-medium / font-semibold / font-bold.
+        sans: SYSTEM,
+        display: ['Display', ...SYSTEM],
+        'display-bold': ['DisplayBold', ...SYSTEM],
+        // Stare nazvy z doby Plus Jakarta Sans - nez se prepisou zbyle obrazovky.
+        'sans-medium': SYSTEM,
+        'sans-semibold': SYSTEM,
+        mono: SYSTEM,
+        'mono-semibold': SYSTEM,
       },
     },
   },

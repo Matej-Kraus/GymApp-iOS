@@ -4,6 +4,10 @@ import {
   registerDialogHost,
   type DialogRequest,
 } from './dialogHost'
+import { setLang } from '@/i18n'
+
+// Výchozí popisky závisí na jazyce; testy je čtou anglicky bez ohledu na systém.
+beforeAll(() => setLang('en'))
 
 /** Falešný host = to, co v appce dělá ConfirmProvider. */
 function fakeHost() {

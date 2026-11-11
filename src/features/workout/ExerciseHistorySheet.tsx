@@ -1,11 +1,11 @@
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { Text, View } from 'react-native'
 import type { Exercise, ExerciseHistory } from '@/core'
-import { formatShort } from '@/lib/format'
-import { phoneWidth } from '@/theme/layout'
+import { Num, Rule, Sheet, tnum } from '@/components/ui'
+import { fmtNum, fmtSet, formatShort } from '@/lib/format'
+import { tr } from '@/i18n'
 import { rirLabel } from './SetRow'
 
-/** Panel s posledními třemi tréninky cviku a osobním rekordem. */
+/** Sheet s osobním rekordem a posledními třemi tréninky cviku. */
 export function ExerciseHistorySheet({
   exercise,
   history,
@@ -15,66 +15,48 @@ export function ExerciseHistorySheet({
   history: ExerciseHistory | null
   onClose: () => void
 }) {
+  const t = tr()
+  const w = t.workout
   return (
-    <Modal visible={exercise !== null} animationType="slide" transparent onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-bg/95" style={phoneWidth}>
-        <View className="flex-row items-center justify-between px-4 pt-4 pb-3">
-          <Text className="flex-1 font-display text-xl text-white" numberOfLines={1}>
-            {exercise?.name}
+    <Sheet visible={exercise !== null} onClose={onClose} title={exercise?.name ?? ''} scroll>
+      {history?.pr ? (
+        <View className="pb-4">
+          <Text className="text-[14px] text-muted">{w.historyPr}</Text>
+          {/* Rekord je jedno z mála míst, kam oranžová patří. */}
+          <Num className="text-[44px] leading-[48px] text-accent">
+            {fmtSet(history.pr.weight, history.pr.reps)}
+          </Num>
+          <Text className="text-[14px] text-muted" style={tnum}>
+            {w.historyE1rm(fmtNum(history.pr.e1rm, 1), formatShort(history.pr.date))}
           </Text>
-          <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Close">
-            <Text className="text-muted text-xl">✕</Text>
-          </Pressable>
         </View>
+      ) : null}
 
-        <ScrollView className="flex-1 px-4" contentContainerClassName="gap-4 pb-10">
-          {history?.pr ? (
-            <View className="rounded-3xl bg-panel border border-white/[0.06] p-4">
-              <Text className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-                Personal record
-              </Text>
-              <Text
-                className="mt-1 font-display text-3xl text-accent"
-                style={{ fontVariant: ['tabular-nums'] }}
-              >
-                {history.pr.reps}×{history.pr.weight} kg
-              </Text>
-              <Text className="text-xs text-muted">
-                est. 1RM {Math.round(history.pr.e1rm * 10) / 10} kg · {formatShort(history.pr.date)}
-              </Text>
-            </View>
-          ) : null}
-
-          {history && history.recent.length > 0 ? (
-            history.recent.map((item) => (
-              <View
-                key={item.sessionId}
-                className="rounded-3xl bg-panel border border-white/[0.06] p-4 gap-1.5"
-              >
-                <Text className="text-xs font-semibold text-muted">{formatShort(item.date)}</Text>
+      {history && history.recent.length > 0 ? (
+        history.recent.map((item) => (
+          <View key={item.sessionId}>
+            <Rule />
+            <View className="flex-row py-3" style={{ gap: 12 }}>
+              <Text className="w-24 pt-0.5 text-[14px] text-muted">{formatShort(item.date)}</Text>
+              <View className="flex-1" style={{ gap: 2 }}>
                 {item.sets.map((s, i) => (
-                  <View key={i} className="flex-row items-center justify-between">
-                    <Text
-                      className="text-base text-white"
-                      style={{ fontVariant: ['tabular-nums'] }}
-                    >
-                      {s.reps}×{s.weight} kg
-                    </Text>
-                    <Text className="text-xs text-muted">
-                      {s.role === 'backoff' ? 'back-off' : ''}
-                      {s.rpe ? `${s.role === 'backoff' ? ' · ' : ''}RIR ${rirLabel(String(s.rpe))}` : ''}
+                  <View key={i} className="flex-row items-baseline justify-between">
+                    <Num className="text-[22px] leading-[26px]">{fmtSet(s.weight, s.reps)}</Num>
+                    <Text className="text-[14px] text-muted" style={tnum}>
+                      {[s.role === 'backoff' ? w.role.backoff : '', s.rpe ? `RIR ${rirLabel(String(s.rpe))}` : '']
+                        .filter(Boolean)
+                        .join(', ')}
                     </Text>
                   </View>
                 ))}
               </View>
-            ))
-          ) : (
-            <Text className="py-10 text-center text-sm text-muted">
-              No finished sets for this exercise yet.
-            </Text>
-          )}
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>
+            </View>
+          </View>
+        ))
+      ) : (
+        <Text className="py-8 text-[16px] text-muted">{w.historyEmpty}</Text>
+      )}
+      <View className="h-2" />
+    </Sheet>
   )
 }

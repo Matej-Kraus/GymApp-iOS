@@ -6,28 +6,37 @@ import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import {
   useFonts,
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-} from '@expo-google-fonts/plus-jakarta-sans'
-import { AppStateProvider } from '@/state/AppStateContext'
+  BarlowCondensed_600SemiBold,
+  BarlowCondensed_700Bold,
+} from '@expo-google-fonts/barlow-condensed'
+import { AppStateProvider, useAppState } from '@/state/AppStateContext'
 import { ConfirmProvider } from '@/components/ConfirmProvider'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { SaveErrorBanner } from '@/components/SaveErrorBanner'
+import { resolveLang } from '@/i18n'
+import { colors } from '@/theme/colors'
 
 SplashScreen.preventAutoHideAsync()
 
+/**
+ * Obrazovky. `key` = jazyk: po přepnutí jazyka se celý strom přemontuje, takže
+ * se texty z `tr()` načtou znovu bez hooku v každé komponentě.
+ */
+function Screens() {
+  const { data } = useAppState()
+  return (
+    <Stack
+      key={resolveLang(data.settings.language)}
+      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}
+    />
+  )
+}
+
 export default function RootLayout() {
-  // Jedna rodina napříč celou appkou. Hierarchii dělá velikost a váha,
-  // ne míchání písem — tak to mají Whoop, Nike i Apple Fitness.
+  // Text je systémové písmo; načítá se jen zúžené display písmo na čísla a názvy.
   const [fontsLoaded] = useFonts({
-    Jakarta: PlusJakartaSans_400Regular,
-    JakartaMedium: PlusJakartaSans_500Medium,
-    JakartaSemiBold: PlusJakartaSans_600SemiBold,
-    JakartaBold: PlusJakartaSans_700Bold,
-    JakartaExtraBold: PlusJakartaSans_800ExtraBold,
+    Display: BarlowCondensed_600SemiBold,
+    DisplayBold: BarlowCondensed_700Bold,
   })
 
   useEffect(() => {
@@ -41,7 +50,7 @@ export default function RootLayout() {
       <AppStateProvider>
         <ConfirmProvider>
           <StatusBar style="light" />
-          <Stack screenOptions={{ headerShown: false }} />
+          <Screens />
           <SaveErrorBanner />
         </ConfirmProvider>
       </AppStateProvider>

@@ -11,6 +11,7 @@ import type { AppData, Exercise, ExerciseGoal, Settings, Split, WorkoutSession, 
 import { createId, createRepository, emptyData, SAMPLE_SPLITS, SAMPLE_SESSIONS } from '@/core'
 import { createAsyncStore } from '@/state/asyncStore'
 import { maybeAutoSnapshot, safetySnapshot } from '@/lib/backups'
+import { resolveLang, setLang } from '@/i18n'
 
 // Posluchač výsledku zápisu — store vzniká mimo React, provider se k němu přihlásí.
 let onWriteResult: (ok: boolean) => void = () => {}
@@ -174,6 +175,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   )
 
   if (!hydrated) return null
+  // Jazyk se nastavuje při renderu, ještě než se vykreslí děti — `tr()` tak
+  // vrací správný slovník už při prvním průchodu.
+  setLang(resolveLang(data.settings.language))
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
 }
 

@@ -160,6 +160,8 @@ export interface Settings {
    * Volitelná mapa v nastavení, takže žádná nová entita ani migrace.
    */
   exerciseNotes?: Record<string, string>
+  /** Jazyk appky. Nenastaveno = podle systému. */
+  language?: 'cs' | 'en'
   /** Zapisovat dokončené tréninky do Apple Health. Default vypnuto. */
   writeWorkoutsToHealth?: boolean
   /** Kdy naposledy odešla záloha mimo telefon (export, ISO). Řídí připomínku. */
