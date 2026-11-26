@@ -1,6 +1,6 @@
 # Workout — iOS (React Native / Expo)
 
-Tréninkový deník s progresivním přetížením. UI je anglicky, kód a komentáře česky.
+Tréninkový deník s progresivním přetížením. UI je česky i anglicky (`src/i18n`), kód a komentáře česky.
 
 > **Co dělat dál:** [ROADMAP.md](./ROADMAP.md) — stav, priority a známé chyby.
 
@@ -9,7 +9,7 @@ Tréninkový deník s progresivním přetížením. UI je anglicky, kód a komen
 ```bash
 npm install
 npx expo start --web      # hlavní testovací smyčka
-npm test                  # 188 testů
+npm test                  # 242 testů
 npx tsc --noEmit          # typecheck
 ```
 
@@ -22,14 +22,15 @@ Na iPhonu: nativní build přes Xcode — postup v [ROADMAP.md](./ROADMAP.md#na-
 - `src/core/` — sdílená logika bez RN/DOM závislostí: typy, progrese (`rir.ts`), svaly a landmarky, mezocyklus, supersety, náhrady cviků, statistiky, PR, kotouče. **Tady jsou testy.**
 - `src/state/asyncStore.ts` — adaptér AsyncStorage se synchronní in-memory cache
 - `src/state/AppStateContext.tsx` — globální stav, hydratace při startu, debounce 300 ms na ukládání
-- `src/theme/colors.ts` — barevné tokeny (zdroj pravdy; `tailwind.config.js` je jeho ruční zrcadlo)
-- `src/components/` — design systém (`ui.tsx`), `LoadedBar`, `charts/AreaChart`, `Shimmer`, `VolumeBar`, `ConfirmProvider`
-- `src/features/workout/` — obrazovka tréninku rozdělená na stav (`useWorkoutSession`) a části UI
-- `src/lib/` — platformní věci: health, notifikace, haptika, autosave draftu, formátování
-- `app/` — obrazovky (expo-router), `app/(tabs)/` je tab bar s 5 záložkami
+- `src/theme/tokens.json` — barvy (jediný zdroj pravdy, čte ho `colors.ts` i `tailwind.config.js`)
+- `src/components/` — design systém (`ui.tsx`), `LoadedBar`, `charts/AreaChart`, `VolumeBar`, `ConfirmProvider`, `ExercisePicker`
+- `src/features/` — větší obrazovky rozdělené na části: `workout/` (stav v `useWorkoutSession`), `progress/`, `settings/`, `exercises/` (knihovna 749 cviků)
+- `src/lib/` — platformní věci: health, notifikace, haptika, autosave draftu, zálohy, formátování
+- `src/i18n/` — texty UI (`cs.ts`, `en.ts`), jazyk podle telefonu, přepínač v Nastavení
+- `app/` — obrazovky (expo-router), `app/(tabs)/` je tab bar se 4 záložkami (Dnes, Historie, Pokrok, Plány), Nastavení je `app/settings.tsx`
 
 Celý `AppData` se serializuje pod jeden klíč v AsyncStorage. Migrace řeší `MIGRATIONS` v `src/core/storage.ts`.
 
 ## Vizuál
 
-Černo-zelená, Plus Jakarta Sans jako jediná rodina. **Pravidla, která to drží pohromadě, jsou v [ROADMAP.md](./ROADMAP.md#pravidla-která-drží-vzhled-pohromadě)** — přečti si je, než budeš přidávat UI.
+Grafitová s jedinou signální oranžovou; systémové písmo na text, Barlow Condensed na velká čísla. **Pravidla, která to drží pohromadě, jsou v [ROADMAP.md](./ROADMAP.md#pravidla-která-drží-vzhled-pohromadě)** — přečti si je, než budeš přidávat UI.
