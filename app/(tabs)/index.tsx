@@ -13,6 +13,7 @@ import {
   volumeLast30Days,
   topMuscleGroup,
   recommendNextSplit,
+  formatVolume,
 } from '@/core'
 
 const MUSCLE_CZ: Record<string, string> = {
@@ -24,6 +25,7 @@ export default function Dashboard() {
   const { data } = useAppState()
   const router = useRouter()
   const { splits, sessions } = data
+  const unit = data.settings.unit
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerStep, setPickerStep] = useState<string>('groups')
 
@@ -106,7 +108,7 @@ export default function Dashboard() {
                     value={streakWeeks}
                     unit={streakWeeks === 1 ? 'týden' : streakWeeks < 5 ? 'týdny' : 'týdnů'}
                   />
-                  <Stat label="Objem 30 dní" value={vol30.toLocaleString('cs-CZ')} unit="kg" />
+                  <Stat label="Objem 30 dní" value={formatVolume(vol30, unit)} />
                 </View>
                 {topMuscle && (
                   <Stat label="Nejčastěji trénováno" value={MUSCLE_CZ[topMuscle] ?? topMuscle} />
@@ -123,21 +125,22 @@ export default function Dashboard() {
                     <Text className="font-display text-lg font-bold text-white">{lastSession.splitName}</Text>
                     <Text className="text-xs text-muted">{formatLongCZ(lastSession.date)}</Text>
                   </View>
-                  <View className="flex-row gap-8">
-                    <View>
-                      <View className="flex-row items-baseline">
-                        <Text className="font-display text-xl font-bold text-white">
-                          {Math.round(sessionVolume(lastSession)).toLocaleString('cs-CZ')}
-                        </Text>
-                        <Text className="ml-1 text-xs font-medium text-muted">kg</Text>
+                  {lastSession.source !== 'healthkit' && (
+                    <View className="flex-row gap-8">
+                      <View>
+                        <View className="flex-row items-baseline">
+                          <Text className="font-display text-xl font-bold text-white">
+                            {formatVolume(sessionVolume(lastSession), unit)}
+                          </Text>
+                        </View>
+                        <Text className="mt-1 text-xs text-muted">Objem</Text>
                       </View>
-                      <Text className="mt-1 text-xs text-muted">Objem</Text>
+                      <View>
+                        <Text className="font-display text-xl font-bold text-white">{countScoringSets(lastSession)}</Text>
+                        <Text className="mt-1 text-xs text-muted">Sérií</Text>
+                      </View>
                     </View>
-                    <View>
-                      <Text className="font-display text-xl font-bold text-white">{countScoringSets(lastSession)}</Text>
-                      <Text className="mt-1 text-xs text-muted">Sérií</Text>
-                    </View>
-                  </View>
+                  )}
                 </Card>
               </View>
             )}
@@ -147,7 +150,7 @@ export default function Dashboard() {
 
       {/* Výběr splitu */}
       <Modal visible={pickerOpen} animationType="slide" transparent onRequestClose={closePicker}>
-        <SafeAreaView className="flex-1 bg-bg/95">
+        <SafeAreaView className="flex-1 bg-bg/95" edges={['top', 'bottom']}>
           <View className="flex-1 px-4 pt-4">
             {pickerStep === 'program' ? (
               <>

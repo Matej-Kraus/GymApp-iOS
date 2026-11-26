@@ -41,7 +41,7 @@ export function ExercisePicker({ visible, exercises, selectedIds, onToggle, onCl
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-bg" edges={['top', 'bottom']}>
         {/* Záhlaví */}
         <View className="flex-row items-center gap-3 border-b border-white/10 px-4 py-3">
           <Pressable onPress={onClose} hitSlop={8}>

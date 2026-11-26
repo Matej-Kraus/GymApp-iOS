@@ -1,14 +1,21 @@
 {
   "expo": {
-    "name": "moje-app-native",
+    "name": "Workout Tracker",
     "slug": "moje-app-native",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "workouttracker",
     "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0F"
+    },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.matejkraus.workouttracker",
+      "buildNumber": "1",
       "infoPlist": {
         "NSHealthShareUsageDescription": "Workout Tracker čte z Apple Health tvoji váhu, tělesné složení a tréninky z Apple Watch, aby je ukázal v přehledech a grafech."
       }
@@ -25,10 +32,22 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "updates": {
+      "enabled": false
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "plugins": [
       "expo-router",
       "expo-font",
       "expo-splash-screen",
+      "./plugins/withoutPushEntitlement",
+      ["@sentry/react-native/expo", {
+        "url": "https://sentry.io/",
+        "organization": "matej-kra",
+        "project": "react-native"
+      }],
       [
         "@kingstinct/react-native-healthkit",
         {

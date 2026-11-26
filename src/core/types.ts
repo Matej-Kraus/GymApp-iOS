@@ -107,6 +107,10 @@ export interface WorkoutSession {
   notes: string
   /** true = součást ukázkových dat. */
   isSample?: boolean
+  /** 'healthkit' = automaticky importováno z Apple Health (Watch), bez detailu cviků/sérií. */
+  source?: 'healthkit'
+  /** HealthKit UUID tréninku — dedup klíč proti opakovanému importu. */
+  externalId?: string
 }
 
 /** Jeden záznam tělesné váhy. */
@@ -126,6 +130,12 @@ export interface Settings {
   activeProgramId?: string
   /** Připomínka tréninku (lokální notifikace). */
   reminder?: ReminderConfig
+  /** Délka odpočinku mezi sériemi v sekundách. 0 = timer vypnut. */
+  restTimerSecs?: number
+  /** Zobrazit kalkulátor kotoučů v tréninku. */
+  showPlateCalc?: boolean
+  /** Průvodce při prvním spuštění — false = zobrazit. */
+  onboardingDone?: boolean
 }
 
 /** Nastavení připomínky tréninku. `days`: 1 = pondělí … 7 = neděle. */

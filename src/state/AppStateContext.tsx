@@ -8,11 +8,9 @@ import {
   type ReactNode,
 } from 'react'
 import type { AppData, Exercise, ExerciseGoal, Settings, Split, WorkoutSession, BodyWeightEntry, MeasurementEntry } from '@/core'
-import { createId, createRepository, emptyData, SAMPLE_SPLITS, SAMPLE_SESSIONS } from '@/core'
+import { createId, createRepository, emptyData, SAMPLE_SPLITS, SAMPLE_SESSIONS, serialize } from '@/core'
 import { createAsyncStore } from '@/state/asyncStore'
-
-const store = createAsyncStore()
-const repo = createRepository(store)
+import * as FileSystem from 'expo-file-system/legacy'
 
 interface AppStateValue {
   data: AppData
@@ -37,6 +35,8 @@ interface AppStateValue {
   deleteGoal: (id: string) => void
   logMeasurement: (entry: MeasurementEntry) => void
   deleteMeasurement: (date: string) => void
+  saveError: boolean
+  dismissSaveError: () => void
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null)
@@ -44,14 +44,37 @@ const AppStateContext = createContext<AppStateValue | null>(null)
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false)
   const [data, setData] = useState<AppData>(() => emptyData())
+  const [saveError, setSaveError] = useState(false)
+  const [store] = useState(() => createAsyncStore(() => setSaveError(true)))
+  const [repo] = useState(() => createRepository(store))
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Jednorázová hydratace z AsyncStorage do sync cache, pak načteme stav.
+  // Jednorázová hydratace z AsyncStorage. Pokud je prázdný, zkusí načíst
+  // zálohu z iCloud Documents (přeinstalace, nový telefon).
   useEffect(() => {
     let mounted = true
-    store.hydrate().then(() => {
+    store.hydrate().then(async () => {
       if (!mounted) return
-      setData(repo.load())
+      const loaded = repo.load()
+      if (loaded.sessions.length === 0 && loaded.splits.length === 0) {
+        try {
+          const path = FileSystem.documentDirectory + 'workout-backup.json'
+          const info = await FileSystem.getInfoAsync(path)
+          if (info.exists) {
+            const { deserialize } = await import('@/core')
+            const raw = await FileSystem.readAsStringAsync(path)
+            const restored = deserialize(raw)
+            if (restored.sessions.length > 0 || restored.splits.length > 0) {
+              setData(restored)
+              setHydrated(true)
+              return
+            }
+          }
+        } catch {
+          // žádná záloha — pokračujeme s prázdným stavem
+        }
+      }
+      setData(loaded)
       setHydrated(true)
     })
     return () => { mounted = false }
@@ -62,7 +85,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated) return
     if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => repo.save(data), 300)
+    saveTimer.current = setTimeout(() => {
+      const ok = repo.save(data)
+      setSaveError((prev) => (ok ? false : prev || true))
+      // Automatická záloha do iCloud Drive (Documents/workout-backup.json).
+      // iOS zálohuje Documents do iCloudu — data přežijí přeinstalaci.
+      // Best-effort, chyba se uživateli nezobrazuje (jen doplňková záloha).
+      const path = FileSystem.documentDirectory + 'workout-backup.json'
+      FileSystem.writeAsStringAsync(path, serialize(data)).catch(() => {})
+    }, 300)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
   }, [data, hydrated])
 
@@ -135,8 +166,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         })),
       deleteMeasurement: (date) =>
         setData((d) => ({ ...d, measurements: d.measurements.filter((e) => e.date !== date) })),
+      saveError,
+      dismissSaveError: () => setSaveError(false),
     }),
-    [data],
+    [data, saveError],
   )
 
   if (!hydrated) return null

@@ -13,7 +13,7 @@ export interface AsyncBackedStore extends KeyValueStore {
   hydrate(): Promise<void>
 }
 
-export function createAsyncStore(): AsyncBackedStore {
+export function createAsyncStore(onWriteError?: (err: unknown) => void): AsyncBackedStore {
   const cache = new Map<string, string>()
   return {
     async hydrate() {
@@ -28,11 +28,11 @@ export function createAsyncStore(): AsyncBackedStore {
     },
     setItem(key, value) {
       cache.set(key, value)
-      void AsyncStorage.setItem(key, value)
+      AsyncStorage.setItem(key, value).catch((err) => onWriteError?.(err))
     },
     removeItem(key) {
       cache.delete(key)
-      void AsyncStorage.removeItem(key)
+      AsyncStorage.removeItem(key).catch((err) => onWriteError?.(err))
     },
   }
 }

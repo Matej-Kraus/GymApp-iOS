@@ -5,6 +5,7 @@ import {
   queryQuantitySamples,
   queryWorkoutSamples,
 } from '@kingstinct/react-native-healthkit'
+import type { ObjectTypeIdentifier } from '@kingstinct/react-native-healthkit'
 
 /**
  * Apple Health (HealthKit) — čtení váhy, tělesného složení a tréninků z Apple Watch.
@@ -19,7 +20,7 @@ const READ_TYPES = [
   'HKQuantityTypeIdentifierActiveEnergyBurned',
   'HKQuantityTypeIdentifierHeartRate',
   'HKWorkoutTypeIdentifier',
-] as const
+] as const satisfies readonly ObjectTypeIdentifier[]
 
 export async function isHealthAvailable(): Promise<boolean> {
   try {
@@ -32,7 +33,7 @@ export async function isHealthAvailable(): Promise<boolean> {
 /** Požádá o přístup ke zdravotním datům (čtení). Vrací true při úspěchu. */
 export async function requestHealthAccess(): Promise<boolean> {
   try {
-    return await requestAuthorization({ toRead: READ_TYPES as unknown as never })
+    return await requestAuthorization({ toRead: READ_TYPES })
   } catch {
     return false
   }
@@ -52,7 +53,6 @@ export async function readBodyMetrics(): Promise<BodyMetrics> {
       getMostRecentQuantitySample('HKQuantityTypeIdentifierBodyFatPercentage', '%'),
       getMostRecentQuantitySample('HKQuantityTypeIdentifierLeanBodyMass', 'kg'),
     ])
-    // body fat % bývá v HealthKitu zlomek (0–1) → převedeme na procenta.
     const fat = f ? (f.quantity <= 1 ? f.quantity * 100 : f.quantity) : null
     return {
       weightKg: w ? Math.round(w.quantity * 10) / 10 : null,
@@ -64,15 +64,34 @@ export async function readBodyMetrics(): Promise<BodyMetrics> {
   }
 }
 
-/** Historie váhy z Health jako body grafu (datum YYYY-MM-DD → kg). */
+/** Historie váhy z Health (datum YYYY-MM-DD → kg). */
 export async function readWeightHistory(): Promise<{ date: string; kg: number }[]> {
   try {
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierBodyMass', {
       unit: 'kg',
       limit: 365,
-    } as never)
+    })
     return samples
-      .map((s) => ({ date: new Date(s.startDate).toISOString().slice(0, 10), kg: Math.round(s.quantity * 10) / 10 }))
+      .map((s) => ({ date: s.startDate.toISOString().slice(0, 10), kg: Math.round(s.quantity * 10) / 10 }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+  } catch {
+    return []
+  }
+}
+
+/** Historie % tělesného tuku z Health (datum YYYY-MM-DD → %). */
+export async function readBodyFatHistory(): Promise<{ date: string; pct: number }[]> {
+  try {
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierBodyFatPercentage', {
+      unit: '%',
+      limit: 365,
+    })
+    return samples
+      .map((s) => {
+        const raw = s.quantity
+        const pct = raw <= 1 ? Math.round(raw * 1000) / 10 : Math.round(raw * 10) / 10
+        return { date: s.startDate.toISOString().slice(0, 10), pct }
+      })
       .sort((a, b) => a.date.localeCompare(b.date))
   } catch {
     return []
@@ -80,22 +99,29 @@ export async function readWeightHistory(): Promise<{ date: string; kg: number }[
 }
 
 export interface HealthWorkout {
+  /** HealthKit UUID tréninku — stabilní dedup klíč. */
+  uuid: string
+  /** Numerická hodnota HKWorkoutActivityType (např. 50 = traditionalStrengthTraining). */
+  activityType: number
   date: string
+  /** Celý ISO timestamp začátku (na rozdíl od `date`, které je jen YYYY-MM-DD). */
+  startDateISO: string
   durationMin: number
   energyKcal: number | null
 }
 
-/** Posledních N tréninků z Apple Watch (počítáno z časů → jednotkově robustní). */
+/** Posledních N tréninků z Apple Watch. */
 export async function readRecentWorkouts(limit = 20): Promise<HealthWorkout[]> {
   try {
-    const samples = await queryWorkoutSamples({ limit } as never)
+    const samples = await queryWorkoutSamples({ limit })
     return samples.map((w) => {
-      const start = new Date(w.startDate).getTime()
-      const end = new Date(w.endDate).getTime()
-      const durationMin = Math.max(0, Math.round((end - start) / 60000))
+      const durationMin = Math.max(0, Math.round((w.endDate.getTime() - w.startDate.getTime()) / 60000))
       const energy = w.totalEnergyBurned?.quantity
       return {
-        date: new Date(w.startDate).toISOString().slice(0, 10),
+        uuid: w.uuid,
+        activityType: w.workoutActivityType,
+        date: w.startDate.toISOString().slice(0, 10),
+        startDateISO: w.startDate.toISOString(),
         durationMin,
         energyKcal: typeof energy === 'number' ? Math.round(energy) : null,
       }

@@ -36,4 +36,15 @@ describe('recommendNextSplit', () => {
   it('prázdný program → null', () => {
     expect(recommendNextSplit([], [sess('p1', '2026-06-01')])).toBeNull()
   })
+
+  it('jednoprvkový program → vždy vrátí jediný split', () => {
+    const one = [push]
+    expect(recommendNextSplit(one, [])).toBe('p1')
+    expect(recommendNextSplit(one, [sess('p1', '2026-06-01')])).toBe('p1')
+  })
+
+  it('program s jedním splitem opakuje cyklicky', () => {
+    const many = [sess('p1', '2026-06-01'), sess('p1', '2026-06-03'), sess('p1', '2026-06-05')]
+    expect(recommendNextSplit([push], many)).toBe('p1')
+  })
 })
