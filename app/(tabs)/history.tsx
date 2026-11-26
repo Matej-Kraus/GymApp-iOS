@@ -1,126 +1,210 @@
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { confirm } from '@/lib/platform'
 import { useAppState } from '@/state/AppStateContext'
-import { sessionVolume, countScoringSets, epley1RM, findExercise } from '@/core'
-import type { WorkoutSession, Exercise } from '@/core'
-import { Button, Card, PageHeader, Stat, cn } from '@/components/ui'
-import { formatLong, todayISO } from '@/lib/format'
+import { countScoringSets, findExercise, localDateISO, sessionVolume } from '@/core'
+import type { Exercise, SetLog, WorkoutSession } from '@/core'
+import {
+  Button,
+  Chip,
+  GUTTER,
+  IconButton,
+  Num,
+  PageHeader,
+  Row,
+  Rule,
+  Screen,
+  Segmented,
+  Title,
+  cn,
+  tnum,
+} from '@/components/ui'
+import { fmtNum, fmtSet, formatLong, formatShort, todayISO } from '@/lib/format'
+import { rirLabel } from '@/features/workout/SetRow'
+import { localeTag, tr } from '@/i18n'
+import { entryName, exName } from '@/lib/exerciseName'
 
-const DAYS = ['Po', 'Tue', 'St', 'Thu', 'Fri', 'So', 'Ne']
-const MONTHS_CZ = ['January', 'February', 'March', 'April', 'May', 'June', 'Juneec', 'August', 'September', 'October', 'November', 'December']
+const pad = (n: number) => String(n).padStart(2, '0')
 
-function Calendar({ year, month, trainingDays, selected, onSelect, onPrev, onNext }: {
-  year: number; month: number; trainingDays: Set<string>
-  selected: string | null; onSelect: (d: string) => void; onPrev: () => void; onNext: () => void
+/** Zkratky dnů od pondělí podle jazyka (1. 1. 2024 bylo pondělí). */
+function weekdayLabels(): string[] {
+  return Array.from({ length: 7 }, (_, i) =>
+    new Date(2024, 0, 1 + i).toLocaleDateString(localeTag(), { weekday: 'short' }),
+  )
+}
+
+function Calendar({
+  year,
+  month,
+  trainingDays,
+  selected,
+  onSelect,
+  onPrev,
+  onNext,
+}: {
+  year: number
+  month: number
+  trainingDays: Set<string>
+  selected: string | null
+  onSelect: (d: string | null) => void
+  onPrev: () => void
+  onNext: () => void
 }) {
-  const firstDay = new Date(year, month, 1)
-  const startOffset = (firstDay.getDay() + 6) % 7
+  const t = tr().history
+  const startOffset = (new Date(year, month, 1).getDay() + 6) % 7
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const cells: (number | null)[] = [
     ...Array(startOffset).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ]
   const today = todayISO()
+  const cell = { width: `${100 / 7}%` as const, height: 46 }
 
   return (
-    <Card>
-      <View className="flex-row items-center justify-between mb-3">
-        <Pressable onPress={onPrev} hitSlop={10}><Text className="text-muted text-xl">‹</Text></Pressable>
-        <Text className="font-display text-white">{MONTHS_CZ[month]} {year}</Text>
-        <Pressable onPress={onNext} hitSlop={10}><Text className="text-muted text-xl">›</Text></Pressable>
+    <View>
+      <View className="flex-row items-center justify-between" style={{ marginHorizontal: -10 }}>
+        <IconButton icon="chevron-back" label={t.prevMonth} onPress={onPrev} />
+        <Title size="sm">
+          {new Date(year, month, 1).toLocaleDateString(localeTag(), { month: 'long', year: 'numeric' })}
+        </Title>
+        <IconButton icon="chevron-forward" label={t.nextMonth} onPress={onNext} />
       </View>
       <View className="flex-row flex-wrap">
-        {DAYS.map((d) => (
-          <View key={d} style={{ width: `${100 / 7}%` }} className="py-1">
-            <Text className="text-center text-[10px] font-semibold text-muted">{d}</Text>
+        {weekdayLabels().map((d) => (
+          <View key={d} style={{ width: cell.width }} className="pb-1">
+            <Text className="text-center text-[13px] text-faint">{d}</Text>
           </View>
         ))}
         {cells.map((day, i) => {
-          if (!day) return <View key={i} style={{ width: `${100 / 7}%`, height: 44 }} />
-          const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-          const hasWorkout = trainingDays.has(key)
+          if (!day) return <View key={`e${i}`} style={cell} />
+          const key = `${year}-${pad(month + 1)}-${pad(day)}`
+          const trained = trainingDays.has(key)
           const isSelected = selected === key
-          const isToday = key === today
           return (
-            <View key={key} style={{ width: `${100 / 7}%`, height: 44 }} className="p-0.5">
+            <View key={key} style={[cell, { padding: 2 }]}>
               <Pressable
-                disabled={!hasWorkout}
-                onPress={() => onSelect(key)}
+                disabled={!trained}
+                onPress={() => onSelect(isSelected ? null : key)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
                 className={cn(
-                  'flex-1 rounded-2xl items-center justify-center',
-                  isSelected ? 'bg-accent' : isToday ? 'border border-accent/40' : '',
-                  hasWorkout && !isSelected ? 'bg-panel2' : '',
+                  'flex-1 items-center justify-center rounded-lg',
+                  isSelected ? 'bg-white' : key === today ? 'border border-line' : '',
                 )}
               >
-                <Text className={cn('text-sm font-medium', isSelected ? 'text-black' : hasWorkout ? 'text-white' : 'text-muted')}>{day}</Text>
-                {hasWorkout && !isSelected ? <View className="absolute bottom-1 h-1 w-1 rounded-full bg-accent" /> : null}
+                <Text
+                  className={cn(
+                    'text-[16px]',
+                    isSelected
+                      ? 'font-semibold text-bg'
+                      : trained
+                        ? 'font-semibold text-white'
+                        : 'text-faint',
+                  )}
+                  style={tnum}
+                >
+                  {day}
+                </Text>
+                {/* Den s tréninkem: proužek pod číslem. */}
+                {trained && !isSelected ? (
+                  <View
+                    className="absolute bg-white"
+                    style={{ bottom: 5, height: 3, width: 14, borderRadius: 2 }}
+                  />
+                ) : null}
               </Pressable>
             </View>
           )
         })}
       </View>
-    </Card>
+    </View>
   )
 }
 
-function WorkoutDetail({ session, onDelete, onRepeat }: { session: WorkoutSession; onDelete: () => void; onRepeat: () => void }) {
-  const vol = Math.round(sessionVolume(session))
-  const sets = countScoringSets(session)
-  const hasPR = session.entries.some((e) => e.sets.some((s) => s.isPR))
+/** Jedna série v detailu: označení, výkon, RIR, případně rekord. */
+function SetLine({ set, label }: { set: SetLog; label: string }) {
+  const t = tr()
   return (
-    <Card className="gap-4">
-      <View className="flex-row items-start justify-between">
-        <View className="flex-1">
-          <Text className="font-display text-xl text-white">{session.splitName}</Text>
-          <Text className="text-xs text-muted">
-            {formatLong(session.date)}{session.durationMinutes ? ` · ${session.durationMinutes} min` : ''}
-          </Text>
-        </View>
-        {hasPR ? <View className="rounded-full bg-accent/20 px-2 py-0.5"><Text className="text-xs font-bold text-accent">PR</Text></View> : null}
-      </View>
-      <View className="flex-row gap-6">
-        <View>
-          <View className="flex-row items-baseline">
-            <Text className="font-display text-2xl text-white">{vol.toLocaleString('cs-CZ')}</Text>
-            <Text className="ml-1 text-xs text-muted">kg</Text>
-          </View>
-          <Text className="text-xs text-muted">Volume</Text>
-        </View>
-        <View>
-          <Text className="font-display text-2xl text-white">{sets}</Text>
-          <Text className="text-xs text-muted">Sets</Text>
-        </View>
-      </View>
-      {session.entries.map((entry) => (
-        <View key={entry.exerciseId} className="gap-1">
-          <Text className="text-sm font-semibold text-white">{entry.exerciseName}</Text>
-          {entry.sets.filter((s) => s.completed).map((s, i) => (
-            <View key={i} className="flex-row items-center gap-2">
-              <Text className={cn('text-xs', s.role === 'warmup' ? 'text-muted/50' : s.role === 'backoff' ? 'text-accent/70' : 'text-white')}>
-                {s.role === 'warmup' ? 'W' : s.role === 'backoff' ? 'B' : `${i + 1}`}
-              </Text>
-              <Text className="text-xs font-bold text-white">{s.reps}×{s.weight} kg</Text>
-              {s.rpe ? <Text className="text-xs text-muted">@{s.rpe}</Text> : null}
-              {s.isPR ? <Text className="text-xs font-bold text-accent">PR</Text> : null}
+    <View className="flex-row items-baseline" style={{ gap: 10 }}>
+      <Text className="w-5 text-[14px] text-faint" style={tnum}>
+        {label}
+      </Text>
+      <Num className={cn('text-[20px] leading-[26px]', set.role === 'warmup' && 'text-muted')}>
+        {fmtSet(set.weight, set.reps)}
+      </Num>
+      {set.rpe ? (
+        <Text className="text-[14px] text-muted" style={tnum}>
+          RIR {rirLabel(String(set.rpe))}
+        </Text>
+      ) : null}
+      {set.isPR ? <Text className="text-[14px] font-medium text-accent">{t.history.pr}</Text> : null}
+    </View>
+  )
+}
+
+function SessionDetail({
+  session,
+  onRepeat,
+  onEdit,
+  onDelete,
+}: {
+  session: WorkoutSession
+  onRepeat: () => void
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const t = tr()
+  const h = t.history
+  return (
+    <View className="pb-2 pt-5">
+      <Title size="md">{session.splitName || t.workout.freeName}</Title>
+      <Text className="mt-1 text-[15px] text-muted">
+        {formatLong(session.date)}
+        {session.durationMinutes ? `, ${h.minutes(session.durationMinutes)}` : ''}
+      </Text>
+      <Text className="mt-0.5 text-[15px] text-muted" style={tnum}>
+        {fmtNum(Math.round(sessionVolume(session)), 0)} {t.common.kg}, {t.count.sets(countScoringSets(session))}
+      </Text>
+
+      <View className="mt-4" style={{ gap: 14 }}>
+        {session.entries.map((entry) => {
+          const done = entry.sets.filter((s) => s.completed)
+          if (done.length === 0) return null
+          let workingNo = 0
+          return (
+            <View key={entry.exerciseId}>
+              <Text className="mb-0.5 text-[16px] font-medium text-white">{entryName(entry)}</Text>
+              {done.map((s, i) => (
+                <SetLine
+                  key={i}
+                  set={s}
+                  label={s.role === 'working' ? String(++workingNo) : t.workout.roleShort[s.role]}
+                />
+              ))}
             </View>
-          ))}
-        </View>
-      ))}
-      {session.notes ? <Text className="text-xs text-muted italic">„{session.notes}"</Text> : null}
-      <View className="flex-row gap-2">
-        <Button title="Repeat" variant="secondary" size="sm" className="flex-1" onPress={onRepeat} />
-        <Button title="Delete" variant="danger" size="sm" onPress={onDelete} />
+          )
+        })}
       </View>
-    </Card>
+
+      {session.notes ? (
+        <Text className="mt-4 text-[15px] leading-[21px] text-muted">{session.notes}</Text>
+      ) : null}
+
+      <View className="mt-5 flex-row" style={{ gap: 8 }}>
+        <Button title={h.repeat} variant="secondary" size="sm" className="flex-1" onPress={onRepeat} />
+        <Button title={h.edit} variant="secondary" size="sm" onPress={onEdit} />
+        <Button title={t.common.delete} variant="danger" size="sm" onPress={onDelete} />
+      </View>
+    </View>
   )
 }
 
 export default function History() {
   const { data, deleteSession } = useAppState()
   const router = useRouter()
+  const t = tr()
+  const h = t.history
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
@@ -128,9 +212,27 @@ export default function History() {
   const [tab, setTab] = useState<'calendar' | 'exercise'>('calendar')
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('')
 
-  const trainingDays = new Set(data.sessions.map((s) => s.date.slice(0, 10)))
+  // Den tréninku v MÍSTNÍM čase — `date.slice(0, 10)` je UTC a večerní
+  // trénink by spadl do špatného dne.
+  const byDay = useMemo(() => {
+    const map = new Map<string, WorkoutSession[]>()
+    for (const s of data.sessions) {
+      const key = localDateISO(s.date)
+      map.set(key, [...(map.get(key) ?? []), s])
+    }
+    return map
+  }, [data.sessions])
+  const trainingDays = useMemo(() => new Set(byDay.keys()), [byDay])
+  const monthPrefix = `${year}-${pad(month + 1)}`
+  const monthSessions = useMemo(
+    () =>
+      data.sessions
+        .filter((s) => localDateISO(s.date).startsWith(monthPrefix))
+        .sort((a, b) => b.date.localeCompare(a.date)),
+    [data.sessions, monthPrefix],
+  )
   const sessionsOnDay = selectedDate
-    ? data.sessions.filter((s) => s.date.slice(0, 10) === selectedDate).sort((a, b) => b.date.localeCompare(a.date))
+    ? [...(byDay.get(selectedDate) ?? [])].sort((a, b) => b.date.localeCompare(a.date))
     : []
 
   const loggedExercises = useMemo<Exercise[]>(() => {
@@ -139,7 +241,7 @@ export default function History() {
     return [...ids]
       .map((id) => findExercise(id, data.customExercises))
       .filter((e): e is Exercise => !!e)
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => exName(a).localeCompare(exName(b)))
   }, [data.sessions, data.customExercises])
 
   const exerciseForHistory = selectedExerciseId || loggedExercises[0]?.id || ''
@@ -150,18 +252,21 @@ export default function History() {
       .sort((a, b) => b.date.localeCompare(a.date))
   }, [data.sessions, exerciseForHistory])
 
-  function prevMonth() { if (month === 0) { setYear((y) => y - 1); setMonth(11) } else setMonth((m) => m - 1) }
-  function nextMonth() { if (month === 11) { setYear((y) => y + 1); setMonth(0) } else setMonth((m) => m + 1) }
+  function shiftMonth(delta: number) {
+    const d = new Date(year, month + delta, 1)
+    setYear(d.getFullYear())
+    setMonth(d.getMonth())
+    setSelectedDate(null)
+  }
 
   function repeat(session: WorkoutSession) {
-    if (session.splitId) router.push({ pathname: '/workout', params: { splitId: session.splitId } })
-    else router.push({ pathname: '/workout', params: { splitId: 'free' } })
+    router.push({ pathname: '/workout', params: { splitId: session.splitId ?? 'free' } })
   }
-  async function confirmDeleteSession(session: WorkoutSession) {
+  async function confirmDelete(session: WorkoutSession) {
     const yes = await confirm({
-      title: 'Delete session?',
+      title: h.deleteTitle,
       message: formatLong(session.date),
-      confirmLabel: 'Delete',
+      confirmLabel: t.common.delete,
       destructive: true,
     })
     if (!yes) return
@@ -170,76 +275,128 @@ export default function History() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
-      <ScrollView className="flex-1 px-4" contentContainerClassName="gap-4 pb-8">
-        <View className="mt-2"><PageHeader title="History" subtitle={`${data.sessions.length} sessions`} /></View>
-
-        <View className="flex-row gap-1 rounded-2xl bg-panel2 p-1">
-          {(['calendar', 'exercise'] as const).map((t) => (
-            <Pressable key={t} onPress={() => setTab(t)} className={cn('flex-1 rounded-xl py-2 items-center', tab === t && 'bg-accent')}>
-              <Text className={cn('text-xs font-semibold', tab === t ? 'text-black' : 'text-muted')}>{t === 'calendar' ? 'Calendar' : 'Exercise'}</Text>
-            </Pressable>
-          ))}
+    <Screen>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: GUTTER, paddingBottom: 40 }}>
+        <View className="mt-2">
+          <PageHeader
+            title={h.title}
+            subtitle={h.sessions(data.sessions.length)}
+            action={
+              <IconButton
+                icon="add"
+                label={h.addPast}
+                onPress={() => router.push('/session-edit')}
+              />
+            }
+          />
         </View>
 
+        <Segmented
+          className="mt-5"
+          options={[
+            { value: 'calendar', label: h.tabCalendar },
+            { value: 'exercise', label: h.tabExercise },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
+
         {tab === 'calendar' ? (
-          <>
+          <View className="mt-4">
             <Calendar
-              year={year} month={month} trainingDays={trainingDays}
-              selected={selectedDate} onSelect={setSelectedDate} onPrev={prevMonth} onNext={nextMonth}
+              year={year}
+              month={month}
+              trainingDays={trainingDays}
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              onPrev={() => shiftMonth(-1)}
+              onNext={() => shiftMonth(1)}
             />
-            {sessionsOnDay.map((session) => (
-              <WorkoutDetail key={session.id} session={session} onDelete={() => confirmDeleteSession(session)} onRepeat={() => repeat(session)} />
-            ))}
-            {data.sessions.length === 0 ? (
-              <Text className="text-center text-sm text-muted py-8">No sessions logged yet.</Text>
-            ) : null}
-          </>
+
+            {selectedDate ? (
+              sessionsOnDay.map((session) => (
+                <View key={session.id}>
+                  <Rule className="mt-3" />
+                  <SessionDetail
+                    session={session}
+                    onRepeat={() => repeat(session)}
+                    onEdit={() => router.push({ pathname: '/session-edit', params: { id: session.id } })}
+                    onDelete={() => confirmDelete(session)}
+                  />
+                </View>
+              ))
+            ) : data.sessions.length === 0 ? (
+              <Text className="py-8 text-[16px] leading-[23px] text-muted">{h.empty}</Text>
+            ) : monthSessions.length === 0 ? (
+              <Text className="py-8 text-[16px] text-muted">{h.emptyMonth}</Text>
+            ) : (
+              <View className="mt-4">
+                <Rule />
+                {monthSessions.map((s) => (
+                  <View key={s.id}>
+                    <Row onPress={() => setSelectedDate(localDateISO(s.date))}>
+                      <Text className="w-24 text-[15px] text-muted">{formatShort(s.date)}</Text>
+                      <Text className="flex-1 text-[16px] font-medium text-white" numberOfLines={1}>
+                        {s.splitName || t.workout.freeName}
+                      </Text>
+                      <Num className="text-[20px]">
+                        {fmtNum(Math.round(sessionVolume(s)), 0)} {t.common.kg}
+                      </Num>
+                    </Row>
+                    <Rule />
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
         ) : loggedExercises.length === 0 ? (
-          <Text className="text-center text-sm text-muted py-8">No exercises logged yet.</Text>
+          <Text className="py-8 text-[16px] text-muted">{h.noExercises}</Text>
         ) : (
-          <>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-1.5">
+          <View className="mt-4">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginHorizontal: -GUTTER }}
+              contentContainerStyle={{ gap: 6, paddingHorizontal: GUTTER }}
+            >
               {loggedExercises.map((ex) => (
-                <Pressable
+                <Chip
                   key={ex.id}
+                  label={exName(ex)}
+                  active={ex.id === exerciseForHistory}
                   onPress={() => setSelectedExerciseId(ex.id)}
-                  className={cn('rounded-full px-3 py-1.5', ex.id === exerciseForHistory ? 'bg-accent' : 'bg-panel2')}
-                >
-                  <Text className={cn('text-xs font-semibold', ex.id === exerciseForHistory ? 'text-black' : 'text-muted')}>{ex.name}</Text>
-                </Pressable>
+                />
               ))}
             </ScrollView>
 
-            {sessionsWithExercise.map((session) => {
-              const entry = session.entries.find((e) => e.exerciseId === exerciseForHistory)!
-              const working = entry.sets.filter((s) => s.role === 'working' && s.completed)
-              const backoff = entry.sets.filter((s) => s.role === 'backoff' && s.completed)
-              const warmups = entry.sets.filter((s) => s.role === 'warmup' && s.completed)
-              return (
-                <Card key={session.id} className="gap-1.5">
-                  <View className="flex-row items-center justify-between">
-                    <Text className="font-display text-white">{session.splitName}</Text>
-                    <Text className="text-xs text-muted">{formatLong(session.date)}</Text>
+            <View className="mt-4">
+              {sessionsWithExercise.map((session) => {
+                const entry = session.entries.find((e) => e.exerciseId === exerciseForHistory)!
+                const done = entry.sets.filter((s) => s.completed)
+                let workingNo = 0
+                return (
+                  <View key={session.id}>
+                    <Rule />
+                    <View className="flex-row py-3" style={{ gap: 12 }}>
+                      <Text className="w-24 pt-1 text-[15px] text-muted">{formatShort(session.date)}</Text>
+                      <View className="flex-1">
+                        {done.map((s, i) => (
+                          <SetLine
+                            key={i}
+                            set={s}
+                            label={s.role === 'working' ? String(++workingNo) : t.workout.roleShort[s.role]}
+                          />
+                        ))}
+                      </View>
+                    </View>
                   </View>
-                  {warmups.length > 0 ? (
-                    <Text className="text-xs text-muted">W: {warmups.map((s) => `${s.reps}×${s.weight}`).join(', ')} kg</Text>
-                  ) : null}
-                  {working.map((s, i) => (
-                    <Text key={`w${i}`} className="text-xs text-muted">
-                      {i + 1}: <Text className="text-white font-semibold">{s.reps}×{s.weight} kg</Text>
-                      {s.rpe ? ` @${s.rpe}` : ''}{s.isPR ? '  PR' : ''}
-                    </Text>
-                  ))}
-                  {backoff.map((s, i) => (
-                    <Text key={`b${i}`} className="text-xs text-accent">B: {s.reps}×{s.weight} kg</Text>
-                  ))}
-                </Card>
-              )
-            })}
-          </>
+                )
+              })}
+              <Rule />
+            </View>
+          </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   )
 }

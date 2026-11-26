@@ -1,11 +1,14 @@
-// Barevný systém — téměř černý podklad, jediný zelený akcent.
+// Barevný systém „Tréninkový deník": grafitová guma, křídový text,
+// jedna signální oranžová.
 //
-// Pravidlo, které drží celý vzhled pohromadě: zelená je vyhrazená pro
-// postup a hlavní akce. Nic dekorativního ji nesmí použít, jinak přestane
-// znamenat „tohle je důležité". Všechno ostatní je šedá škála.
+// Hodnoty jsou v `tokens.json` — jediný zdroj pravdy, čte ho i
+// `tailwind.config.js`. Názvy jsou podle ROLE (bg, panel, muted…), ne podle
+// odstínu, takže světlý režim později znamená jen druhou sadu hodnot.
 //
-// Výjimka jsou barvy kotoučů: na naložené ose nesou skutečnou informaci
-// (červená = 25 kg), takže tam sytá barva smysl má. Nikde jinde.
+// Pravidlo, které drží vzhled pohromadě: oranžová je vyhrazená pro hlavní
+// akci, postup a rekordy. Nic dekorativního ji nesmí použít. Výjimka jsou
+// barvy kotoučů a pásma objemu — tam barva nese skutečnou informaci.
+import tokens from './tokens.json'
 
 /** Oficiální barvy kotoučů (IWF). Klíč = hmotnost v kg. */
 export const PLATE_COLORS = {
@@ -18,34 +21,11 @@ export const PLATE_COLORS = {
   1.25: '#9AA5B1', // chrom
 } as const
 
-export const colors = {
-  // Podklad a povrchy — téměř černá s nepatrným zeleným nádechem.
-  bg: '#070A08',
-  panel: '#101511',
-  panel2: '#18201A',
-  line: '#232C26',
-
-  // Text — tři úrovně, víc není potřeba.
-  text: '#ECF2ED',
-  muted: '#8A9690',
-  faint: '#5A665F',
-
-  // Akcent. Jen postup a hlavní akce.
-  accent: '#00E676',
-  accentText: '#04140B', // na sytě zelené čte černý text líp než bílý
-
-  // Stavy. Zelená / jantarová / červená jako na semaforu.
-  optimal: '#00E676',
-  warn: '#FFC53D',
-  over: '#FF4D4F',
-  danger: '#FF4D4F',
-  under: '#5A665F',
-  pr: '#00E676',
-} as const
+export const colors = tokens
 
 export type PlateWeight = keyof typeof PLATE_COLORS
 
-/** Barva kotouče podle hmotnosti; chrom jako fallback pro nestandardní. */
+/** Barva kotouče podle hmotnosti; šedá jako fallback pro nestandardní. */
 export function plateColor(kg: number): string {
   return (PLATE_COLORS as Record<number, string>)[kg] ?? colors.faint
 }

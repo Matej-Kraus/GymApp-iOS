@@ -11,14 +11,24 @@ import {
   nextSupersetGroup,
   warmupSets,
 } from '@/core'
+import { healthWorkoutWindow } from '@/core'
 import type { Exercise, SetRole, Split, WorkoutEntry } from '@/core'
 import type { DraftEntry, DraftSet } from '@/lib/workoutDraft'
 import { clearDraft, loadDraft, saveDraft } from '@/lib/workoutDraft'
 import { choose } from '@/lib/platform'
+import { saveWorkout } from '@/lib/health'
+import { tr } from '@/i18n'
 import { success, tapLight, tapMedium } from '@/lib/haptics'
 import { cancelRestEnd, scheduleRestEnd } from '@/lib/restAlert'
 import { useAppState } from '@/state/AppStateContext'
-import { blankBackoff, blankWarmup, blankWorking, buildEntry, setToLog } from './draftFactories'
+import {
+  blankBackoff,
+  blankWarmup,
+  blankWorking,
+  buildEntry,
+  setToLog,
+  withTargetFilled,
+} from './draftFactories'
 
 /**
  * Všechen stav obrazovky tréninku: série, autosave, obnovení po pádu,
@@ -42,7 +52,7 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
 
   const isFree = splitId === 'free'
   const freshSplit = isFree
-    ? ({ id: 'free', name: 'Free session', exerciseIds: [] } as Split)
+    ? ({ id: 'free', name: tr().workout.freeName, exerciseIds: [] } as Split)
     : data.splits.find((s) => s.id === splitId)
   const startTime = useRef(Date.now())
 
@@ -231,7 +241,7 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
           ? {
               ...e,
               sets: e.sets.map((s, j) =>
-                j === si ? { ...s, completed: !s.completed, skipped: false } : s,
+                j === si ? { ...withTargetFilled(s, !s.completed), completed: !s.completed, skipped: false } : s,
               ),
             }
           : e,
@@ -341,12 +351,12 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
   async function leave() {
     // Tři možnosti — přesně proto nestačí window.confirm.
     const answer = await choose<'stay' | 'keep' | 'discard'>({
-      title: 'Leave this session?',
-      message: 'It stays saved. You can pick it up again from Today.',
+      title: tr().workout.leaveTitle,
+      message: tr().workout.leaveText,
       options: [
-        { label: 'Stay', value: 'stay', style: 'cancel' },
-        { label: 'Leave and keep', value: 'keep' },
-        { label: 'Discard', value: 'discard', style: 'destructive' },
+        { label: tr().workout.leaveStay, value: 'stay', style: 'cancel' },
+        { label: tr().workout.leaveKeep, value: 'keep' },
+        { label: tr().workout.leaveDiscard, value: 'discard', style: 'destructive' },
       ],
     })
     if (answer === 'stay' || answer === null) return
@@ -375,6 +385,10 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
       data.sessions,
     )
     addSession(marked)
+    if (settings.writeWorkoutsToHealth) {
+      // Bez await: zápis do Health nesmí zdržet přechod na souhrn.
+      void saveWorkout(healthWorkoutWindow(durationMinutes, Date.now()))
+    }
     void clearDraft()
     success()
     router.replace({ pathname: '/workout-summary', params: { id: marked.id } })
@@ -385,9 +399,17 @@ export function useWorkoutSession({ splitId, isResume }: WorkoutSessionOptions) 
     [entries],
   )
 
+  /** Všechny série jsou hotové nebo přeskočené (a aspoň jedna existuje). */
+  const allDone = useMemo(() => {
+    const sets = entries.flatMap((e) => e.sets)
+    return sets.length > 0 && sets.every((s) => s.completed || s.skipped)
+  }, [entries])
+
   return {
     // stav
     data,
+    startedAt: startTime.current,
+    allDone,
     settings,
     plate,
     entries,

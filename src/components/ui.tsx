@@ -1,20 +1,32 @@
-import { ReactNode, useEffect, useRef, useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated'
+import { type ReactNode, useEffect } from 'react'
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  type TextInputProps,
+  View,
+} from 'react-native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { colors } from '@/theme/colors'
+import { PHONE_MAX_WIDTH } from '@/theme/layout'
+import { tr } from '@/i18n'
 
-/** Design systém.
+/** Design systém „Tréninkový deník".
  *
- *  Pravidla, která drží vzhled pohromadě:
- *  1. Zelená je jen pro postup a hlavní akce. Nic dekorativního.
- *  2. Čísla jsou velká, popisky malé. Velikost říká, co je důležité.
- *  3. Jedna rodina písma, hierarchii dělá váha a velikost.
- *  4. Velkorysé mezery — radši míň prvků s víc prostorem. */
+ *  1. Plocha, ne karty. Obsah leží přímo na pozadí a dělí ho linky; výplň
+ *     dostane jen to, na co se dá sáhnout (tlačítko, pole, sheet).
+ *  2. Oranžová je jen hlavní akce, postup a rekord. Vybraný stav (segment,
+ *     štítek, přepínač) je křídově bílý, ne oranžový.
+ *  3. Čísla sází zúžené display písmo, text systémové. Popisky jsou běžná
+ *     věta — žádné verzálky s prostrkáním.
+ *  4. Pohyb jen jako odpověď na dotek. Nic nenajíždí samo. */
 
 /** Spojí podmíněně třídy (ignoruje prázdné / false hodnoty). */
 export function cn(...classes: Array<string | false | null | undefined>): string {
@@ -24,65 +36,137 @@ export function cn(...classes: Array<string | false | null | undefined>): string
 /** Tabulkové číslice — čísla nesmí poskakovat, když se mění. */
 export const tnum = { fontVariant: ['tabular-nums' as const] }
 
-/** Odpočítá číslo nahoru při změně. */
-export function useCountUp(target: number, durationMs = 650): number {
-  const [value, setValue] = useState(target)
-  const fromRef = useRef(target)
-  const rafRef = useRef<number | null>(null)
+/** Vodorovný okraj obrazovky (px). */
+export const GUTTER = 20
 
-  useEffect(() => {
-    const from = fromRef.current
-    if (from === target) return
-    const start = Date.now()
+// ───────────────────────── Rozvržení ─────────────────────────
 
-    const tick = () => {
-      const t = Math.min(1, (Date.now() - start) / durationMs)
-      const eased = 1 - Math.pow(1 - t, 3) // easeOutCubic
-      setValue(from + (target - from) * eased)
-      if (t < 1) rafRef.current = requestAnimationFrame(tick)
-      else fromRef.current = target
-    }
-    rafRef.current = requestAnimationFrame(tick)
-
-    return () => {
-      if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
-      fromRef.current = target
-    }
-  }, [target, durationMs])
-
-  return value
+/** Obrazovka: pozadí + safe area nahoře. */
+export function Screen({ children }: { children: ReactNode }) {
+  return (
+    <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
+      {children}
+    </SafeAreaView>
+  )
 }
 
-/** Povrch karty. */
-export function Panel({ children, className }: { children: ReactNode; className?: string }) {
-  return <View className={cn('rounded-3xl border border-line bg-panel', className)}>{children}</View>
+/** Linka mezi řádky. */
+export function Rule({ className }: { className?: string }) {
+  return <View className={cn('bg-line', className)} style={{ height: 1 }} />
 }
+
+/** Název obrazovky nebo bloku v display písmu. */
+export function Title({
+  children,
+  size = 'lg',
+  className,
+}: {
+  children: ReactNode
+  size?: 'lg' | 'md' | 'sm'
+  className?: string
+}) {
+  const box =
+    size === 'lg'
+      ? 'text-[44px] leading-[44px]'
+      : size === 'md'
+        ? 'text-[30px] leading-[32px]'
+        : 'text-[24px] leading-[26px]'
+  return <Text className={cn('font-display text-white', box, className)}>{children}</Text>
+}
+
+/** Číslo v display písmu s tabulkovými číslicemi. */
+export function Num({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <Text className={cn('font-display text-white', className)} style={tnum}>
+      {children}
+    </Text>
+  )
+}
+
+/** Nadpis oddílu. Běžná věta, vpravo volitelná akce. */
+export function SectionTitle({ children, action }: { children: string; action?: ReactNode }) {
+  return (
+    <View className="mb-2 flex-row items-center justify-between">
+      <Text className="text-[15px] font-semibold text-white">{children}</Text>
+      {action}
+    </View>
+  )
+}
+
+/** Hlavička obrazovky: malé datum / kontext nad velkým názvem. */
+export function PageHeader({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string
+  subtitle?: string
+  action?: ReactNode
+}) {
+  return (
+    <View className="flex-row items-end justify-between gap-3">
+      <View className="flex-1">
+        {subtitle ? <Text className="text-[15px] text-muted">{subtitle}</Text> : null}
+        <Title className="mt-1">{title}</Title>
+      </View>
+      {action ? <View>{action}</View> : null}
+    </View>
+  )
+}
+
+/** Řádek seznamu. Bez `onPress` je to jen rozvržení. */
+export function Row({
+  children,
+  onPress,
+  accessibilityLabel,
+  className,
+}: {
+  children: ReactNode
+  onPress?: () => void
+  accessibilityLabel?: string
+  className?: string
+}) {
+  const box = cn('min-h-[52px] flex-row items-center gap-3 py-3', className)
+  return onPress ? (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      className={cn(box, 'active:opacity-60')}
+    >
+      {children}
+    </Pressable>
+  ) : (
+    <View className={box}>{children}</View>
+  )
+}
+
+// ───────────────────────── Ovládání ─────────────────────────
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
 const variantBox: Record<Variant, string> = {
   primary: 'bg-accent',
-  secondary: 'bg-panel2 border border-line',
+  secondary: 'bg-panel2',
   ghost: '',
-  danger: 'border border-danger/40 bg-danger/10',
+  danger: 'bg-panel2',
 }
 const variantText: Record<Variant, string> = {
-  // Na syté zelené čte tmavý text líp než bílý.
   primary: 'text-accent-text',
   secondary: 'text-white',
   ghost: 'text-muted',
   danger: 'text-danger',
 }
 const sizeBox: Record<Size, string> = {
-  sm: 'h-11 px-4', // 44pt — minimum podle Apple HIG
-  md: 'h-[52px] px-6',
-  lg: 'h-[58px] px-7',
+  sm: 'h-11 px-4', // 44 pt — minimum podle Apple HIG
+  md: 'h-[52px] px-5',
+  lg: 'h-[58px] px-6',
 }
 const sizeText: Record<Size, string> = {
-  sm: 'text-[13px]',
-  md: 'text-[15px]',
-  lg: 'text-base',
+  sm: 'text-[15px]',
+  md: 'text-[16px]',
+  lg: 'text-[18px]',
 }
 
 export function Button({
@@ -100,209 +184,96 @@ export function Button({
   disabled?: boolean
   className?: string
 }) {
-  const pressed = useSharedValue(0)
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(1 - pressed.value * 0.025, { damping: 20, stiffness: 340 }) }],
-    opacity: withTiming(1 - pressed.value * 0.12, { duration: 90 }),
-  }))
-
   return (
-    <Animated.View style={style} className={className}>
+    <View className={className}>
       <Pressable
         onPress={onPress}
         disabled={disabled}
-        onPressIn={() => (pressed.value = 1)}
-        onPressOut={() => (pressed.value = 0)}
+        accessibilityRole="button"
         className={cn(
-          'flex-row items-center justify-center rounded-2xl',
+          'flex-row items-center justify-center rounded-[10px] active:opacity-70',
           variantBox[variant],
           sizeBox[size],
           disabled && 'opacity-30',
         )}
       >
-        <Text
-          className={cn('font-sans-semibold tracking-[0.2px]', variantText[variant], sizeText[size])}
-        >
-          {title}
-        </Text>
+        <Text className={cn('font-semibold', variantText[variant], sizeText[size])}>{title}</Text>
       </Pressable>
-    </Animated.View>
-  )
-}
-
-/** Karta — základní plocha pro obsah. */
-export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <Panel className={cn('p-5', className)}>{children}</Panel>
-}
-
-/** Hlavička obrazovky. Titulek velký, nadpisek drobný. */
-export function PageHeader({
-  title,
-  subtitle,
-  action,
-}: {
-  title: string
-  subtitle?: string
-  action?: ReactNode
-}) {
-  return (
-    <View className="flex-row items-end justify-between gap-3">
-      <View className="flex-1">
-        {subtitle ? (
-          <Text className="font-sans-medium text-[11px] uppercase tracking-[1.6px] text-faint">
-            {subtitle}
-          </Text>
-        ) : null}
-        <Text className="mt-1.5 font-display text-[32px] leading-[36px] tracking-[-0.8px] text-white">
-          {title}
-        </Text>
-      </View>
-      {action ? <View>{action}</View> : null}
     </View>
   )
 }
 
-/** Popisek sekce. */
-export function SectionTitle({ children, action }: { children: string; action?: ReactNode }) {
-  return (
-    <View className="mb-3 flex-row items-center justify-between">
-      <Text className="font-sans-semibold text-[11px] uppercase tracking-[1.4px] text-faint">
-        {children}
-      </Text>
-      {action}
-    </View>
-  )
-}
-
-/** Prázdný stav — pozvánka k akci. */
-export function EmptyState({
-  title,
-  description,
-  action,
-}: {
-  title: string
-  description?: string
-  action?: ReactNode
-}) {
-  return (
-    <View className="items-center justify-center rounded-3xl border border-dashed border-line px-6 py-14">
-      <Text className="text-center font-display text-lg tracking-[-0.3px] text-white">{title}</Text>
-      {description ? (
-        <Text className="mt-2 max-w-xs text-center text-sm leading-[20px] text-muted">
-          {description}
-        </Text>
-      ) : null}
-      {action ? <View className="mt-6">{action}</View> : null}
-    </View>
-  )
-}
-
-/** Statistika. Číslo je hrdina, popisek slouží. */
-export function Stat({
+/** Tlačítko s ikonou, dotyková plocha 44 pt. */
+export function IconButton({
+  icon,
+  onPress,
   label,
-  value,
-  unit,
-  animate = false,
-  decimals = 0,
+  color = colors.muted,
+  size = 22,
 }: {
+  icon: keyof typeof Ionicons.glyphMap
+  onPress: () => void
+  /** Popisek pro VoiceOver — ikona sama nic neříká. */
   label: string
-  value: ReactNode
-  unit?: string
-  animate?: boolean
-  decimals?: number
+  color?: string
+  size?: number
 }) {
-  const numeric = typeof value === 'number' ? value : 0
-  const counted = useCountUp(numeric)
-  const shown = animate && typeof value === 'number' ? counted.toFixed(decimals) : value
-
   return (
-    <Panel className="flex-1 px-4 py-4">
-      <View className="flex-row items-baseline">
-        <Text className="font-display text-[26px] leading-[30px] tracking-[-0.6px] text-white" style={tnum}>
-          {shown}
-        </Text>
-        {unit ? <Text className="ml-1 font-sans-medium text-xs text-muted">{unit}</Text> : null}
-      </View>
-      <Text className="mt-2 font-sans-medium text-[11px] tracking-[0.2px] text-faint">{label}</Text>
-    </Panel>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className="h-11 w-11 items-center justify-center active:opacity-50"
+    >
+      <Ionicons name={icon} size={size} color={color} />
+    </Pressable>
   )
 }
 
-/** Přerostlé číslo pro klíčovou metriku — to, co má být čitelné na délku paže. */
-export function HeroStat({
-  value,
-  unit,
-  label,
-  color = colors.text,
-}: {
-  value: string | number
-  unit?: string
-  label?: string
-  color?: string
-}) {
+/** Textové pole s popiskem nad ním. */
+export function Field({ label, className, ...input }: TextInputProps & { label?: string }) {
   return (
-    <View className="items-center">
-      <View className="flex-row items-baseline">
-        <Text
-          className="font-display text-[56px] leading-[60px] tracking-[-2px]"
-          style={[tnum, { color }]}
-        >
-          {value}
-        </Text>
-        {unit ? (
-          <Text className="ml-1.5 font-sans-medium text-base text-muted">{unit}</Text>
-        ) : null}
-      </View>
-      {label ? (
-        <Text className="mt-1 font-sans-medium text-[11px] uppercase tracking-[1.4px] text-faint">
-          {label}
-        </Text>
-      ) : null}
+    <View className={className}>
+      {label ? <Text className="mb-1.5 text-[13px] text-muted">{label}</Text> : null}
+      <TextInput
+        placeholderTextColor={colors.faint}
+        accessibilityLabel={label}
+        {...input}
+        className="min-h-[48px] rounded-[10px] bg-panel2 px-3.5 py-3 text-[17px] text-white"
+      />
     </View>
   )
 }
 
-/** Chip / pill — filtr, volba, štítek. */
+/** Štítek / volba. Vybraný je křídově bílý. */
 export function Chip({
   label,
   active,
   onPress,
-  color,
   className,
+  compact,
 }: {
   label: string
   active?: boolean
   onPress?: () => void
-  color?: string
   className?: string
+  /** Bez vodorovného odsazení — pro úzké štítky rozdělené na stejné díly. */
+  compact?: boolean
 }) {
-  const pressed = useSharedValue(0)
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(1 - pressed.value * 0.04, { damping: 20, stiffness: 360 }) }],
-  }))
-
   return (
-    <Animated.View style={style} className={className}>
-      <Pressable
-        onPress={onPress}
-        onPressIn={() => (pressed.value = 1)}
-        onPressOut={() => (pressed.value = 0)}
-        style={active && color ? { backgroundColor: color, borderColor: color } : undefined}
-        className={cn(
-          'h-10 justify-center rounded-full border px-4',
-          active ? 'border-accent bg-accent' : 'border-line bg-panel',
-        )}
-      >
-        <Text
-          className={cn(
-            'font-sans-semibold text-[13px]',
-            active ? 'text-accent-text' : 'text-muted',
-          )}
-        >
-          {label}
-        </Text>
-      </Pressable>
-    </Animated.View>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!active }}
+      className={cn(
+        'h-10 justify-center rounded-full active:opacity-70',
+        compact ? 'items-center' : 'px-4',
+        active ? 'bg-white' : 'bg-panel2',
+        className,
+      )}
+    >
+      <Text className={cn('text-[14px] font-medium', active ? 'text-bg' : 'text-muted')}>{label}</Text>
+    </Pressable>
   )
 }
 
@@ -319,24 +290,18 @@ export function Segmented<T extends string>({
   className?: string
 }) {
   return (
-    <View className={cn('flex-row rounded-2xl border border-line bg-panel p-1', className)}>
+    <View className={cn('flex-row rounded-[10px] bg-panel2 p-[3px]', className)}>
       {options.map((o) => {
         const active = o.value === value
         return (
           <Pressable
             key={o.value}
             onPress={() => onChange(o.value)}
-            className={cn(
-              'h-10 flex-1 items-center justify-center rounded-xl',
-              active && 'bg-accent',
-            )}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+            className={cn('h-10 flex-1 items-center justify-center rounded-lg', active && 'bg-white')}
           >
-            <Text
-              className={cn(
-                'font-sans-semibold text-[13px]',
-                active ? 'text-accent-text' : 'text-muted',
-              )}
-            >
+            <Text className={cn('text-[14px] font-semibold', active ? 'text-bg' : 'text-muted')}>
               {o.label}
             </Text>
           </Pressable>
@@ -346,7 +311,7 @@ export function Segmented<T extends string>({
   )
 }
 
-/** Přepínač s plynulým přejezdem palce. */
+/** Přepínač. Zapnutý je bílý s tmavým palcem. */
 export function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   const on = useSharedValue(value ? 1 : 0)
 
@@ -355,63 +320,55 @@ export function Toggle({ value, onChange }: { value: boolean; onChange: (v: bool
   }, [value, on])
 
   const knob = useAnimatedStyle(() => ({
-    transform: [{ translateX: withSpring(on.value * 20, { damping: 20, stiffness: 300 }) }],
+    transform: [{ translateX: withTiming(on.value * 20, { duration: 140 }) }],
+    backgroundColor: withTiming(on.value ? colors.bg : colors.muted, { duration: 140 }),
   }))
   const track = useAnimatedStyle(() => ({
-    backgroundColor: withTiming(on.value ? colors.accent : colors.panel2, { duration: 160 }),
-    borderColor: withTiming(on.value ? colors.accent : colors.line, { duration: 160 }),
+    backgroundColor: withTiming(on.value ? colors.text : colors.panel2, { duration: 140 }),
   }))
 
   // Rozměry přes style, ne třídami: `Animated.View` si `className` v tomhle
-  // setupu nebere spolehlivě (a `px-0.5` se nepropíše vůbec), takže přepínač
-  // vycházel nulový a byl neviditelný. Proto si settings dlouho kreslily
-  // vlastní přepínač místo téhle komponenty.
+  // setupu nebere spolehlivě, takže přepínač vycházel nulový a neviditelný.
   return (
-    <Pressable onPress={() => onChange(!value)} hitSlop={10} accessibilityRole="switch">
+    <Pressable
+      onPress={() => onChange(!value)}
+      hitSlop={10}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+    >
       <Animated.View
-        style={[
-          { height: 28, width: 48, borderRadius: 999, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
-          track,
-        ]}
+        style={[{ height: 28, width: 48, borderRadius: 999, justifyContent: 'center', paddingHorizontal: 3 }, track]}
       >
-        <Animated.View
-          style={[{ height: 22, width: 22, borderRadius: 999, backgroundColor: '#FFFFFF' }, knob]}
-        />
+        <Animated.View style={[{ height: 22, width: 22, borderRadius: 999 }, knob]} />
       </Animated.View>
     </Pressable>
   )
 }
 
-/** Ukazatel postupu. */
-export function ProgressBar({
-  value,
-  color = colors.accent,
-  className,
+// ───────────────────────── Sdělení ─────────────────────────
+
+/** Prázdný stav — co tu bude a jak začít. */
+export function EmptyState({
+  title,
+  description,
+  action,
 }: {
-  /** 0–1 */
-  value: number
-  color?: string
-  className?: string
+  title: string
+  description?: string
+  action?: ReactNode
 }) {
-  const pct = Math.max(0, Math.min(1, value))
-  const w = useSharedValue(pct)
-
-  useEffect(() => {
-    w.value = pct
-  }, [pct, w])
-
-  const style = useAnimatedStyle(() => ({
-    width: withTiming(`${w.value * 100}%`, { duration: 520 }),
-  }))
-
   return (
-    <View className={cn('h-2 overflow-hidden rounded-full bg-panel2', className)}>
-      <Animated.View className="h-full rounded-full" style={[style, { backgroundColor: color }]} />
+    <View className="py-8">
+      <Title size="md">{title}</Title>
+      {description ? (
+        <Text className="mt-2 text-[16px] leading-[23px] text-muted">{description}</Text>
+      ) : null}
+      {action ? <View className="mt-5">{action}</View> : null}
     </View>
   )
 }
 
-/** Upozornění. */
+/** Upozornění. Barevný proužek vlevo říká, jak je to vážné. */
 export function Banner({
   tone = 'info',
   title,
@@ -424,52 +381,123 @@ export function Banner({
   action?: ReactNode
 }) {
   const toneColor = tone === 'over' ? colors.over : tone === 'warn' ? colors.warn : colors.accent
-
   return (
-    <View
-      className="flex-row items-center gap-3.5 rounded-2xl border bg-panel p-4"
-      style={{ borderColor: `${toneColor}55` }}
-    >
-      <View className="h-9 w-1 rounded-full" style={{ backgroundColor: toneColor }} />
-      <View className="flex-1">
-        <Text className="font-sans-semibold text-sm" style={{ color: toneColor }}>
-          {title}
-        </Text>
+    <View className="flex-row items-stretch gap-3 rounded-[10px] bg-panel py-3 pr-3">
+      <View style={{ width: 3, backgroundColor: toneColor, borderRadius: 2 }} />
+      <View className="flex-1 justify-center">
+        <Text className="text-[15px] font-semibold text-white">{title}</Text>
         {description ? (
-          <Text className="mt-0.5 text-[13px] leading-[18px] text-muted">{description}</Text>
+          <Text className="mt-0.5 text-[14px] leading-[19px] text-muted">{description}</Text>
         ) : null}
       </View>
-      {action}
+      {action ? <View className="justify-center">{action}</View> : null}
     </View>
   )
 }
 
-/** Řádek v seznamu nastavení / voleb. */
-export function Row({
+/** Spodní sheet: titulek, zavření, obsah. Drží se nad klávesnicí. */
+export function Sheet({
+  visible,
+  onClose,
+  title,
+  children,
+  scroll = false,
+}: {
+  visible: boolean
+  onClose: () => void
+  title: string
+  children: ReactNode
+  /** Obsah delší než obrazovka — zabalí se do ScrollView. */
+  scroll?: boolean
+}) {
+  const insets = useSafeAreaInsets()
+  const body = scroll ? (
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: GUTTER }}>
+      {children}
+    </ScrollView>
+  ) : (
+    <View style={{ paddingHorizontal: GUTTER }}>{children}</View>
+  )
+
+  // Bez tříd na kořenech: `className` uvnitř <Modal> na RN webu občas
+  // nedorazí (modal se montuje mimo #root), takže rozměry jdou přes style.
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1, justifyContent: 'flex-end' }}
+      >
+        <Pressable
+          onPress={onClose}
+          accessibilityLabel={tr().common.close}
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+        />
+        <View
+          style={{
+            width: '100%',
+            maxWidth: PHONE_MAX_WIDTH,
+            alignSelf: 'center',
+            maxHeight: '90%',
+            backgroundColor: colors.panel,
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            paddingBottom: Math.max(insets.bottom, 16),
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingLeft: GUTTER,
+              paddingRight: 8,
+              paddingTop: 10,
+              paddingBottom: 6,
+            }}
+          >
+            <Title size="sm" className="flex-1 pr-2">
+              {title}
+            </Title>
+            <IconButton icon="close" label={tr().common.close} onPress={onClose} />
+          </View>
+          {body}
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  )
+}
+
+// ───────────────── Starší plochy (než se přepíšou zbylé obrazovky) ─────────────────
+
+/** Vyplněná plocha. V novém vzhledu jen pro sheety a pole; karty se ruší. */
+export function Panel({ children, className }: { children: ReactNode; className?: string }) {
+  return <View className={cn('rounded-xl bg-panel', className)}>{children}</View>
+}
+
+export function Card({ children, className }: { children: ReactNode; className?: string }) {
+  return <Panel className={cn('p-4', className)}>{children}</Panel>
+}
+
+/** Statistika: číslo nahoře, popisek pod ním. */
+export function Stat({
   label,
-  hint,
-  right,
-  onPress,
+  value,
+  unit,
 }: {
   label: string
-  hint?: string
-  right?: ReactNode
-  onPress?: () => void
+  value: ReactNode
+  unit?: string
+  /** Dřív animace čísla; v novém vzhledu se čísla nepočítají nahoru. */
+  animate?: boolean
+  decimals?: number
 }) {
-  const content = (
-    <View className="min-h-[56px] flex-row items-center justify-between gap-4 px-5 py-3.5">
-      <View className="flex-1">
-        <Text className="font-sans-medium text-[15px] text-white">{label}</Text>
-        {hint ? <Text className="mt-0.5 text-[13px] leading-[18px] text-muted">{hint}</Text> : null}
+  return (
+    <View className="flex-1">
+      <View className="flex-row items-baseline">
+        <Num className="text-[30px] leading-[32px]">{value}</Num>
+        {unit ? <Text className="ml-1 text-[14px] text-muted">{unit}</Text> : null}
       </View>
-      {right}
+      <Text className="mt-0.5 text-[13px] text-muted">{label}</Text>
     </View>
-  )
-  return onPress ? (
-    <Pressable onPress={onPress} className="active:opacity-70">
-      {content}
-    </Pressable>
-  ) : (
-    content
   )
 }

@@ -55,6 +55,21 @@ export function blankBackoff(
   }
 }
 
+/**
+ * Odškrtnutí série bez psaní: prázdná pole převezmou navržený cíl.
+ *
+ * Návrh je v poli vidět jen jako placeholder. Bez tohohle se série odškrtnutá
+ * „na cíl" uložila jako 0 × 0 kg, i když obrazovka ukazovala 70 × 5.
+ */
+export function withTargetFilled(set: DraftSet, completing: boolean): DraftSet {
+  if (!completing || !set.suggestion) return set
+  return {
+    ...set,
+    weight: set.weight || String(set.suggestion.weight),
+    reps: set.reps || String(set.suggestion.reps),
+  }
+}
+
 /** Draft série → záznam pro uložení. Prázdný vstup je 0, ne NaN. */
 export function setToLog(s: DraftSet): SetLog {
   return {

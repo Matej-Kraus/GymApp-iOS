@@ -4,8 +4,12 @@
  * Base URL obrázků: https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/
  */
 import type { Exercise } from './types'
+import { buildLibrary } from './exerciseLibrary'
 
 const IMG = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises'
+
+/** ID ve free-exercise-db, ze kterých berou obrázek vestavěné cviky — v knihovně se už neopakují. */
+const CURATED_SOURCE_IDS = new Set<string>()
 
 function ex(
   id: string,
@@ -18,6 +22,7 @@ function ex(
   repRange: [number, number] = [5, 9],
   defaultSets = 3,
 ): Exercise {
+  if (imgPath) CURATED_SOURCE_IDS.add(imgPath)
   return {
     id,
     name,
@@ -259,12 +264,22 @@ export const SPLIT_TEMPLATES: Array<{
   },
 ]
 
-/** Všechny dostupné cviky (vestavěné + vlastní). */
+/** Knihovna (free-exercise-db) bez toho, co už je mezi vestavěnými. */
+export const LIBRARY_EXERCISES: Exercise[] = buildLibrary(CURATED_SOURCE_IDS)
+
+const SHIPPED_BY_ID = new Map<string, Exercise>(
+  [...BUILTIN_EXERCISES, ...LIBRARY_EXERCISES].map((e) => [e.id, e]),
+)
+
+/**
+ * Všechny dostupné cviky: hlavní vestavěné, vlastní a pak knihovna.
+ * Pořadí je záměrné — nahoře je to, co člověk hledá nejčastěji.
+ */
 export function allExercises(customExercises: Exercise[]): Exercise[] {
-  return [...BUILTIN_EXERCISES, ...customExercises]
+  return [...BUILTIN_EXERCISES, ...customExercises, ...LIBRARY_EXERCISES]
 }
 
-/** Najde cvik podle ID (hledá v obou zdrojích). */
+/** Najde cvik podle ID. Dodané cviky přes index — volá se při každém renderu. */
 export function findExercise(id: string, customExercises: Exercise[]): Exercise | undefined {
-  return allExercises(customExercises).find((e) => e.id === id)
+  return SHIPPED_BY_ID.get(id) ?? customExercises.find((e) => e.id === id)
 }

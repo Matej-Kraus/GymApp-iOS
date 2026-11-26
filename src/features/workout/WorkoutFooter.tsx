@@ -1,23 +1,27 @@
 import { View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Button } from '@/components/ui'
+import { Button, GUTTER } from '@/components/ui'
 import { RestTimer } from '@/components/RestTimer'
+import { tr } from '@/i18n'
 
 /**
- * Spodní lišta: odpočinek mezi sériemi a dokončení tréninku.
+ * Spodní lišta: odpočet pauzy a dokončení tréninku.
  *
- * Spodní odsazení bere ze safe area, ne natvrdo — home indikátor má na
- * Dynamic Islandu 34 px, na SE nulu, takže jeden odhad sedí jen na jednom
- * telefonu.
+ * Dokončit je oranžové až ve chvíli, kdy jsou všechny série hotové — do té
+ * doby je hlavní akcí odškrtnutí série, ne konec tréninku.
+ *
+ * Spodní odsazení bere ze safe area, ne natvrdo — home indikátor má jinou
+ * výšku na každém telefonu.
  */
-
 export function WorkoutFooter({
   rest,
+  allDone,
   onAdjustRest,
   onStopRest,
   onFinish,
 }: {
   rest: { endsAt: number; total: number } | null
+  allDone: boolean
   onAdjustRest: (delta: number) => void
   onStopRest: () => void
   onFinish: () => void
@@ -26,7 +30,7 @@ export function WorkoutFooter({
 
   return (
     <View
-      className="absolute inset-x-0 bottom-0 border-t border-white/10 bg-bg pt-2"
+      className="absolute inset-x-0 bottom-0 border-t border-line bg-bg"
       style={{ paddingBottom: Math.max(insets.bottom, 12) }}
     >
       {rest ? (
@@ -38,8 +42,12 @@ export function WorkoutFooter({
           onSkip={onStopRest}
         />
       ) : null}
-      <View className="px-4">
-        <Button title="Finish session" size="lg" onPress={onFinish} />
+      <View style={{ paddingHorizontal: GUTTER, paddingTop: rest ? 4 : 10 }}>
+        <Button
+          title={tr().workout.finish}
+          variant={allDone ? 'primary' : 'secondary'}
+          onPress={onFinish}
+        />
       </View>
     </View>
   )

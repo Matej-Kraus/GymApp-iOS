@@ -1,61 +1,80 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useAppState } from '@/state/AppStateContext'
-import { Banner, Button, Card, EmptyState, PageHeader, SectionTitle, cn, tnum } from '@/components/ui'
-import { LoadedBar } from '@/components/LoadedBar'
-import { TrainingHeatmap } from '@/components/TrainingHeatmap'
-import { Onboarding } from '@/components/Onboarding'
-import { formatLong, formatShort, isThisMonth, isThisWeek } from '@/lib/format'
-import { loadDraft, type WorkoutDraft } from '@/lib/workoutDraft'
-import { colors } from '@/theme/colors'
-import { exportBackup } from '@/lib/backups'
 import {
-  sessionVolume,
+  Banner,
+  Button,
+  EmptyState,
+  GUTTER,
+  IconButton,
+  Num,
+  Row,
+  Rule,
+  Screen,
+  SectionTitle,
+  Sheet,
+  Title,
+  cn,
+  tnum,
+} from '@/components/ui'
+import { Onboarding } from '@/components/Onboarding'
+import { VolumeBar } from '@/components/VolumeBar'
+import { daysSince, fmtNum, fmtSet, formatLong, formatShort, isThisWeek } from '@/lib/format'
+import { loadDraft, type WorkoutDraft } from '@/lib/workoutDraft'
+import { exportBackup } from '@/lib/backups'
+import { colors } from '@/theme/colors'
+import { localeTag, tr } from '@/i18n'
+import {
   countScoringSets,
-  workoutStreakWeeks,
-  volumeLast30Days,
-  weeklyVolumeReport,
-  deloadSignals,
   currentWeek,
+  deloadSignals,
   isDeloadWeek,
-  recommendNextSplit,
-  countsTowardProgress,
-  daysAgoLabel,
+  localDateISO,
+  mondayOf,
   offPhoneBackupStatus,
+  planDelta,
+  planPreview,
+  recommendNextSplit,
+  sessionVolume,
   showBackupReminder,
   snoozeBackupReminder,
+  weeklyVolumeReport,
+  workoutStreakWeeks,
+  type PlanRow,
+  type Split,
   type WorkoutSession,
 } from '@/core'
-import { VolumeBar, volumeHeadline } from '@/components/VolumeBar'
-import { phoneWidth } from '@/theme/layout'
+import { exName } from '@/lib/exerciseName'
 
-/** Heaviest working set of a session — what the loaded bar renders. */
-function topSet(session: WorkoutSession): { name: string; weight: number; reps: number } | null {
-  let best: { name: string; weight: number; reps: number } | null = null
-  for (const entry of session.entries) {
-    for (const set of entry.sets) {
-      if (!countsTowardProgress(set)) continue
-      if (!best || set.weight > best.weight) {
-        best = { name: entry.exerciseName, weight: set.weight, reps: set.reps }
-      }
+/** Sedm dní aktuálního týdne (Po–Ne) a jestli se v nich cvičilo. */
+function weekDays(sessions: WorkoutSession[]) {
+  const trained = new Set(sessions.map((s) => localDateISO(s.date)))
+  const today = localDateISO()
+  const [y, m, d] = mondayOf(new Date()).split('-').map(Number)
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(y, m - 1, d + i)
+    const iso = localDateISO(date)
+    return {
+      iso,
+      label: date.toLocaleDateString(localeTag(), { weekday: 'short' }),
+      trained: trained.has(iso),
+      isToday: iso === today,
+      isFuture: iso > today,
     }
-  }
-  return best
+  })
 }
 
-export default function Dashboard() {
+export default function Today() {
   const { data, updateSettings } = useAppState()
   const router = useRouter()
-  const { splits, sessions } = data
+  const t = tr()
+  const { splits, sessions, settings } = data
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [pickerStep, setPickerStep] = useState<string>('groups')
   const [draft, setDraft] = useState<WorkoutDraft | null>(null)
 
-  // Check for an unfinished session every time we come back to the dashboard.
+  // Rozdělaný trénink se kontroluje při každém návratu na obrazovku.
   useFocusEffect(
     useCallback(() => {
       let active = true
@@ -68,182 +87,152 @@ export default function Dashboard() {
     }, []),
   )
 
-  const volumeRows = weeklyVolumeReport(sessions, data.customExercises)
-  const meso = data.settings.mesocycle ?? null
+  // Doporučení jde spočítat ze všech splitů — aktivní program je jen zúžení.
+  const programSplits = useMemo(
+    () =>
+      settings.activeProgramId
+        ? splits.filter((s) => s.groupId === settings.activeProgramId)
+        : splits,
+    [splits, settings.activeProgramId],
+  )
+  const next = useMemo(() => {
+    const id = recommendNextSplit(programSplits, sessions)
+    return programSplits.find((s) => s.id === id) ?? null
+  }, [programSplits, sessions])
+
+  const plan = useMemo(
+    () => (next ? planPreview(next, sessions, data.customExercises, settings) : []),
+    [next, sessions, data.customExercises, settings],
+  )
+  const week = useMemo(() => {
+    const thisWeek = sessions.filter((s) => isThisWeek(s.date))
+    return {
+      days: weekDays(thisWeek),
+      count: thisWeek.length,
+      volume: Math.round(thisWeek.reduce((sum, s) => sum + sessionVolume(s), 0)),
+      streak: workoutStreakWeeks(sessions),
+    }
+  }, [sessions])
+  const volumeRows = useMemo(
+    () => weeklyVolumeReport(sessions, data.customExercises),
+    [sessions, data.customExercises],
+  )
+  const meso = settings.mesocycle ?? null
   const deload = useMemo(
     () => deloadSignals(sessions, data.customExercises, meso),
     [sessions, data.customExercises, meso],
   )
-  const hasSplits = splits.length > 0
   const lastSession = useMemo(
-    () => (sessions.length > 0 ? [...sessions].sort((a, b) => b.date.localeCompare(a.date))[0] : null),
+    () =>
+      sessions.length > 0 ? [...sessions].sort((a, b) => b.date.localeCompare(a.date))[0] : null,
     [sessions],
   )
-  const lastTop = lastSession ? topSet(lastSession) : null
+  const nextLastDone = useMemo(() => {
+    if (!next) return null
+    const dates = sessions.filter((s) => s.splitId === next.id).map((s) => s.date)
+    return dates.length > 0 ? dates.sort().at(-1)! : null
+  }, [next, sessions])
 
-  const weekCount = sessions.filter((s) => isThisWeek(s.date)).length
-  const monthCount = sessions.filter((s) => isThisMonth(s.date)).length
-  const streakWeeks = workoutStreakWeeks(sessions)
-  const vol30 = Math.round(volumeLast30Days(sessions))
-
-  const today = formatLong(new Date().toISOString())
-
-  // Splits grouped by programme (PPL, Upper/Lower, custom…).
-  type GroupEntry = { groupName: string; splits: typeof splits }
-  const groupMap = new Map<string, GroupEntry>()
-  for (const split of splits) {
-    const key = split.groupId ?? '__custom__'
-    const name = split.groupName ?? 'Custom splits'
-    if (!groupMap.has(key)) groupMap.set(key, { groupName: name, splits: [] })
-    groupMap.get(key)!.splits.push(split)
-  }
-  const groups = [...groupMap.entries()]
-
-  const activeProgramId = data.settings.activeProgramId
-  // Bez nastaveného programu se dřív nedoporučilo nic a dashboard hlásil
-  // „Pick a session", i když uživatel splity měl. Doporučení jde spočítat
-  // ze všech splitů — aktivní program je jen zúžení, ne podmínka.
-  const programSplits = activeProgramId
-    ? splits.filter((s) => s.groupId === activeProgramId)
-    : splits
-  const recommendedId = recommendNextSplit(programSplits, sessions)
-  const recommendedSplit = programSplits.find((s) => s.id === recommendedId) ?? null
-
-  function openPicker() {
-    setPickerStep(programSplits.length > 0 ? 'program' : 'groups')
-    setPickerOpen(true)
-  }
-  function closePicker() {
-    setPickerOpen(false)
-    setPickerStep('groups')
-  }
   function startWorkout(splitIdOrFree: string) {
-    closePicker()
+    setPickerOpen(false)
     router.push({ pathname: '/workout', params: { splitId: splitIdOrFree } })
   }
 
-  // Staged entrance — each block lands a beat after the one above it.
-  const stage = (i: number) => FadeInDown.delay(60 * i).springify().damping(20).stiffness(180)
+  const hasSplits = splits.length > 0
+  const hasDraft = !!draft && draft.entries.length > 0
+  const backup = offPhoneBackupStatus(data, new Date())
 
   return (
-    <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
-      <ScrollView className="flex-1 px-4" contentContainerClassName="gap-6 pb-8">
-        <Animated.View entering={stage(0)} className="mt-2">
-          <PageHeader title="Workout" subtitle={today} />
-        </Animated.View>
-
-        {draft && draft.entries.length > 0 ? (
-          <Animated.View entering={stage(1)}>
-            <Pressable
-              onPress={() => router.push({ pathname: '/workout', params: { resume: '1' } })}
-              accessibilityLabel="Resume unfinished session"
-              className="flex-row items-center gap-3 rounded-2xl border border-accent bg-accent/10 px-4 py-3.5 active:opacity-80"
-            >
-              <Ionicons name="play-circle" size={22} color={colors.accent} />
-              <View className="flex-1">
-                <Text className="font-display text-[13px] tracking-[1px] text-accent">
-                  Resume session
-                </Text>
-                <Text className="mt-0.5 font-mono text-[11px] text-muted">
-                  {draft.splitName} · {draft.entries.length} exercises in progress
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.accent} />
-            </Pressable>
-          </Animated.View>
-        ) : null}
+    <Screen>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: GUTTER, paddingBottom: 40 }}>
+        <View className="flex-row items-center justify-between" style={{ marginRight: -10 }}>
+          <Text className="text-[15px] text-muted">{formatLong(new Date().toISOString())}</Text>
+          <IconButton
+            icon="settings-outline"
+            label={t.today.openSettings}
+            onPress={() => router.push('/settings')}
+          />
+        </View>
 
         {!hasSplits ? (
-          <Animated.View entering={stage(2)}>
-            <EmptyState
-              title="Build your first split"
-              description="Set up a training split — Push / Pull / Legs is a good start — and you're ready to train."
-              action={<Button title="Create split" onPress={() => router.push('/splits')} />}
-            />
-          </Animated.View>
+          <EmptyState
+            title={t.today.emptyTitle}
+            description={t.today.emptyText}
+            action={<Button title={t.today.emptyAction} onPress={() => router.push('/splits')} />}
+          />
         ) : (
           <>
-            {/* HERO — what you're lifting next, and what it looked like last time. */}
-            <Animated.View entering={stage(2)}>
-              <Card className="gap-4">
-                <View className="flex-row items-start justify-between">
-                  <View className="flex-1">
-                    <Text className="font-mono text-[10px] uppercase tracking-[1.6px] text-accent">
-                      {recommendedSplit ? 'Next up' : 'Ready when you are'}
-                    </Text>
-                    <Text className="mt-1.5 font-display text-2xl leading-7 text-white">
-                      {recommendedSplit ? recommendedSplit.name : 'Pick a session'}
-                    </Text>
-                    {recommendedSplit ? (
-                      <Text className="mt-1 font-mono text-[11px] text-muted">
-                        {recommendedSplit.exerciseIds.length} exercises
-                      </Text>
-                    ) : null}
-                  </View>
-                </View>
+            {/* Co je na řadě a jedno tlačítko. Rozdělaný trénink má přednost. */}
+            <View className="mt-3">
+              <Title>{hasDraft ? draft.splitName || t.workout.freeName : next ? next.name : t.today.pickSession}</Title>
+              <Text className="mt-2 text-[16px] text-muted">
+                {hasDraft
+                  ? t.today.resumeText(t.count.exercises(draft.entries.length))
+                  : next
+                    ? `${t.count.exercises(next.exerciseIds.length)}, ${
+                        nextLastDone
+                          ? t.today.lastDone(t.count.daysAgo(daysSince(nextLastDone)))
+                          : t.today.neverDone
+                      }`
+                    : t.today.freeText}
+              </Text>
+              <Button
+                className="mt-5"
+                size="lg"
+                title={hasDraft ? t.today.resumeTitle : t.today.start}
+                onPress={() =>
+                  hasDraft
+                    ? router.push({ pathname: '/workout', params: { resume: '1' } })
+                    : next
+                      ? startWorkout(next.id)
+                      : setPickerOpen(true)
+                }
+              />
+              {!hasDraft && next ? (
+                <Pressable
+                  onPress={() => setPickerOpen(true)}
+                  accessibilityRole="button"
+                  className="h-11 items-center justify-center active:opacity-60"
+                >
+                  <Text className="text-[15px] text-muted">{t.today.otherSession}</Text>
+                </Pressable>
+              ) : (
+                <View className="h-6" />
+              )}
+            </View>
 
-                {lastTop ? (
-                  <View className="gap-2 rounded-2xl border border-line bg-bg px-3 py-3">
-                    <Text className="font-mono text-[10px] uppercase tracking-[1.2px] text-faint">
-                      Last top set · {lastTop.name}
-                    </Text>
-                    <LoadedBar
-                      weightKg={lastTop.weight}
-                      barKg={data.settings.barWeightKg ?? 20}
-                      smallestPlateKg={data.settings.smallestPlateKg ?? 1.25}
-                      height={52}
-                    />
-                    <View className="mt-1 flex-row items-baseline justify-center gap-2">
-                      <Text className="font-mono-semibold text-xl text-white" style={tnum}>
-                        {lastTop.weight}
-                      </Text>
-                      <Text className="font-mono text-xs text-muted">kg</Text>
-                      <Text className="font-mono text-xs text-faint">×</Text>
-                      <Text className="font-mono-semibold text-xl text-white" style={tnum}>
-                        {lastTop.reps}
-                      </Text>
-                    </View>
-                  </View>
-                ) : null}
-
-                <Button title="Start session" size="lg" onPress={openPicker} />
-              </Card>
-            </Animated.View>
-
-            {/* Compact metric strip — data, not decoration. */}
-            <Animated.View entering={stage(3)}>
-              <SectionTitle>This week</SectionTitle>
-              <View className="flex-row rounded-2xl border border-line bg-panel">
-                <Metric value={weekCount} label="sessions" />
-                <Divider />
-                <Metric value={monthCount} label="this month" />
-                <Divider />
-                <Metric value={streakWeeks} label={streakWeeks === 1 ? 'week streak' : 'weeks streak'} />
-                <Divider />
-                <Metric value={vol30.toLocaleString('en-GB')} label="kg · 30d" />
-              </View>
-            </Animated.View>
-
-            {deload.shouldDeload && (
-              <Animated.View entering={stage(3)}>
+            {deload.shouldDeload ? (
+              <View className="mb-3">
                 <Banner
                   tone={deload.scheduled ? 'warn' : 'over'}
-                  title={deload.scheduled ? 'Deload week' : 'Time to deload'}
-                  description={deload.reasons[0]}
+                  title={deload.scheduled ? t.today.deloadPlanned : t.today.deloadNeeded}
+                  description={
+                    deload.scheduled
+                      ? t.deloadWhy.scheduled
+                      : deload.overreached
+                        ? t.deloadWhy.overreached(deload.overMrvCount)
+                        : deload.exhausted
+                          ? t.deloadWhy.exhausted
+                          : t.deloadWhy.stagnating(deload.stalledCount)
+                  }
                 />
-              </Animated.View>
-            )}
+              </View>
+            ) : null}
 
-            {showBackupReminder(data, new Date()) && (
-              <Animated.View entering={stage(3)}>
+            {showBackupReminder(data, new Date()) ? (
+              <View className="mb-3">
                 <Banner
                   tone="warn"
-                  title="Back up your training"
-                  description={backupReminderText(offPhoneBackupStatus(data, new Date()).daysAgo)}
+                  title={t.today.backupTitle}
+                  description={
+                    backup.daysAgo === null
+                      ? t.today.backupNever
+                      : t.today.backupOld(t.count.daysAgo(backup.daysAgo))
+                  }
                   action={
-                    <View className="items-end gap-1">
+                    <View className="items-end">
                       <Button
-                        title="Save"
+                        title={t.common.save}
                         size="sm"
                         variant="secondary"
                         onPress={async () => {
@@ -256,255 +245,251 @@ export default function Dashboard() {
                         }}
                       />
                       <Pressable
-                        onPress={() => updateSettings({ backupReminderSnoozedUntil: snoozeBackupReminder(new Date()) })}
-                        hitSlop={8}
-                        className="min-h-[28px] justify-center"
+                        onPress={() =>
+                          updateSettings({ backupReminderSnoozedUntil: snoozeBackupReminder(new Date()) })
+                        }
                         accessibilityRole="button"
+                        className="h-9 justify-center active:opacity-60"
                       >
-                        <Text className="text-[12px] text-muted">Later</Text>
+                        <Text className="text-[14px] text-muted">{t.common.later}</Text>
                       </Pressable>
                     </View>
                   }
                 />
-              </Animated.View>
-            )}
+              </View>
+            ) : null}
 
-            {sessions.length > 0 && (
-              <Animated.View entering={stage(4)}>
-                <SectionTitle>
-                  {`Weekly sets by muscle${
-                    meso ? ` · week ${currentWeek(meso)} of ${meso.lengthWeeks}` : ''
-                  }${meso && isDeloadWeek(meso) ? ' · deload' : ''}`}
+            {/* Týden: sedm dní a tři čísla. */}
+            <View className="mt-4">
+              <SectionTitle>{t.today.week}</SectionTitle>
+              <View className="flex-row" style={{ gap: 6 }}>
+                {week.days.map((day) => (
+                  <View key={day.iso} className="flex-1" accessibilityLabel={day.label}>
+                    <View
+                      style={{
+                        height: 6,
+                        borderRadius: 2,
+                        backgroundColor: day.trained ? colors.text : colors.panel2,
+                        opacity: day.isFuture ? 0.5 : 1,
+                      }}
+                    />
+                    <Text
+                      className={cn(
+                        'mt-1.5 text-[13px]',
+                        day.isToday ? 'font-semibold text-white' : 'text-faint',
+                      )}
+                    >
+                      {day.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              <View className="mt-5 flex-row">
+                <WeekStat value={String(week.count)} label={t.today.statSessions} />
+                <WeekStat grow={1.5} value={fmtNum(week.volume, 0)} unit={t.common.kg} label={t.today.statVolume} />
+                <WeekStat grow={1.2} value={String(week.streak)} label={t.today.statStreak} />
+              </View>
+            </View>
+
+            {/* Plán na dnešek: minulý výkon a cíl z motoru progrese. */}
+            {!hasDraft && plan.length > 0 ? (
+              <View className="mt-9">
+                <SectionTitle>{t.today.plan}</SectionTitle>
+                <Rule />
+                {plan.map((row) => (
+                  <View key={row.exercise.id}>
+                    <PlanLine row={row} />
+                    <Rule />
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {sessions.length > 0 ? (
+              <View className="mt-9">
+                <SectionTitle
+                  action={
+                    meso ? (
+                      <Text className="text-[14px] text-muted">
+                        {t.today.mesoWeek(currentWeek(meso), meso.lengthWeeks)}
+                        {isDeloadWeek(meso) ? `, ${t.today.deloadTag}` : ''}
+                      </Text>
+                    ) : undefined
+                  }
+                >
+                  {t.today.volume}
                 </SectionTitle>
-                <Card className="gap-2.5">
-                  <Text className="text-xs text-muted">{volumeHeadline(volumeRows)}</Text>
+                <View style={{ gap: 9 }}>
                   {volumeRows.map((row) => (
                     <VolumeBar key={row.muscle} row={row} />
                   ))}
-                  <Text className="text-[10px] text-faint">
-                    Band = MEV to MAV, line = MRV. Secondary muscles count as half a set.
-                  </Text>
-                </Card>
-              </Animated.View>
-            )}
+                </View>
+                <Text className="mt-3 text-[13px] leading-[18px] text-faint">{t.today.volumeLegend}</Text>
+              </View>
+            ) : null}
 
-            {sessions.length > 0 && (
-              <Animated.View entering={stage(5)}>
-                <TrainingHeatmap sessions={sessions} />
-              </Animated.View>
-            )}
-
-            {lastSession && (
-              <Animated.View entering={stage(6)}>
-                <SectionTitle>Last session</SectionTitle>
-                <Card className="gap-3">
-                  <View>
-                    <Text className="font-display text-base tracking-wide text-white">
-                      {lastSession.splitName}
+            {lastSession ? (
+              <View className="mt-9">
+                <SectionTitle>{t.today.lastSession}</SectionTitle>
+                <Rule />
+                <Row>
+                  <View className="flex-1">
+                    <Text className="text-[16px] font-medium text-white">
+                      {lastSession.splitName || t.workout.freeName}
                     </Text>
-                    <Text className="mt-0.5 font-mono text-[11px] text-muted">
-                      {formatShort(lastSession.date)}
+                    <Text className="mt-0.5 text-[14px] text-muted">{formatShort(lastSession.date)}</Text>
+                  </View>
+                  <View className="items-end">
+                    <Num className="text-[22px] leading-[24px]">
+                      {fmtNum(Math.round(sessionVolume(lastSession)), 0)} {t.common.kg}
+                    </Num>
+                    <Text className="mt-0.5 text-[14px] text-muted">
+                      {t.count.sets(countScoringSets(lastSession))}
                     </Text>
                   </View>
-                  <View className="flex-row gap-8">
-                    <View>
-                      <View className="flex-row items-baseline">
-                        <Text className="font-mono-semibold text-lg text-white" style={tnum}>
-                          {Math.round(sessionVolume(lastSession)).toLocaleString('en-GB')}
-                        </Text>
-                        <Text className="ml-1 font-mono text-[11px] text-muted">kg</Text>
-                      </View>
-                      <Text className="mt-1 font-mono text-[10px] uppercase tracking-[1.2px] text-faint">
-                        Volume
-                      </Text>
-                    </View>
-                    <View>
-                      <Text className="font-mono-semibold text-lg text-white" style={tnum}>
-                        {countScoringSets(lastSession)}
-                      </Text>
-                      <Text className="mt-1 font-mono text-[10px] uppercase tracking-[1.2px] text-faint">
-                        Sets
-                      </Text>
-                    </View>
-                  </View>
-                </Card>
-              </Animated.View>
-            )}
+                </Row>
+                <Rule />
+              </View>
+            ) : null}
           </>
         )}
       </ScrollView>
 
-      {/* Session picker */}
-      <Modal visible={pickerOpen} animationType="slide" transparent onRequestClose={closePicker}>
-        <SafeAreaView className="flex-1 bg-bg/95" style={phoneWidth}>
-          <View className="flex-1 px-4 pt-4">
-            {pickerStep === 'program' ? (
-              <>
-                <PickerHeader title="Your programme" onClose={closePicker} />
-                {programSplits.map((split) => {
-                  const isRec = split.id === recommendedId
-                  return (
-                    <Pressable
-                      key={split.id}
-                      onPress={() => startWorkout(split.id)}
-                      className={cn(
-                        'mb-2 flex-row items-center justify-between rounded-2xl px-4 py-4 active:opacity-80',
-                        isRec ? 'border border-accent bg-accent/10' : 'border border-line bg-panel',
-                      )}
-                    >
-                      <View>
-                        <Text
-                          className={cn(
-                            'font-display text-base tracking-wide',
-                            isRec ? 'text-accent' : 'text-white',
-                          )}
-                        >
-                          {split.name}
-                        </Text>
-                        <Text className="mt-0.5 font-mono text-[11px] text-muted">
-                          {split.exerciseIds.length} exercises
-                        </Text>
-                      </View>
-                      {isRec ? (
-                        <Text className="font-mono text-[10px] uppercase tracking-[1.2px] text-accent">
-                          Today
-                        </Text>
-                      ) : (
-                        <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-                      )}
-                    </Pressable>
-                  )
-                })}
-                <PickerRow
-                  title="Free session"
-                  subtitle="No split — add exercises as you go"
-                  dashed
-                  onPress={() => startWorkout('free')}
-                />
-                {groups.length > 1 || (groups.length === 1 && groups[0][0] !== activeProgramId) ? (
-                  <Pressable onPress={() => setPickerStep('groups')} className="items-center py-3">
-                    <Text className="font-mono text-[11px] uppercase tracking-[1.2px] text-muted">
-                      Other splits
-                    </Text>
-                  </Pressable>
-                ) : null}
-              </>
-            ) : pickerStep === 'groups' ? (
-              <>
-                <PickerHeader title="Choose a session" onClose={closePicker} />
-                <PickerRow
-                  title="Free session"
-                  subtitle="No split — add exercises as you go"
-                  dashed
-                  onPress={() => startWorkout('free')}
-                />
-                {groups.map(([groupId, group]) => {
-                  const one = group.splits.length === 1
-                  const n = group.splits.length
-                  return (
-                    <PickerRow
-                      key={groupId}
-                      title={group.groupName}
-                      subtitle={`${n} ${n === 1 ? 'day' : 'days'}`}
-                      chevron={!one}
-                      onPress={() => (one ? startWorkout(group.splits[0].id) : setPickerStep(groupId))}
-                    />
-                  )
-                })}
-              </>
-            ) : (
-              <>
-                <View className="mb-5 flex-row items-center gap-3">
-                  <Pressable onPress={() => setPickerStep('groups')} hitSlop={12}>
-                    <Ionicons name="chevron-back" size={22} color={colors.muted} />
-                  </Pressable>
-                  <Text className="flex-1 font-display text-lg tracking-wide text-white">
-                    {groupMap.get(pickerStep)?.groupName}
-                  </Text>
-                  <Pressable onPress={closePicker} hitSlop={12}>
-                    <Ionicons name="close" size={22} color={colors.muted} />
-                  </Pressable>
-                </View>
-                {(groupMap.get(pickerStep)?.splits ?? []).map((split) => (
-                  <PickerRow
-                    key={split.id}
-                    title={split.name}
-                    subtitle={`${split.exerciseIds.length} exercises`}
-                    chevron
-                    onPress={() => startWorkout(split.id)}
-                  />
-                ))}
-              </>
-            )}
-          </View>
-        </SafeAreaView>
-      </Modal>
+      <SessionPicker
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        splits={splits}
+        recommendedId={next?.id ?? null}
+        onStart={startWorkout}
+      />
 
-      <Onboarding visible={!data.settings.onboarded && !hasSplits} />
-    </SafeAreaView>
+      <Onboarding visible={!settings.onboarded && !hasSplits} />
+    </Screen>
   )
 }
 
-function Metric({ value, label }: { value: number | string; label: string }) {
-  return (
-    <View className="flex-1 px-2 py-3">
-      <Text className="text-center font-mono-semibold text-base text-white" style={tnum}>
-        {value}
-      </Text>
-      <Text className="mt-1 text-center font-mono text-[9px] uppercase tracking-[1px] text-faint">
-        {label}
-      </Text>
-    </View>
-  )
-}
-
-function Divider() {
-  return <View className="my-3 w-px bg-line" />
-}
-
-function PickerHeader({ title, onClose }: { title: string; onClose: () => void }) {
-  return (
-    <View className="mb-5 flex-row items-center justify-between">
-      <Text className="font-display text-lg tracking-wide text-white">{title}</Text>
-      <Pressable onPress={onClose} hitSlop={12}>
-        <Ionicons name="close" size={22} color={colors.muted} />
-      </Pressable>
-    </View>
-  )
-}
-
-function PickerRow({
-  title,
-  subtitle,
-  onPress,
-  chevron,
-  dashed,
+function WeekStat({
+  value,
+  unit,
+  label,
+  grow = 1,
 }: {
-  title: string
-  subtitle: string
-  onPress: () => void
-  chevron?: boolean
-  dashed?: boolean
+  value: string
+  unit?: string
+  label: string
+  /** Poměr šířky sloupce — objem je delší číslo než počet tréninků. */
+  grow?: number
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      className={cn(
-        'mb-2 flex-row items-center justify-between rounded-2xl bg-panel px-4 py-4 active:opacity-80',
-        dashed ? 'border border-dashed border-line' : 'border border-line',
-      )}
-    >
-      <View>
-        <Text className="font-display text-base tracking-wide text-white">{title}</Text>
-        <Text className="mt-0.5 font-mono text-[11px] text-muted">{subtitle}</Text>
+    <View style={{ flex: grow }}>
+      <View className="flex-row items-baseline">
+        <Num className="text-[34px] leading-[36px]">{value}</Num>
+        {unit ? <Text className="ml-1 text-[15px] text-muted">{unit}</Text> : null}
       </View>
-      {chevron ? <Ionicons name="chevron-forward" size={18} color={colors.muted} /> : null}
-    </Pressable>
+      <Text className="text-[14px] text-muted">{label}</Text>
+    </View>
   )
 }
 
-function backupReminderText(daysAgo: number | null): string {
-  return daysAgo === null
-    ? 'No copy outside this phone yet. Save one to iCloud Drive.'
-    : `Last copy off this phone: ${daysAgoLabel(daysAgo)}. Save a fresh one.`
+/** Řádek plánu: vlevo cvik a minulý výkon, vpravo dnešní cíl a rozdíl. */
+function PlanLine({ row }: { row: PlanRow }) {
+  const t = tr()
+  const delta = planDelta(row)
+  const deltaText =
+    delta === null
+      ? null
+      : delta.kind === 'weight'
+        ? `${delta.kg > 0 ? '+' : '−'}${fmtNum(Math.abs(delta.kg), 2)} ${t.common.kg}`
+        : delta.kind === 'reps'
+          ? t.today.plusReps(delta.reps)
+          : t.today.same
+  // Oranžová jen když jde výkon nahoru — to je postup.
+  const up = delta !== null && delta.kind !== 'same' && (delta.kind === 'weight' ? delta.kg > 0 : delta.reps > 0)
+
+  return (
+    <Row>
+      <View className="flex-1">
+        <Text className="text-[16px] font-medium text-white" numberOfLines={1}>
+          {exName(row.exercise)}
+        </Text>
+        <Text className="mt-0.5 text-[14px] text-muted" style={tnum}>
+          {row.last ? `${t.today.planLast} ${fmtSet(row.last.weight, row.last.reps)}` : t.today.planFirst}
+        </Text>
+      </View>
+      {row.target ? (
+        <View className="items-end">
+          <Num className="text-[22px] leading-[24px]">{fmtSet(row.target.weight, row.target.reps)}</Num>
+          {deltaText ? (
+            <Text className={cn('mt-0.5 text-[14px]', up ? 'text-accent' : 'text-muted')} style={tnum}>
+              {deltaText}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+    </Row>
+  )
+}
+
+/** Výběr tréninku: všechny plány po skupinách v jednom seznamu. */
+function SessionPicker({
+  visible,
+  onClose,
+  splits,
+  recommendedId,
+  onStart,
+}: {
+  visible: boolean
+  onClose: () => void
+  splits: Split[]
+  recommendedId: string | null
+  onStart: (splitIdOrFree: string) => void
+}) {
+  const t = tr()
+  const groups = useMemo(() => {
+    const map = new Map<string, { name: string; splits: Split[] }>()
+    for (const split of splits) {
+      const key = split.groupId ?? '__custom__'
+      if (!map.has(key)) map.set(key, { name: split.groupName ?? t.today.customGroup, splits: [] })
+      map.get(key)!.splits.push(split)
+    }
+    return [...map.entries()]
+  }, [splits, t])
+
+  return (
+    <Sheet visible={visible} onClose={onClose} title={t.today.pickerAll} scroll>
+      {groups.map(([key, group]) => (
+        <View key={key} className="mb-4">
+          <Text className="pb-1.5 text-[14px] text-muted">{group.name}</Text>
+          <Rule />
+          {group.splits.map((split) => (
+            <View key={split.id}>
+              <Row onPress={() => onStart(split.id)}>
+                <View className="flex-1">
+                  <Text className="text-[17px] font-medium text-white">{split.name}</Text>
+                  <Text className="mt-0.5 text-[14px] text-muted">
+                    {t.count.exercises(split.exerciseIds.length)}
+                  </Text>
+                </View>
+                {split.id === recommendedId ? (
+                  <Text className="text-[14px] font-medium text-accent">{t.today.pickerToday}</Text>
+                ) : null}
+                <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+              </Row>
+              <Rule />
+            </View>
+          ))}
+        </View>
+      ))}
+      <Rule />
+      <Row onPress={() => onStart('free')}>
+        <View className="flex-1">
+          <Text className="text-[17px] font-medium text-white">{t.today.free}</Text>
+          <Text className="mt-0.5 text-[14px] text-muted">{t.today.freeText}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+      </Row>
+      <Rule />
+      <View className="h-4" />
+    </Sheet>
+  )
 }

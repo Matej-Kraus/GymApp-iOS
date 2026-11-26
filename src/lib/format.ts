@@ -1,13 +1,15 @@
 /**
- * Date formatting and comparison helpers.
- * Everything takes an ISO string — that's how WorkoutSession stores dates.
+ * Formátování dat a čísel podle jazyka appky (`@/i18n`) a pomocné funkce
+ * na porovnání dat. Data se berou jako ISO řetězec — tak je ukládá
+ * WorkoutSession.
  */
+import { localeTag } from '@/i18n'
 
 const MS_PER_DAY = 86_400_000
 
 /** "Jun 1, 2026" */
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
+  return new Date(iso).toLocaleDateString(localeTag(), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -16,7 +18,7 @@ export function formatDate(iso: string): string {
 
 /** "Mon 1 Jun" — compact, fits a row. */
 export function formatShort(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
+  return new Date(iso).toLocaleDateString(localeTag(), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -25,7 +27,7 @@ export function formatShort(iso: string): string {
 
 /** "Monday 1 June" */
 export function formatLong(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
+  return new Date(iso).toLocaleDateString(localeTag(), {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -58,4 +60,26 @@ export function isThisMonth(iso: string): boolean {
   const now = new Date()
   const d = new Date(iso)
   return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+}
+
+/**
+ * Číslo podle jazyka: 82.5 → „82,5" česky, „82.5" anglicky; tisíce odděluje
+ * mezera / čárka. `maxDecimals` ořízne desetinná místa (default 1).
+ */
+export function fmtNum(n: number, maxDecimals = 1): string {
+  return n.toLocaleString(localeTag(), { maximumFractionDigits: maxDecimals })
+}
+
+/** Série jako „82,5 × 6". Křížek, ne písmeno x. */
+export function fmtSet(weight: number, reps: number): string {
+  return `${fmtNum(weight, 2)} × ${reps}`
+}
+
+/** Kolik celých kalendářních dní uplynulo od data (0 = dnes). */
+export function daysSince(iso: string, now: Date = new Date()): number {
+  const a = new Date(iso)
+  a.setHours(0, 0, 0, 0)
+  const b = new Date(now)
+  b.setHours(0, 0, 0, 0)
+  return Math.max(0, Math.round((b.getTime() - a.getTime()) / MS_PER_DAY))
 }

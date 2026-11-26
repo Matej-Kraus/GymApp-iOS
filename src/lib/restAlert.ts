@@ -1,3 +1,4 @@
+import { tr } from '@/i18n'
 import * as Notifications from 'expo-notifications'
 import { ensurePermission, REST_END_ID } from './notifications'
 
@@ -19,8 +20,8 @@ export async function scheduleRestEnd(endsAt: number, nextLabel?: string): Promi
     await Notifications.scheduleNotificationAsync({
       identifier: REST_END_ID,
       content: {
-        title: 'Rest is over',
-        body: nextLabel ? `Next up: ${nextLabel}` : 'Time for your next set.',
+        title: tr().notify.restTitle,
+        body: nextLabel ? tr().notify.restNext(nextLabel) : tr().notify.restBody,
         sound: 'default',
       },
       trigger: {

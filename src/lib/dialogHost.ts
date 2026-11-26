@@ -21,6 +21,8 @@
  * `neutral` existuje kvůli pravidlu „zelená jen pro postup a hlavní akce":
  * seznam šesti náhrad cviku jsou rovnocenné možnosti, ne šest hlavních akcí.
  */
+import { tr } from '@/i18n'
+
 export type DialogStyle = 'default' | 'neutral' | 'cancel' | 'destructive'
 
 export interface DialogOption<T> {
@@ -106,7 +108,7 @@ export async function askConfirm(req: ConfirmRequest): Promise<boolean> {
     title: req.title,
     message: req.message,
     options: [
-      { label: req.cancelLabel ?? 'Cancel', value: false, style: 'cancel' },
+      { label: req.cancelLabel ?? tr().common.cancel, value: false, style: 'cancel' },
       {
         label: req.confirmLabel ?? 'OK',
         value: true,

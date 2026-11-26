@@ -77,7 +77,10 @@ export interface DeloadSignals {
   exhausted: boolean
   /** ≥2 cviky bez zlepšení. */
   stagnating: boolean
-  /** Co uživateli ukázat. */
+  /** Kolik partií je nad MRV / kolik cviků stagnuje — pro text v jazyce appky. */
+  overMrvCount: number
+  stalledCount: number
+  /** Anglické shrnutí důvodů (ladění, testy); UI skládá text z příznaků výš. */
   reasons: string[]
   shouldDeload: boolean
 }
@@ -140,6 +143,8 @@ export function deloadSignals(
     overreached,
     exhausted,
     stagnating,
+    overMrvCount: overMrv.length,
+    stalledCount: stalled.length,
     reasons,
     shouldDeload: scheduled || signals >= SIGNALS_NEEDED,
   }

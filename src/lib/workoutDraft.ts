@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import type { SetRole } from '@/core'
+import type { ProgressionAction, SetRole } from '@/core'
 
 /**
  * Perzistence ROZDĚLANÉHO tréninku. Bez tohohle žil aktivní trénink jen v paměti
@@ -19,7 +19,8 @@ export interface DraftSet {
   completed: boolean
   isPR: boolean
   skipped: boolean
-  suggestion: { weight: number; reps: number; reason: string } | null
+  /** Návrh motoru progrese. `action` říká proč — text k ní je v `tr().why`. */
+  suggestion: { weight: number; reps: number; reason: string; action?: ProgressionAction } | null
   lastPerf: { weight: number; reps: number } | null
 }
 

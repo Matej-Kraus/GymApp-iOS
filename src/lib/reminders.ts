@@ -1,3 +1,4 @@
+import { tr } from '@/i18n'
 import * as Notifications from 'expo-notifications'
 import type { ReminderConfig } from '@/core'
 import { ensurePermission, REST_END_ID, REMINDER_PREFIX } from './notifications'
@@ -35,7 +36,7 @@ export async function applyReminders(cfg: ReminderConfig | undefined): Promise<b
     for (const day of cfg.days) {
       await Notifications.scheduleNotificationAsync({
         identifier: `${REMINDER_PREFIX}${day}`,
-        content: { title: 'Time to train', body: 'Today is a training day.' },
+        content: { title: tr().notify.remindTitle, body: tr().notify.remindBody },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
           weekday: toIosWeekday(day),

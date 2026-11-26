@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
-import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated'
-import { LinearGradient } from 'expo-linear-gradient'
-import { StyleSheet } from 'react-native'
-import Ionicons from '@expo/vector-icons/Ionicons'
+import { Num } from '@/components/ui'
 import { colors } from '@/theme/colors'
 import { tapLight, warning } from '@/lib/haptics'
+import { tr } from '@/i18n'
 
 function mmss(sec: number): string {
   const m = Math.floor(sec / 60)
@@ -14,7 +12,7 @@ function mmss(sec: number): string {
 }
 
 /**
- * Rest mezi sériemi — sticky lišta s odpočtem, ±15 s a přeskočením.
+ * Pauza mezi sériemi — odpočet ve spodní liště, ±15 s a přeskočení.
  * Běží v appce (interval + haptika na konci). `endsAt` = epoch ms konce.
  * Se zamčeným telefonem ohlásí konec lokální notifikace (`lib/restAlert.ts`).
  */
@@ -31,6 +29,7 @@ export function RestTimer({
   onDone: () => void
   onSkip: () => void
 }) {
+  const t = tr().workout
   const [remaining, setRemaining] = useState(() => Math.max(0, Math.round((endsAt - Date.now()) / 1000)))
   const firedRef = useRef(false)
 
@@ -54,49 +53,38 @@ export function RestTimer({
   const pct = Math.max(0, Math.min(1, remaining / Math.max(1, totalSec)))
 
   return (
-    <Animated.View entering={FadeInDown.springify().damping(18)} exiting={FadeOutDown.duration(180)}>
-      <View className="relative mx-4 mb-2 overflow-hidden rounded-2xl border border-accent/30 bg-panel2">
-        {/* progress výplň */}
-        <LinearGradient
-          colors={[`${colors.accent}38`, `${colors.accent}1A`]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[StyleSheet.absoluteFillObject, { right: `${(1 - pct) * 100}%` }]}
-        />
-        <View className="flex-row items-center gap-3 px-3 py-2.5">
-          <Ionicons name="timer-outline" size={20} color={colors.accent} />
-          <View className="flex-1">
-            <Text className="text-[10px] font-semibold uppercase tracking-wide text-accent/80">Rest</Text>
-            <Text className="font-display text-xl text-white" style={{ fontVariant: ['tabular-nums'] }}>
-              {mmss(remaining)}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => { tapLight(); onAdjust(-15) }}
-            hitSlop={8}
-            accessibilityLabel="Remove 15 seconds"
-            className="h-9 w-12 items-center justify-center rounded-xl bg-panel"
-          >
-            <Text className="text-xs font-bold text-white">−15</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => { tapLight(); onAdjust(15) }}
-            hitSlop={8}
-            accessibilityLabel="Add 15 seconds"
-            className="h-9 w-12 items-center justify-center rounded-xl bg-panel"
-          >
-            <Text className="text-xs font-bold text-white">+15</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => { tapLight(); onSkip() }}
-            hitSlop={8}
-            accessibilityLabel="Skip rest"
-            className="h-9 px-3 items-center justify-center rounded-xl bg-accent"
-          >
-            <Text className="text-xs font-bold text-black">Skip</Text>
-          </Pressable>
-        </View>
+    <View>
+      {/* Ubývající linka — jediná oranžová v liště, dokud pauza běží. */}
+      <View style={{ height: 3, backgroundColor: colors.panel2 }}>
+        <View style={{ height: 3, width: `${pct * 100}%`, backgroundColor: colors.accent }} />
       </View>
-    </Animated.View>
+      <View className="flex-row items-center px-5 py-2" style={{ gap: 8 }}>
+        <View className="flex-1 flex-row items-baseline" style={{ gap: 8 }}>
+          <Num className="text-[34px] leading-[38px]">{mmss(remaining)}</Num>
+          <Text className="text-[15px] text-muted">{t.rest}</Text>
+        </View>
+        <StepButton label="−15" a11y={t.restMinus} onPress={() => onAdjust(-15)} />
+        <StepButton label="+15" a11y={t.restPlus} onPress={() => onAdjust(15)} />
+        <StepButton label={t.restSkip} a11y={t.restSkip} onPress={onSkip} />
+      </View>
+    </View>
+  )
+}
+
+function StepButton({ label, a11y, onPress }: { label: string; a11y: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={() => {
+        tapLight()
+        onPress()
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={a11y}
+      className="h-11 items-center justify-center rounded-lg bg-panel2 px-3.5 active:opacity-60"
+    >
+      <Text className="text-[15px] font-medium text-white" style={{ fontVariant: ['tabular-nums'] }}>
+        {label}
+      </Text>
+    </Pressable>
   )
 }

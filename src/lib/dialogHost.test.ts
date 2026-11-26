@@ -5,6 +5,7 @@ import {
   type DialogRequest,
 } from './dialogHost'
 
+
 /** Falešný host = to, co v appce dělá ConfirmProvider. */
 function fakeHost() {
   const seen: DialogRequest<unknown>[] = []
